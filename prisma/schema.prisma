@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CefrLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
+enum Skill {
+  VOCABULARY
+  GRAMMAR
+  READING
+  LISTENING
+  BUSINESS
+  CONTRACTS
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  FILL_BLANK
+  TRUE_FALSE
+  LISTENING_MCQ
+}
+
+model Question {
+  id          String       @id @default(cuid())
+  level       CefrLevel
+  skill       Skill
+  type        QuestionType
+  prompt      String
+  options     Json
+  answer      String
+  explanation String?
+  audioUrl    String?
+  tags        String[]
+  createdAt   DateTime     @default(now())
+
+  @@index([level, skill])
+}
+
+model Lesson {
+  id          String     @id @default(cuid())
+  module      String
+  level       CefrLevel
+  title       String
+  summary     String
+  content     String     @db.Text
+  order       Int        @default(0)
+  createdAt   DateTime   @default(now())
+
+  @@index([module, level])
+}
+
+model Vocabulary {
+  id          String     @id @default(cuid())
+  term        String
+  definition  String
+  example     String
+  module      String
+  level       CefrLevel
+  createdAt   DateTime   @default(now())
+
+  @@index([module, level])
+}
+
+model Module {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  description String
+  icon        String
+  order       Int        @default(0)
+}
