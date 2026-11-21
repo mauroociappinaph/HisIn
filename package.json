@@ -7,10 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/modules/vocabulary/srs.test.ts src/modules/ai/schema.test.ts src/modules/ai/gentle-shell.test.ts src/modules/ai/guard.test.ts",
+    "test": "node --import tsx --test src/modules/vocabulary/srs.test.ts src/modules/ai/schema.test.ts src/modules/ai/gentle-shell.test.ts src/modules/ai/guard.test.ts src/modules/ai/models.test.ts src/modules/ai/queue.test.ts src/modules/ai/policy.test.ts",
     "seed": "tsx prisma/seed.ts",
     "db:migrate": "prisma migrate deploy",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "db:reset-content": "tsx scripts/reset-content.ts && tsx prisma/seed.ts",
+    "ai:generate": "tsx scripts/generate.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.1",

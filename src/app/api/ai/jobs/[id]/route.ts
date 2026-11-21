@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthorized } from "@/modules/ai/guard";
 import { getJob } from "@/modules/ai/repository";
+import { toJobPayload } from "@/modules/ai/service";
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   if (!isAuthorized(req.headers)) {
@@ -13,15 +14,5 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     return NextResponse.json({ error: "job not found" }, { status: 404 });
   }
 
-  return NextResponse.json({
-    id: job.id,
-    kind: job.kind,
-    status: job.status,
-    model: job.model,
-    createdCount: job.createdCount,
-    error: job.error,
-    createdAt: job.createdAt,
-    startedAt: job.startedAt,
-    finishedAt: job.finishedAt,
-  });
+  return NextResponse.json(toJobPayload(job));
 }

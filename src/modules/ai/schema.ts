@@ -15,21 +15,49 @@ export const QUESTION_TYPES = [
   "TRUE_FALSE",
   "LISTENING_MCQ",
 ] as const;
+export const GENERATION_KINDS = ["question", "vocabulary", "lesson"] as const;
+
+/**
+ * Module slugs that real pages render. Generated content outside this set would
+ * be invisible in the app, so the engine refuses it instead of writing orphans.
+ */
+export const CONTENT_MODULES = [
+  "vocabulary",
+  "reading",
+  "listening",
+  "business-english",
+  "contracts",
+  "grammar",
+] as const;
+export const contentModuleSchema = z.enum(CONTENT_MODULES);
 
 export const cefrLevelSchema = z.enum(CEFR_LEVELS);
 export const skillSchema = z.enum(SKILLS);
 export const questionTypeSchema = z.enum(QUESTION_TYPES);
+export const generationKindSchema = z.enum(GENERATION_KINDS);
 
-/** What the caller may ask the engine to generate. */
-export const questionRequestSchema = z.object({
-  level: cefrLevelSchema,
-  skill: skillSchema,
-  type: questionTypeSchema,
-  count: z.number().int().min(1).max(5).default(3),
-  topic: z.string().trim().min(3).max(120).optional(),
-});
+/** What a caller may ask the engine to generate. */
+export const generationRequestSchema = z
+  .object({
+    kind: generationKindSchema.default("question"),
+    level: cefrLevelSchema,
+    skill: skillSchema.optional(),
+    type: questionTypeSchema.optional(),
+    count: z.number().int().min(1).max(5).default(3),
+    topic: z.string().trim().min(3).max(120).optional(),
+  })
+  .superRefine((request, ctx) => {
+    if (request.kind !== "question") return;
+    if (!request.skill) {
+      ctx.addIssue({ code: "custom", path: ["skill"], message: "skill is required for questions" });
+    }
+    if (!request.type) {
+      ctx.addIssue({ code: "custom", path: ["type"], message: "type is required for questions" });
+    }
+  });
 
-export type QuestionRequest = z.infer<typeof questionRequestSchema>;
+export type GenerationRequest = z.infer<typeof generationRequestSchema>;
+export type GenerationKind = (typeof GENERATION_KINDS)[number];
 
 const generatedQuestionShape = z.object({
   level: cefrLevelSchema,
@@ -78,39 +106,78 @@ export const generatedQuestionSchema = generatedQuestionShape.superRefine((quest
   }
 });
 
-export type GeneratedQuestion = z.infer<typeof generatedQuestionShape>;
-
-export const generatedBatchSchema = z.object({
-  questions: z.array(generatedQuestionSchema).min(1).max(10),
+export const generatedVocabularySchema = z.object({
+  term: z.string().min(2).max(80),
+  definition: z.string().min(10).max(400),
+  example: z.string().min(10).max(400),
+  module: contentModuleSchema,
+  level: cefrLevelSchema,
 });
 
-/**
- * Parses the model's raw reply into validated questions.
- *
- * Tolerates markdown fences and surrounding prose, but never tolerates an
- * unanswerable or malformed question.
- */
-export function parseGeneratedBatch(raw: string): GeneratedQuestion[] {
+export const generatedLessonSchema = z.object({
+  module: contentModuleSchema,
+  level: cefrLevelSchema,
+  title: z.string().min(5).max(120),
+  summary: z.string().min(10).max(300),
+  content: z.string().min(50).max(6000),
+  order: z.number().int().min(0).max(99).default(0),
+});
+
+export type GeneratedQuestion = z.infer<typeof generatedQuestionShape>;
+export type GeneratedVocabulary = z.infer<typeof generatedVocabularySchema>;
+export type GeneratedLesson = z.infer<typeof generatedLessonSchema>;
+
+/** The batch key and item schema each kind must return. */
+export const BATCH_KEY: Record<GenerationKind, string> = {
+  question: "questions",
+  vocabulary: "vocabulary",
+  lesson: "lessons",
+};
+
+function extractJsonObject(raw: string): unknown {
   const cleaned = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
   if (start === -1 || end === -1 || end <= start) {
     throw new Error("model response did not contain a JSON object");
   }
-
-  let parsed: unknown;
   try {
-    parsed = JSON.parse(cleaned.slice(start, end + 1));
+    return JSON.parse(cleaned.slice(start, end + 1));
   } catch {
     throw new Error("model response was not valid JSON");
   }
+}
 
-  const result = generatedBatchSchema.safeParse(parsed);
-  if (!result.success) {
-    const issues = result.error.issues
+/**
+ * Parses the model's raw reply into validated items of one kind.
+ *
+ * Tolerates markdown fences and surrounding prose, but never tolerates a
+ * malformed or unanswerable item.
+ */
+function parseBatch<T>(raw: string, key: string, item: z.ZodType<T>): T[] {
+  const parsed = extractJsonObject(raw);
+  const batch = z
+    .object({ [key]: z.array(item).min(1).max(10) })
+    .safeParse(parsed);
+
+  if (!batch.success) {
+    const issues = batch.error.issues
       .map((issue) => `${issue.path.join(".") || "root"}: ${issue.message}`)
       .join("; ");
     throw new Error(`model response failed validation: ${issues}`);
   }
-  return result.data.questions;
+
+  return (batch.data as Record<string, T[]>)[key] ?? [];
+}
+
+export function parseGeneratedBatch(raw: string): GeneratedQuestion[] {
+  return parseBatch(raw, BATCH_KEY.question, generatedQuestionSchema);
+}
+
+export function parseGeneratedVocabulary(raw: string): GeneratedVocabulary[] {
+  return parseBatch(raw, BATCH_KEY.vocabulary, generatedVocabularySchema);
+}
+
+export function parseGeneratedLessons(raw: string): GeneratedLesson[] {
+  return parseBatch(raw, BATCH_KEY.lesson, generatedLessonSchema);
 }

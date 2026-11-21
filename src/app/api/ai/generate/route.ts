@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthorized } from "@/modules/ai/guard";
-import { questionRequestSchema } from "@/modules/ai/schema";
-import { generateQuestions } from "@/modules/ai/service";
+import { generationRequestSchema } from "@/modules/ai/schema";
+import { startGeneration } from "@/modules/ai/service";
 
 // Gentle Shell is a local CLI: this route needs a Node process that can spawn it.
 export const maxDuration = 180;
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const parsed = questionRequestSchema.safeParse(body);
+  const parsed = generationRequestSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "invalid request", issues: parsed.error.issues },
@@ -20,13 +20,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  try {
-    const outcome = await generateQuestions(parsed.data);
-    return NextResponse.json(outcome, { status: 201 });
-  } catch (error) {
+  const outcome = await startGeneration(parsed.data);
+  if (!outcome.accepted) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "generation failed" },
-      { status: 502 },
+      { error: "another generation is already running", jobId: outcome.runningJobId },
+      { status: 429 },
     );
   }
+
+  return NextResponse.json({ jobId: outcome.jobId, status: "PENDING" }, { status: 202 });
 }

@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseGeneratedBatch } from "./schema";
+import {
+  generationRequestSchema,
+  parseGeneratedBatch,
+  parseGeneratedLessons,
+  parseGeneratedVocabulary,
+} from "./schema";
 
 const validChoiceQuestion = {
   level: "B1",
@@ -78,6 +83,95 @@ test("an empty batch is rejected", () => {
 test("requests outside the supported enums are rejected", () => {
   assert.throws(
     () => parseGeneratedBatch(JSON.stringify({ questions: [{ ...validChoiceQuestion, level: "D1" }] })),
+    /failed validation/,
+  );
+});
+
+test("a question request without skill or type is rejected", () => {
+  const result = generationRequestSchema.safeParse({ kind: "question", level: "B1", count: 2 });
+
+  assert.equal(result.success, false);
+});
+
+test("vocabulary and lesson requests need no skill or type", () => {
+  assert.equal(generationRequestSchema.safeParse({ kind: "vocabulary", level: "B2", count: 2 }).success, true);
+  assert.equal(generationRequestSchema.safeParse({ kind: "lesson", level: "B2", count: 1 }).success, true);
+});
+
+test("the kind defaults to question so the old callers keep working", () => {
+  const parsed = generationRequestSchema.safeParse({
+    level: "B1",
+    skill: "GRAMMAR",
+    type: "TRUE_FALSE",
+  });
+
+  assert.equal(parsed.success, true);
+  assert.equal(parsed.success && parsed.data.kind, "question");
+});
+
+test("a valid vocabulary batch is accepted", () => {
+  const entries = parseGeneratedVocabulary(
+    JSON.stringify({
+      vocabulary: [
+        {
+          term: "runway",
+          definition: "The number of months a company can operate before cash runs out.",
+          example: "We have twelve months of runway after this round.",
+          module: "vocabulary",
+          level: "B2",
+        },
+      ],
+    }),
+  );
+
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0]?.term, "runway");
+});
+
+test("a vocabulary entry with a one word definition is rejected", () => {
+  assert.throws(
+    () =>
+      parseGeneratedVocabulary(
+        JSON.stringify({
+          vocabulary: [
+            { term: "runway", definition: "money", example: "ok", module: "vocabulary", level: "B2" },
+          ],
+        }),
+      ),
+    /failed validation/,
+  );
+});
+
+test("a valid lesson batch is accepted", () => {
+  const lessons = parseGeneratedLessons(
+    JSON.stringify({
+      lessons: [
+        {
+          module: "business-english",
+          level: "B2",
+          title: "Writing an investor update",
+          summary: "Short, honest updates that keep investors aligned.",
+          content: "Lead with the headline.\nAdd metrics.\nName the risks.\nAsk for one thing.",
+          order: 1,
+        },
+      ],
+    }),
+  );
+
+  assert.equal(lessons.length, 1);
+  assert.equal(lessons[0]?.order, 1);
+});
+
+test("a lesson without content is rejected", () => {
+  assert.throws(
+    () =>
+      parseGeneratedLessons(
+        JSON.stringify({
+          lessons: [
+            { module: "grammar", level: "B1", title: "Present perfect", summary: "Short summary here." },
+          ],
+        }),
+      ),
     /failed validation/,
   );
 });

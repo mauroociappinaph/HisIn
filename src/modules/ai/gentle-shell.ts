@@ -1,4 +1,7 @@
 import { spawn } from "node:child_process";
+import { DEFAULT_MODEL, DEFAULT_TIMEOUT_MS } from "./models";
+
+export { DEFAULT_MODEL, DEFAULT_TIMEOUT_MS };
 
 /**
  * Gentle Shell is the only AI engine HisIn talks to.
@@ -12,9 +15,6 @@ import { spawn } from "node:child_process";
  * 2. It exits 0 when the provider fails. Provider errors are therefore read
  *    from the JSON event stream (`errorMessage`), never from the exit code.
  */
-
-export const DEFAULT_MODEL = "gemini-free/gemini-3.1-flash-lite";
-export const DEFAULT_TIMEOUT_MS = 90_000;
 
 export type GentleShellFailure = "spawn" | "timeout" | "provider" | "empty";
 
