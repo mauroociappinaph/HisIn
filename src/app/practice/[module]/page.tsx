@@ -14,8 +14,8 @@ const SKILL_BY_MODULE: Record<string, Skill> = {
 
 function PracticeInner() {
   const params = useParams();
-  const module = params.module as string;
-  const skill = SKILL_BY_MODULE[module] ?? "VOCABULARY";
+  const moduleSlug = params.module as string;
+  const skill = SKILL_BY_MODULE[moduleSlug] ?? "VOCABULARY";
   const [level, setLevel] = useState("B1");
   const [vocab, setVocab] = useState<VocabularyDTO[]>([]);
   const [questions, setQuestions] = useState<QuestionDTO[]>([]);
@@ -24,11 +24,22 @@ function PracticeInner() {
   const [showResult, setShowResult] = useState(false);
 
   useEffect(() => {
-    const l = localStorage.getItem("hisin_level") ?? "B1";
-    setLevel(l);
-    fetch(`/api/vocabulary?module=${module}&level=${l}`).then((r) => r.json()).then(setVocab);
-    fetch(`/api/questions?skill=${skill}&level=${l}&limit=10`).then((r) => r.json()).then(setQuestions);
-  }, [module, skill]);
+    let active = true;
+    void (async () => {
+      const storedLevel = localStorage.getItem("hisin_level") ?? "B1";
+      const [vocabData, questionData] = await Promise.all([
+        fetch(`/api/vocabulary?module=${moduleSlug}&level=${storedLevel}`).then((r) => r.json()),
+        fetch(`/api/questions?skill=${skill}&level=${storedLevel}&limit=10`).then((r) => r.json()),
+      ]);
+      if (!active) return;
+      setLevel(storedLevel);
+      setVocab(vocabData as VocabularyDTO[]);
+      setQuestions(questionData as QuestionDTO[]);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [moduleSlug, skill]);
 
   const q = questions[index];
 
@@ -38,6 +49,136 @@ function PracticeInner() {
       if (answers[qq.id] === qq.answer) correct++;
     });
     return { correct, total: questions.length };
+  }
+
+  function renderQuestion(q: QuestionDTO) {
+    const selected = answers[q.id];
+    const isCorrect = selected === q.answer;
+    const showAnswer = selected !== undefined;
+
+    switch (q.type) {
+      case "FILL_BLANK":
+        return (
+          <div className="p-6 bg-white rounded-xl border shadow-sm">
+            <p className="mb-4">{q.prompt}</p>
+            <input
+              type="text"
+              value={selected ?? ""}
+              onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value.trim() }))}
+              placeholder="Escribe tu respuesta..."
+              className={`w-full px-4 py-2 rounded border ${
+                showAnswer
+                  ? isCorrect
+                    ? "bg-green-50 border-green-500"
+                    : "bg-red-50 border-red-500"
+                  : "hover:bg-slate-50"
+              }`}
+              disabled={showAnswer}
+            />
+            {showAnswer && q.explanation && (
+              <p className="mt-3 text-sm text-slate-600">{q.explanation}</p>
+            )}
+            {showAnswer && !isCorrect && q.answer && (
+              <p className="mt-2 text-sm text-red-600">Correcto: {q.answer}</p>
+            )}
+          </div>
+        );
+
+      case "TRUE_FALSE":
+        return (
+          <div className="p-6 bg-white rounded-xl border shadow-sm">
+            <p className="mb-4">{q.prompt}</p>
+            <div className="flex gap-4">
+              {["True", "False"].map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => !showAnswer && setAnswers((a) => ({ ...a, [q.id]: opt }))}
+                  className={`flex-1 px-4 py-3 rounded border text-lg font-medium ${
+                    selected === opt
+                      ? isCorrect
+                        ? "bg-green-100 border-green-500 text-green-800"
+                        : "bg-red-100 border-red-500 text-red-800"
+                      : "hover:bg-slate-50"
+                  }`}
+                  disabled={showAnswer}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+            {showAnswer && q.explanation && (
+              <p className="mt-3 text-sm text-slate-600">{q.explanation}</p>
+            )}
+          </div>
+        );
+
+      case "LISTENING_MCQ":
+        return (
+          <div className="p-6 bg-white rounded-xl border shadow-sm">
+            {q.audioUrl && (
+              <audio controls className="mb-4 w-full">
+                <source src={q.audioUrl} type="audio/mpeg" />
+                Tu navegador no soporta audio.
+              </audio>
+            )}
+            <p className="mb-4">{q.prompt}</p>
+            <div className="space-y-2">
+              {q.options.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => !showAnswer && setAnswers((a) => ({ ...a, [q.id]: opt }))}
+                  className={`w-full text-left px-4 py-2 rounded border ${
+                    selected === opt
+                      ? isCorrect
+                        ? "bg-green-100 border-green-500"
+                        : "bg-red-100 border-red-500"
+                      : "hover:bg-slate-50"
+                  }`}
+                  disabled={showAnswer}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+            {showAnswer && q.explanation && (
+              <p className="mt-3 text-sm text-slate-600">{q.explanation}</p>
+            )}
+          </div>
+        );
+
+      default: // MULTIPLE_CHOICE
+        return (
+          <div className="p-6 bg-white rounded-xl border shadow-sm">
+            <p className="mb-4">{q.prompt}</p>
+            {q.audioUrl && (
+              <audio controls className="mb-4 w-full">
+                <source src={q.audioUrl} type="audio/mpeg" />
+              </audio>
+            )}
+            <div className="space-y-2">
+              {q.options.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => !showAnswer && setAnswers((a) => ({ ...a, [q.id]: opt }))}
+                  className={`w-full text-left px-4 py-2 rounded border ${
+                    selected === opt
+                      ? isCorrect
+                        ? "bg-green-100 border-green-500"
+                        : "bg-red-100 border-red-500"
+                      : "hover:bg-slate-50"
+                  }`}
+                  disabled={showAnswer}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+            {showAnswer && q.explanation && (
+              <p className="mt-3 text-sm text-slate-600">{q.explanation}</p>
+            )}
+          </div>
+        );
+    }
   }
 
   if (showResult) {
@@ -64,7 +205,7 @@ function PracticeInner() {
 
   return (
     <div className="space-y-8">
-      <h2 className="text-2xl font-bold capitalize">{module} — Práctica ({level})</h2>
+      <h2 className="text-2xl font-bold capitalize">{moduleSlug} — Práctica ({level})</h2>
 
       {vocab.length > 0 && (
         <section>
@@ -83,23 +224,11 @@ function PracticeInner() {
 
       {questions.length > 0 && q && (
         <section className="space-y-4">
-          <h3 className="font-semibold">Quiz</h3>
-          <div className="p-6 bg-white rounded-xl border shadow-sm">
-            <p className="mb-4">{q.prompt}</p>
-            <div className="space-y-2">
-              {q.options.map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
-                  className={`w-full text-left px-4 py-2 rounded border ${
-                    answers[q.id] === opt ? "bg-indigo-100 border-indigo-500" : "hover:bg-slate-50"
-                  }`}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
+          <div className="flex justify-between items-center">
+            <h3 className="font-semibold">Quiz</h3>
+            <span className="text-xs text-slate-500 capitalize">{q.type.replace("_", " ").toLowerCase()}</span>
           </div>
+          {renderQuestion(q)}
           <div className="flex justify-between">
             <button
               disabled={index === 0}
