@@ -61,17 +61,35 @@ model Lesson {
   @@index([module, level])
 }
 
+enum VocabularyKind {
+  WORD
+  PHRASAL_VERB
+  PATTERN
+}
+
+enum VocabularySource {
+  SEED
+  GENERATED
+  USER
+}
+
 model Vocabulary {
-  id          String     @id @default(cuid())
-  term        String
-  definition  String
-  example     String
-  module      String
-  level       CefrLevel
-  createdAt   DateTime   @default(now())
-  reviews     VocabularyReview[]
+  id           String           @id @default(cuid())
+  term         String
+  definition   String
+  example      String
+  module       String
+  level        CefrLevel
+  kind         VocabularyKind   @default(WORD)
+  particle     String?
+  source       VocabularySource @default(SEED)
+  extraExample String?
+  notes        String?
+  createdAt    DateTime         @default(now())
+  reviews      VocabularyReview[]
 
   @@index([module, level])
+  @@index([kind])
 }
 
 /// A short generated narrative that recycles target vocabulary in context.

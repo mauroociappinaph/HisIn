@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { usesTerm } from "@/shared/lib/text";
 
 export const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 export const SKILLS = [
@@ -122,18 +123,6 @@ export const generatedLessonSchema = z.object({
   content: z.string().min(50).max(6000),
   order: z.number().int().min(0).max(99).default(0),
 });
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/** Whole-word, case-insensitive, multiword-aware "is this word used?" test. */
-export function usesTerm(text: string, term: string): boolean {
-  const trimmed = term.trim();
-  if (!trimmed) return false;
-  const pattern = trimmed.split(/\s+/).map(escapeRegExp).join("\\s+");
-  return new RegExp(`(?<![\\w-])${pattern}(?![\\w-])`, "i").test(text);
-}
 
 const generatedStoryShape = z.object({
   module: contentModuleSchema,
