@@ -35,6 +35,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/review/vocab" className="hover:text-indigo-600">
                 Repaso SRS
               </Link>
+              <Link href="/phrasal-verbs" className="hover:text-indigo-600">
+                Phrasal verbs
+              </Link>
+              <Link href="/patterns" className="hover:text-indigo-600">
+                Patrones
+              </Link>
               <Link href="/progress" className="hover:text-indigo-600">
                 Progreso
               </Link>

@@ -224,6 +224,7 @@ export default function VocabTrainerPage() {
           loading={bankLoading}
           recentlyMastered={known}
           onToggleMastered={toggleKnown}
+          onCreated={(entry) => setBank((previous) => [entry, ...previous])}
         />
       ) : null}
 

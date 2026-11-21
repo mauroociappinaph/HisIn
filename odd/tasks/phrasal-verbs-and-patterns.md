@@ -79,3 +79,5 @@ Comparado contra Duolingo, Anki, Quizlet, Clozemaster, LingQ, British Council Le
 - Búsqueda de ejemplos reales (YouGlish).
 
 **Decisiones de diseño adoptadas** (ver S11–S16): separabilidad y registro en cada phrasal verb, agrupación por partícula, función en cada patrón, cloze sobre la oración propia, cola única mezclada, formulario que fuerza paráfrasis y oración personal, y anti-bloat.
+
+L3 (extensión pendiente, T6): el motor todavía no genera `PHRASAL_VERB` ni `PATTERN`; hoy esas dos secciones se llenan con entradas del aprendiz. La unidad siguiente es un `category` opcional en `kind: "vocabulary"` (WORD | PHRASAL_VERB | PATTERN) que valide cada salida con `validateEntry` — derivando `particle` del término y exigiendo separabilidad y registro — y persista con el `kind` correcto. Es un cambio al contrato compartido del motor (lo consumen el CLI, `/api/ai/generate` y `/studio`), así que necesita test diferencial además de los unitarios.

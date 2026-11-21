@@ -85,6 +85,9 @@ model Vocabulary {
   source       VocabularySource @default(SEED)
   extraExample String?
   notes        String?
+  separable    Boolean?
+  register     String?
+  function     String?
   createdAt    DateTime         @default(now())
   reviews      VocabularyReview[]
 

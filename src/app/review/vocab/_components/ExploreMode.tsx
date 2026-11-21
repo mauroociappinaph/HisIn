@@ -2,16 +2,18 @@
 
 import { useMemo, useState } from "react";
 import type { VocabularyDTO } from "@/shared/types";
-import { LevelBadge, ModuleTag, SpeakButton, humanizeModule } from "./ui";
+import { LevelBadge, ModuleTag, SpeakButton, KindTag, humanizeModule } from "./ui";
+import { EntryForm } from "@/components/entry-form";
 
 interface ExploreModeProps {
   bank: VocabularyDTO[];
   loading: boolean;
   recentlyMastered: Set<string>;
   onToggleMastered: (id: string) => void;
+  onCreated: (entry: VocabularyDTO) => void;
 }
 
-export function ExploreMode({ bank, loading, recentlyMastered, onToggleMastered }: ExploreModeProps) {
+export function ExploreMode({ bank, loading, recentlyMastered, onToggleMastered, onCreated }: ExploreModeProps) {
   const [query, setQuery] = useState("");
   const [moduleFilter, setModuleFilter] = useState<string>("all");
   const [levelFilter, setLevelFilter] = useState<string>("all");
@@ -85,9 +87,12 @@ export function ExploreMode({ bank, loading, recentlyMastered, onToggleMastered 
         </select>
       </div>
 
-      <p className="text-sm text-slate-500">
-        {visible.length} de {bank.length} palabras
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-slate-500">
+          {visible.length} de {bank.length} entradas
+        </p>
+        <EntryForm kinds={["WORD"]} onCreated={onCreated} />
+      </div>
 
       {visible.length === 0 ? (
         <div className="p-10 rounded-2xl bg-white border border-slate-200 text-center text-slate-500">
@@ -106,6 +111,7 @@ export function ExploreMode({ bank, loading, recentlyMastered, onToggleMastered 
                   <div className="flex items-center gap-2 flex-wrap">
                     <LevelBadge level={item.level} />
                     <ModuleTag module={item.module} />
+                    <KindTag kind={item.kind} />
                   </div>
                   <SpeakButton text={item.term} label={`Escuchar ${item.term}`} />
                 </div>

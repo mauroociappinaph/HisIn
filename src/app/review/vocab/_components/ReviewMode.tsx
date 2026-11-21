@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { LevelBadge, ModuleTag, ProgressBar, SpeakButton } from "./ui";
+import { KindTag, LevelBadge, ModuleTag, ProgressBar, SpeakButton } from "./ui";
 import type { TrainerMode, VocabReviewItem } from "./types";
 
 interface ReviewModeProps {
@@ -181,6 +181,7 @@ export function ReviewMode({ loading, items, onGrade, onReload, onSwitchMode }: 
             <div className="flex items-center gap-2 flex-wrap">
               <LevelBadge level={vocabulary.level} />
               <ModuleTag module={vocabulary.module} />
+              <KindTag kind={vocabulary.kind} />
             </div>
             <SpeakButton text={vocabulary.term} label={`Escuchar ${vocabulary.term}`} />
           </div>

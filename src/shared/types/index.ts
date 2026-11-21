@@ -48,6 +48,9 @@ export interface LessonDTO {
   order: number;
 }
 
+export type VocabularyKind = "WORD" | "PHRASAL_VERB" | "PATTERN";
+export type VocabularySource = "SEED" | "GENERATED" | "USER";
+
 export interface VocabularyDTO {
   id: string;
   term: string;
@@ -55,6 +58,14 @@ export interface VocabularyDTO {
   example: string;
   module: string;
   level: CefrLevel;
+  kind: VocabularyKind;
+  source: VocabularySource;
+  particle?: string;
+  separable?: boolean;
+  register?: string;
+  function?: string;
+  extraExample?: string;
+  notes?: string;
 }
 
 export interface StoryDTO {
