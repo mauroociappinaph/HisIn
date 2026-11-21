@@ -16,4 +16,4 @@ export interface ReviewStats {
   mature: number;
 }
 
-export type TrainerMode = "review" | "explore" | "challenge";
+export type TrainerMode = "review" | "explore" | "challenge" | "stories";

@@ -5,6 +5,7 @@ import type { VocabularyDTO } from "@/shared/types";
 import { ChallengeMode } from "./_components/ChallengeMode";
 import { ExploreMode } from "./_components/ExploreMode";
 import { ReviewMode } from "./_components/ReviewMode";
+import { StoryMode } from "./_components/StoryMode";
 import { ProgressBar, Stat } from "./_components/ui";
 import {
   getTrainerServerSnapshot,
@@ -21,6 +22,7 @@ const MODES: { id: TrainerMode; label: string; icon: string }[] = [
   { id: "review", label: "Repaso SRS", icon: "🧠" },
   { id: "explore", label: "Explorar", icon: "🗂️" },
   { id: "challenge", label: "Desafío", icon: "⚡" },
+  { id: "stories", label: "Historias", icon: "📖" },
 ];
 
 type ToastTone = "success" | "info" | "warning";
@@ -224,6 +226,8 @@ export default function VocabTrainerPage() {
           onToggleMastered={toggleKnown}
         />
       ) : null}
+
+      {mode === "stories" ? <StoryMode /> : null}
 
       {mode === "challenge" ? (
         <ChallengeMode
