@@ -5,22 +5,29 @@ import type { LessonDTO } from "@/shared/types";
 
 function LessonsInner() {
   const params = useParams();
-  const module = params.module as string;
+  const moduleSlug = params.module as string;
   const [lessons, setLessons] = useState<LessonDTO[]>([]);
   const [level, setLevel] = useState<string>("B1");
   const [open, setOpen] = useState<string | null>(null);
 
   useEffect(() => {
-    const l = localStorage.getItem("hisin_level") ?? "B1";
-    setLevel(l);
-    fetch(`/api/lessons?module=${module}&level=${l}`)
-      .then((r) => r.json())
-      .then(setLessons);
-  }, [module]);
+    let active = true;
+    void (async () => {
+      const storedLevel = localStorage.getItem("hisin_level") ?? "B1";
+      const response = await fetch(`/api/lessons?module=${moduleSlug}&level=${storedLevel}`);
+      const data = (await response.json()) as LessonDTO[];
+      if (!active) return;
+      setLevel(storedLevel);
+      setLessons(data);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [moduleSlug]);
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold capitalize">{module} — Lecciones ({level})</h2>
+      <h2 className="text-2xl font-bold capitalize">{moduleSlug} — Lecciones ({level})</h2>
       {lessons.length === 0 && <p className="text-slate-500">No hay lecciones para este nivel.</p>}
       <div className="space-y-4">
         {lessons.map((l) => (
