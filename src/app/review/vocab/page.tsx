@@ -1,19 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useSearchParams } from "next/navigation";
 import type { VocabularyDTO } from "@/shared/types";
 import { ChallengeMode } from "./_components/ChallengeMode";
 import { ExploreMode } from "./_components/ExploreMode";
 import { ReviewMode } from "./_components/ReviewMode";
 import { StoryMode } from "./_components/StoryMode";
 import { ProgressBar, Stat } from "./_components/ui";
-import {
-  getTrainerServerSnapshot,
-  getTrainerSnapshot,
-  saveScore,
-  subscribeTrainer,
-  toggleKnown,
-} from "./_components/store";
+import { getTrainerServerSnapshot, getTrainerSnapshot, subscribeTrainer, toggleKnown } from "./_components/store";
 import type { ReviewStats, TrainerMode, VocabReviewItem } from "./_components/types";
 
 const TOAST_MS = 2200;
@@ -40,8 +35,21 @@ async function fetchReviewData(): Promise<{ due: VocabReviewItem[]; stats: Revie
   };
 }
 
-export default function VocabTrainerPage() {
-  const [mode, setMode] = useState<TrainerMode>("review");
+interface ProfileDTO {
+  xp: number;
+  streak: number;
+  bestStreak: number;
+  level: string;
+  itemsToday: number;
+  dailyGoal: number;
+}
+
+function TrainerInner() {
+  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<TrainerMode>(
+    searchParams.get("modo") === "historias" ? "stories" : "review",
+  );
+  const [profile, setProfile] = useState<ProfileDTO | null>(null);
   const [bank, setBank] = useState<VocabularyDTO[]>([]);
   const [bankLoading, setBankLoading] = useState(true);
   const [due, setDue] = useState<VocabReviewItem[]>([]);
@@ -49,8 +57,13 @@ export default function VocabTrainerPage() {
   const [reviewLoading, setReviewLoading] = useState(true);
   const [toast, setToast] = useState<{ id: number; message: string; tone: ToastTone } | null>(null);
 
-  const trainer = useSyncExternalStore(subscribeTrainer, getTrainerSnapshot, getTrainerServerSnapshot);
-  const known = useMemo(() => new Set(trainer.known), [trainer.known]);
+  const local = useSyncExternalStore(subscribeTrainer, getTrainerSnapshot, getTrainerServerSnapshot);
+  const known = useMemo(() => new Set(local.known), [local.known]);
+  const score = {
+    xp: profile?.xp ?? 0,
+    streak: profile?.streak ?? 0,
+    best: profile?.bestStreak ?? 0,
+  };
 
   const showToast = useCallback((message: string, tone: ToastTone = "success") => {
     setToast({ id: Date.now(), message, tone });
@@ -61,6 +74,37 @@ export default function VocabTrainerPage() {
     const timer = setTimeout(() => setToast(null), TOAST_MS);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/progress")
+      .then((response) => response.json())
+      .then((data: { profile: ProfileDTO }) => {
+        if (active) setProfile(data.profile);
+      })
+      .catch(() => {
+        if (active) setProfile(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const record = useCallback(
+    async (event: { event: "practice" | "review" | "story"; items: number; correct: number; xp: number }) => {
+      try {
+        const response = await fetch("/api/progress", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(event),
+        });
+        if (response.ok) setProfile((await response.json()) as ProfileDTO);
+      } catch {
+        // A failed counter must never block the practice the learner is doing.
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     let active = true;
@@ -114,8 +158,9 @@ export default function VocabTrainerPage() {
         showToast("No pudimos guardar ese repaso", "warning");
         throw new Error(`Review failed with ${response.status}`);
       }
+      await record({ event: "review", items: 1, correct: quality >= 3 ? 1 : 0, xp: quality >= 3 ? 10 : 2 });
     },
-    [showToast],
+    [record, showToast],
   );
 
   /** Event handler: refetches due words and stats after a finished session. */
@@ -152,15 +197,15 @@ export default function VocabTrainerPage() {
           <div className="grid grid-cols-3 gap-2 text-center shrink-0">
             <div className="px-3 py-1.5 rounded-xl bg-white/15">
               <div className="text-[10px] uppercase tracking-wide text-white/70">XP</div>
-              <div className="text-lg font-bold">{trainer.score.xp}</div>
+              <div className="text-lg font-bold">{score.xp}</div>
             </div>
             <div className="px-3 py-1.5 rounded-xl bg-white/15">
               <div className="text-[10px] uppercase tracking-wide text-white/70">Racha</div>
-              <div className="text-lg font-bold">{trainer.score.streak}</div>
+              <div className="text-lg font-bold">{score.streak}</div>
             </div>
             <div className="px-3 py-1.5 rounded-xl bg-white/15">
               <div className="text-[10px] uppercase tracking-wide text-white/70">Mejor</div>
-              <div className="text-lg font-bold">{trainer.score.best}</div>
+              <div className="text-lg font-bold">{score.best}</div>
             </div>
           </div>
         </div>
@@ -234,8 +279,10 @@ export default function VocabTrainerPage() {
         <ChallengeMode
           bank={bank}
           loading={bankLoading}
-          score={trainer.score}
-          onScore={saveScore}
+          score={score}
+          onAnswered={(gained, correct) =>
+            void record({ event: "practice", items: 1, correct: correct ? 1 : 0, xp: gained })
+          }
           onToast={showToast}
         />
       ) : null}
@@ -258,5 +305,13 @@ export default function VocabTrainerPage() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+export default function VocabTrainerPage() {
+  return (
+    <Suspense fallback={<div className="h-64 rounded-lg bg-white border border-slate-200 animate-pulse" />}>
+      <TrainerInner />
+    </Suspense>
   );
 }

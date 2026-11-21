@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import type { CefrLevel, QuestionDTO, VocabularyDTO, Skill } from "@/shared/types";
@@ -28,7 +29,12 @@ function PracticeInner() {
   useEffect(() => {
     let active = true;
     void (async () => {
-      const storedLevel = (localStorage.getItem("hisin_level") ?? "B1") as CefrLevel;
+      // The learner level lives in Postgres now; localStorage was erased by a
+      // cleared browser and froze the level forever.
+      const progress = (await fetch("/api/progress").then((r) => r.json())) as {
+        profile: { level: string };
+      };
+      const storedLevel = (progress.profile?.level ?? "B1") as CefrLevel;
       // The full module vocabulary comes back at once so a level without its own
       // content can fall back to the closest available level, in the page.
       const [vocabData, questionData] = await Promise.all([
@@ -237,7 +243,26 @@ function PracticeInner() {
 
   return (
     <div className="space-y-8">
-      <h2 className="text-2xl font-bold capitalize">{moduleSlug} — Práctica ({level})</h2>
+      <nav className="text-xs text-slate-500 flex items-center gap-2">
+        <Link href="/learn" className="hover:text-indigo-600">
+          Aprender
+        </Link>
+        <span aria-hidden="true">/</span>
+        <Link href={`/lessons/${moduleSlug}`} className="capitalize hover:text-indigo-600">
+          {moduleSlug}
+        </Link>
+        <span aria-hidden="true">/</span>
+        <span className="text-slate-700">Práctica</span>
+      </nav>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-2xl font-bold capitalize">{moduleSlug} — Práctica ({level})</h2>
+        <Link
+          href={`/practice/${moduleSlug}?focus=1`}
+          className="text-xs px-3 py-1.5 rounded-sm border border-slate-300 font-medium hover:border-indigo-300"
+        >
+          Modo foco
+        </Link>
+      </div>
       {requestedLevel && requestedLevel !== level && (
         <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
           No hay contenido {requestedLevel} todavía; estás practicando con {level}.

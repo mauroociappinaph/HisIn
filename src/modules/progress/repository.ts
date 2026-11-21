@@ -1,0 +1,113 @@
+import { prisma } from "@/shared/db/prisma";
+import type { CefrLevel } from "@/shared/types";
+import { applyProgress, dayKey, type ProgressEvent, type ProgressState } from "./service";
+
+export interface ProfileDTO {
+  level: CefrLevel;
+  goal: string;
+  dailyGoal: number;
+  xp: number;
+  streak: number;
+  bestStreak: number;
+  itemsToday: number;
+  totalItems: number;
+  totalCorrect: number;
+  onboarded: boolean;
+}
+
+function toState(row: {
+  xp: number;
+  streak: number;
+  bestStreak: number;
+  lastActiveDay: string | null;
+  itemsToday: number;
+  totalItems: number;
+  totalCorrect: number;
+}): ProgressState {
+  return {
+    xp: row.xp,
+    streak: row.streak,
+    bestStreak: row.bestStreak,
+    lastActiveDay: row.lastActiveDay,
+    itemsToday: row.itemsToday,
+    totalItems: row.totalItems,
+    totalCorrect: row.totalCorrect,
+  };
+}
+
+export class ProgressRepository {
+  /** One profile per learner, created on first read so onboarding never 500s. */
+  async getProfile(userId: string): Promise<ProfileDTO> {
+    const row = await prisma.learnerProfile.upsert({
+      where: { userId },
+      update: {},
+      create: { userId },
+    });
+
+    return {
+      level: row.level as CefrLevel,
+      goal: row.goal,
+      dailyGoal: row.dailyGoal,
+      xp: row.xp,
+      streak: row.streak,
+      bestStreak: row.bestStreak,
+      itemsToday: row.lastActiveDay === dayKey(new Date()) ? row.itemsToday : 0,
+      totalItems: row.totalItems,
+      totalCorrect: row.totalCorrect,
+      onboarded: row.onboardedAt !== null,
+    };
+  }
+
+  async saveOnboarding(
+    userId: string,
+    input: { goal: string; dailyGoal: number; level: CefrLevel },
+  ): Promise<ProfileDTO> {
+    await prisma.learnerProfile.upsert({
+      where: { userId },
+      update: { ...input, onboardedAt: new Date() },
+      create: { userId, ...input, onboardedAt: new Date() },
+    });
+    return this.getProfile(userId);
+  }
+
+  async recordEvent(userId: string, event: ProgressEvent & { lessonId?: string }): Promise<ProfileDTO> {
+    const current = await prisma.learnerProfile.upsert({
+      where: { userId },
+      update: {},
+      create: { userId },
+    });
+
+    const next = applyProgress(toState(current), event, dayKey(new Date()));
+
+    await prisma.learnerProfile.update({
+      where: { userId },
+      data: {
+        xp: next.xp,
+        streak: next.streak,
+        bestStreak: next.bestStreak,
+        lastActiveDay: next.lastActiveDay,
+        itemsToday: next.itemsToday,
+        totalItems: next.totalItems,
+        totalCorrect: next.totalCorrect,
+      },
+    });
+
+    if (event.lessonId) {
+      await prisma.lessonCompletion.upsert({
+        where: { userId_lessonId: { userId, lessonId: event.lessonId } },
+        update: {},
+        create: { userId, lessonId: event.lessonId },
+      });
+    }
+
+    return this.getProfile(userId);
+  }
+
+  async completedLessonIds(userId: string): Promise<string[]> {
+    const rows = await prisma.lessonCompletion.findMany({
+      where: { userId },
+      select: { lessonId: true },
+    });
+    return rows.map((row) => row.lessonId);
+  }
+}

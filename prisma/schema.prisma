@@ -32,6 +32,38 @@ enum QuestionType {
   LISTENING_MCQ
 }
 
+/// Durable learner state. XP, streak and level lived in localStorage before this,
+/// which meant clearing the browser erased months of practice.
+model LearnerProfile {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level         CefrLevel @default(B1)
+  goal          String    @default("interviews")
+  dailyGoal     Int       @default(10)
+  xp            Int       @default(0)
+  streak        Int       @default(0)
+  bestStreak    Int       @default(0)
+  lastActiveDay String?
+  itemsToday    Int       @default(0)
+  totalItems    Int       @default(0)
+  totalCorrect  Int       @default(0)
+  onboardedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model LessonCompletion {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  completedAt DateTime @default(now())
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+}
+
 model Question {
   id          String       @id @default(cuid())
   level       CefrLevel
@@ -127,6 +159,8 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   vocabReviews  VocabularyReview[]
+  profile       LearnerProfile?
+  completions   LessonCompletion[]
 }
 
 enum GenerationStatus {

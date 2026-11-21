@@ -1,86 +1,146 @@
 "use client";
+
+import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
-import type { CefrLevel, LessonDTO } from "@/shared/types";
+import { useCallback, useEffect, useState } from "react";
+import type { LessonDTO } from "@/shared/types";
+import { LevelBadge } from "@/components/vocab-ui";
 import { resolveLevel } from "@/shared/lib/presentation";
 
-function LessonsInner() {
+export default function LessonsPage() {
   const params = useParams();
   const moduleSlug = params.module as string;
+
   const [lessons, setLessons] = useState<LessonDTO[]>([]);
   const [level, setLevel] = useState<string>("B1");
   const [requestedLevel, setRequestedLevel] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [completed, setCompleted] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
-    void (async () => {
-      const storedLevel = (localStorage.getItem("hisin_level") ?? "B1") as CefrLevel;
-      // The full module listing comes back at once so a level without lessons
-      // can fall back to the closest available level, in the page.
-      const data = (await fetch(`/api/lessons?module=${moduleSlug}`).then(
-        (r) => r.json(),
-      )) as LessonDTO[];
-      if (!active) return;
-      const target = resolveLevel(storedLevel, [...new Set(data.map((l) => l.level))]);
-      setLevel(target ?? storedLevel);
-      setRequestedLevel(target && target !== storedLevel ? storedLevel : null);
-      setLessons(target ? data.filter((l) => l.level === target) : []);
-    })();
+    Promise.all([
+      fetch(`/api/lessons?module=${moduleSlug}`).then((response) => response.json()),
+      fetch("/api/progress").then((response) => response.json()),
+    ])
+      .then(([all, progress]: [LessonDTO[], { profile: { level: string }; completedLessonIds: string[] }]) => {
+        if (!active) return;
+        const target = resolveLevel(progress.profile.level as never, [
+          ...new Set(all.map((lesson) => lesson.level)),
+        ]);
+        const chosen = target ?? (progress.profile.level as string);
+        setLevel(chosen);
+        setRequestedLevel(chosen !== progress.profile.level ? progress.profile.level : null);
+        setLessons(all.filter((lesson) => lesson.level === chosen));
+        setCompleted(progress.completedLessonIds);
+      })
+      .catch(() => {
+        if (active) setLessons([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
     return () => {
       active = false;
     };
   }, [moduleSlug]);
 
+  const complete = useCallback(
+    async (lessonId: string) => {
+      setCompleted((previous) => (previous.includes(lessonId) ? previous : [...previous, lessonId]));
+      await fetch("/api/progress", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ event: "lesson", lessonId, items: 1, xp: 15 }),
+      });
+    },
+    [],
+  );
+
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold capitalize">{moduleSlug} — Lecciones ({level})</h2>
-      {requestedLevel && requestedLevel !== level && (
-        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
+      <nav className="text-xs text-slate-500 flex items-center gap-2">
+        <Link href="/learn" className="hover:text-indigo-600">
+          Aprender
+        </Link>
+        <span aria-hidden="true">/</span>
+        <span className="capitalize text-slate-700">{moduleSlug}</span>
+      </nav>
+
+      <header className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-2xl font-bold capitalize text-slate-900">{moduleSlug} — Lecciones</h1>
+        <LevelBadge level={level as never} />
+      </header>
+
+      {requestedLevel ? (
+        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-sm px-4 py-2">
           No hay lecciones {requestedLevel} todavía; estás viendo lecciones {level}.
         </p>
-      )}
-      {lessons.length === 0 && <p className="text-slate-500">No hay lecciones para este nivel.</p>}
-      <div className="space-y-4">
-        {lessons.map((l) => (
-          <div key={l.id} className="bg-white rounded-xl border shadow-sm">
-            <button
-              onClick={() => setOpen(open === l.id ? null : l.id)}
-              className="w-full text-left p-4 flex justify-between items-center"
-            >
-              <span className="font-semibold">{l.title}</span>
-              <span className="text-xs text-slate-500">{l.level}</span>
-            </button>
-            {open === l.id && (
-              <div className="p-4 border-t prose prose-sm max-w-none">
-                <p className="text-slate-600 mb-3">{l.summary}</p>
-                <div className="whitespace-pre-wrap text-slate-800">{l.content}</div>
-                <button
-                  onClick={() => {
-                    const raw = localStorage.getItem("hisin_completed");
-                    const arr = raw ? JSON.parse(raw) : [];
-                    if (!arr.includes(l.id)) {
-                      arr.push(l.id);
-                      localStorage.setItem("hisin_completed", JSON.stringify(arr));
-                    }
-                  }}
-                  className="mt-3 px-4 py-2 bg-green-600 text-white rounded text-sm"
-                >
-                  Marcar como completada
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+      ) : null}
 
-export default function LessonsPage() {
-  return (
-    <Suspense fallback={<p className="p-8 text-center">Cargando...</p>}>
-      <LessonsInner />
-    </Suspense>
+      {loading ? (
+        <div className="space-y-3" aria-busy="true">
+          {[0, 1, 2].map((row) => (
+            <div key={row} className="h-16 rounded-lg bg-white border border-slate-200 animate-pulse" />
+          ))}
+        </div>
+      ) : lessons.length === 0 ? (
+        <div className="rounded-lg bg-white border border-slate-200 p-8 text-center space-y-2">
+          <p className="font-medium text-slate-700">No hay lecciones para este módulo todavía.</p>
+          <p className="text-sm text-slate-500">Podés generar contenido nuevo o practicar con lo que ya hay.</p>
+          <div className="flex justify-center gap-2 pt-2">
+            <Link
+              href="/studio"
+              className="px-4 py-2 rounded-sm bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"
+            >
+              Generar lecciones
+            </Link>
+            <Link
+              href={`/practice/${moduleSlug}`}
+              className="px-4 py-2 rounded-sm border border-slate-300 text-sm font-medium hover:border-indigo-300"
+            >
+              Practicar
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {lessons.map((lesson) => {
+            const isDone = completed.includes(lesson.id);
+            return (
+              <article key={lesson.id} className="bg-white rounded-lg border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setOpen(open === lesson.id ? null : lesson.id)}
+                  aria-expanded={open === lesson.id}
+                  className="w-full text-left p-4 flex justify-between items-center gap-3"
+                >
+                  <span className="font-semibold text-slate-800">{lesson.title}</span>
+                  <span className="flex items-center gap-2 shrink-0">
+                    {isDone ? <span className="text-xs text-emerald-600 font-semibold">✓ vista</span> : null}
+                    <LevelBadge level={lesson.level} />
+                  </span>
+                </button>
+                {open === lesson.id ? (
+                  <div className="p-4 border-t border-slate-200 space-y-3">
+                    <p className="text-sm text-slate-600">{lesson.summary}</p>
+                    <div className="whitespace-pre-wrap text-slate-800 text-sm leading-relaxed">{lesson.content}</div>
+                    <button
+                      type="button"
+                      onClick={() => void complete(lesson.id)}
+                      disabled={isDone}
+                      className="px-4 py-2 bg-emerald-600 text-white rounded-sm text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      {isDone ? "Ya la marcaste" : "Marcar como vista"}
+                    </button>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

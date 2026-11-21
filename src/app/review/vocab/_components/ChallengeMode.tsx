@@ -13,11 +13,12 @@ interface ChallengeModeProps {
   bank: VocabularyDTO[];
   loading: boolean;
   score: ScoreState;
-  onScore: (state: ScoreState) => void;
+  /** XP gained and whether it was right; the tally itself belongs to the server. */
+  onAnswered: (gained: number, correct: boolean) => void;
   onToast: (message: string, tone?: "success" | "info" | "warning") => void;
 }
 
-export function ChallengeMode({ bank, loading, score, onScore, onToast }: ChallengeModeProps) {
+export function ChallengeMode({ bank, loading, score, onAnswered, onToast }: ChallengeModeProps) {
   const [roundKey, setRoundKey] = useState(0);
   const [index, setIndex] = useState(0);
   const [chosen, setChosen] = useState<string | null>(null);
@@ -57,7 +58,7 @@ export function ChallengeMode({ bank, loading, score, onScore, onToast }: Challe
       if (!question || chosen !== null) return;
       const correct = term === question.answer;
       const result = scoreAnswer(score, correct);
-      onScore(result.state);
+      onAnswered(result.gained, correct);
       setChosen(term);
       setRound((previous) => ({
         answered: previous.answered + 1,
@@ -71,7 +72,7 @@ export function ChallengeMode({ bank, loading, score, onScore, onToast }: Challe
       }
       timer.current = setTimeout(advance, FEEDBACK_DELAY_MS);
     },
-    [advance, chosen, onScore, onToast, question, score],
+    [advance, chosen, onAnswered, onToast, question, score],
   );
 
   useEffect(() => {

@@ -1,0 +1,1 @@
+ALTER TABLE "LearnerProfile" ADD COLUMN "itemsToday" INTEGER NOT NULL DEFAULT 0;

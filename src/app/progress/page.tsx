@@ -1,58 +1,95 @@
-"use client";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Suspense } from "react";
+import { prisma } from "@/shared/db/prisma";
+import { getLocalUser } from "@/modules/identity/service";
+import { ProgressRepository } from "@/modules/progress/repository";
+import { goalRatio } from "@/modules/progress/service";
+import { ProgressBar } from "@/app/review/vocab/_components/ui";
+
+/**
+ * Progress reads Postgres, not localStorage: the numbers survive a cleared
+ * browser, which is the whole point of moving them.
+ */
+async function ProgressContent() {
+  const user = await getLocalUser();
+  const repository = new ProgressRepository();
+  const [profile, completed, reviews, words, stories] = await Promise.all([
+    repository.getProfile(user.id),
+    repository.completedLessonIds(user.id),
+    prisma.vocabularyReview.findMany({ where: { userId: user.id } }),
+    prisma.vocabulary.count(),
+    prisma.vocabularyStory.count(),
+  ]);
+
+  const mature = reviews.filter((review) => review.interval >= 21).length;
+  const accuracy = profile.totalItems === 0 ? 0 : Math.round((profile.totalCorrect / profile.totalItems) * 100);
+
+  return (
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-bold text-slate-900">Progreso</h1>
+        <p className="text-sm text-slate-600">Todo lo que ves acá está guardado en la base.</p>
+      </header>
+
+      <section className="rounded-lg bg-white border border-slate-200 p-5 space-y-3">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-600">Meta de hoy</span>
+          <span className="font-semibold text-slate-800">
+            {profile.itemsToday} / {profile.dailyGoal}
+          </span>
+        </div>
+        <ProgressBar value={goalRatio(profile.itemsToday, profile.dailyGoal) * 100} />
+      </section>
+
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "XP total", value: profile.xp },
+          { label: "Racha actual", value: `${profile.streak} d` },
+          { label: "Mejor racha", value: `${profile.bestStreak} d` },
+          { label: "Precisión", value: `${accuracy}%` },
+          { label: "Tarjetas hechas", value: profile.totalItems },
+          { label: "Palabras maduras", value: mature },
+          { label: "Lecciones vistas", value: completed.length },
+          { label: "Banco", value: `${words} palabras · ${stories} historias` },
+        ].map((stat) => (
+          <div key={stat.label} className="rounded-sm bg-white border border-slate-200 px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wide text-slate-500">{stat.label}</div>
+            <div className="text-xl font-bold text-slate-800">{stat.value}</div>
+          </div>
+        ))}
+      </section>
+
+      <section className="rounded-lg bg-white border border-slate-200 p-5 space-y-2">
+        <h2 className="font-semibold text-slate-800">Qué hacer con esto</h2>
+        <p className="text-sm text-slate-600">
+          La precisión sólo dice algo si seguís practicando lo que te cuesta: el repaso espaciado elige por vos.
+        </p>
+        <div className="flex flex-wrap gap-2 pt-1">
+          <Link
+            href="/review/vocab"
+            className="px-4 py-2 rounded-sm bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"
+          >
+            Repasar ahora
+          </Link>
+          <Link
+            href="/learn"
+            className="px-4 py-2 rounded-sm border border-slate-300 text-sm font-medium hover:border-indigo-300"
+          >
+            Elegir un tema
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
+}
 
 export default function ProgressPage() {
-  const [level, setLevel] = useState<string>("—");
-  const [completed, setCompleted] = useState<string[]>([]);
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      const storedLevel = localStorage.getItem("hisin_level") ?? "—";
-      const raw = localStorage.getItem("hisin_completed");
-      const parsed: string[] = raw ? JSON.parse(raw) : [];
-      await Promise.resolve();
-      if (!active) return;
-      setLevel(storedLevel);
-      setCompleted(parsed);
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold">Tu progreso</h2>
-      <div className="p-6 bg-white rounded-xl border shadow-sm space-y-2">
-        <div>
-          <span className="font-medium">Nivel actual: </span>
-          <span className="text-indigo-600 font-bold">{level}</span>
-        </div>
-        <div>
-          <span className="font-medium">Lecciones completadas: </span>
-          {completed.length}
-        </div>
-      </div>
-      {completed.length > 0 && (
-        <div className="p-6 bg-white rounded-xl border shadow-sm">
-          <h3 className="font-semibold mb-2">Lecciones completadas</h3>
-          <ul className="list-disc pl-5 text-sm text-slate-700">
-            {completed.map((c) => (
-              <li key={c}>{c}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      <button
-        onClick={() => {
-          localStorage.removeItem("hisin_completed");
-          localStorage.removeItem("hisin_level");
-          setCompleted([]);
-          setLevel("—");
-        }}
-        className="px-4 py-2 border rounded text-sm"
-      >
-        Reiniciar progreso
-      </button>
-    </div>
+    <Suspense fallback={<div className="space-y-3" aria-busy="true">
+      <div className="h-24 rounded-lg bg-white border border-slate-200 animate-pulse" />
+      <div className="h-40 rounded-lg bg-white border border-slate-200 animate-pulse" />
+    </div>}>
+      <ProgressContent />
+    </Suspense>
   );
 }
