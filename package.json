@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:reset-content": "tsx scripts/reset-content.ts && tsx prisma/seed.ts",
-    "ai:generate": "tsx scripts/generate.ts"
+    "ai:generate": "tsx scripts/generate.ts",
+    "audio:generate": "tsx scripts/generate-audio.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.1",

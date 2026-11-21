@@ -41,6 +41,7 @@ English practice for entrepreneurs and healthtech founders. Learners take a CEFR
 | `pnpm db:generate` | Regenerate the Prisma client |
 | `pnpm db:reset-content` | Clear seedable content and reseed (reviews cascade with vocabulary) |
 | `pnpm ai:generate` | Generate content headlessly: `--kind --level --skill --type --count --topic` |
+| `pnpm audio:generate` | Synthesize the listening clips into `public/audio` (macOS `say` + `ffmpeg`) |
 
 ## Content generation with Gentle Shell
 
@@ -96,7 +97,7 @@ Vocabulary reviews use the SM-2 algorithm (`src/modules/vocabulary/srs.ts`). Gra
 
 ## Known gaps
 
-- **Listening audio**: `LISTENING_MCQ` questions reference placeholder paths under `/audio/`, and no audio assets exist yet. Until real files are generated, those items cannot be practiced as listening.
+- **Listening audio is synthesized, not recorded**: the twelve clips in `public/audio` are spoken by the macOS `say` voice at a deliberately slow rate. Regenerate them with `pnpm audio:generate` (`--force` to overwrite); a different voice or rate is a one-line change in `scripts/generate-audio.ts`. They are committed so cloning the repo needs no TTS step.
 - **Authentication**: the app attributes progress to one local learner. There is no sign-up, sign-in or per-user session.
 - **Migrations against the real database**: pending migrations must be applied with `pnpm db:migrate` before the SRS and generation features work.
 
