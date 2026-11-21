@@ -7,9 +7,17 @@ export default function DashboardPage() {
   const [modules, setModules] = useState<ModuleDTO[]>([]);
   const [level, setLevel] = useState<string>("B1");
   useEffect(() => {
-    fetch("/api/modules").then((r) => r.json()).then(setModules);
-    const l = localStorage.getItem("hisin_level");
-    if (l) setLevel(l);
+    let active = true;
+    void (async () => {
+      const data = (await fetch("/api/modules").then((r) => r.json())) as ModuleDTO[];
+      const storedLevel = localStorage.getItem("hisin_level");
+      if (!active) return;
+      setModules(data);
+      if (storedLevel) setLevel(storedLevel);
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
   return (
     <div className="space-y-6">

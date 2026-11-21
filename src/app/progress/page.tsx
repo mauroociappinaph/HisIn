@@ -5,9 +5,19 @@ export default function ProgressPage() {
   const [level, setLevel] = useState<string>("—");
   const [completed, setCompleted] = useState<string[]>([]);
   useEffect(() => {
-    setLevel(localStorage.getItem("hisin_level") ?? "—");
-    const raw = localStorage.getItem("hisin_completed");
-    setCompleted(raw ? JSON.parse(raw) : []);
+    let active = true;
+    void (async () => {
+      const storedLevel = localStorage.getItem("hisin_level") ?? "—";
+      const raw = localStorage.getItem("hisin_completed");
+      const parsed: string[] = raw ? JSON.parse(raw) : [];
+      await Promise.resolve();
+      if (!active) return;
+      setLevel(storedLevel);
+      setCompleted(parsed);
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
   return (
     <div className="max-w-2xl mx-auto space-y-6">

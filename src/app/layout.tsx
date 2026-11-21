@@ -28,8 +28,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/dashboard" className="hover:text-indigo-600">
                 Dashboard
               </Link>
+              <Link href="/review/vocab" className="hover:text-indigo-600">
+                Repaso SRS
+              </Link>
               <Link href="/progress" className="hover:text-indigo-600">
                 Progreso
+              </Link>
+              <Link href="/studio" className="hover:text-indigo-600">
+                Generar
               </Link>
             </div>
           </nav>

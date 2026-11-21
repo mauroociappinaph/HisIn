@@ -1,6 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { QuestionDTO } from "@/shared/types";
+
+interface AssessmentSkillResult {
+  correct: number;
+  total: number;
+}
+
+interface AssessmentResult {
+  level: string;
+  score: number;
+  total: number;
+  bySkill: Record<string, AssessmentSkillResult>;
+}
 import Link from "next/link";
 
 export default function TestPage() {
@@ -9,7 +21,7 @@ export default function TestPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<AssessmentResult | null>(null);
 
   useEffect(() => {
     fetch("/api/assessment/questions")
@@ -29,7 +41,7 @@ export default function TestPage() {
           Puntaje: {result.score} / {result.total}
         </p>
         <div className="grid grid-cols-2 gap-3 text-sm">
-          {Object.entries(result.bySkill).map(([skill, v]: any) => (
+          {Object.entries(result.bySkill).map(([skill, v]) => (
             <div key={skill} className="p-3 bg-white rounded border">
               <div className="font-medium">{skill}</div>
               <div>
@@ -53,6 +65,95 @@ export default function TestPage() {
 
   const selected = answers[q.id];
 
+  function renderQuestion(q: QuestionDTO) {
+    switch (q.type) {
+      case "FILL_BLANK":
+        return (
+          <div className="p-6 bg-white rounded-xl border shadow-sm">
+            <p className="text-lg mb-4">{q.prompt}</p>
+            <input
+              type="text"
+              value={selected ?? ""}
+              onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value.trim() }))}
+              placeholder="Escribe tu respuesta..."
+              className="w-full px-4 py-2 rounded border hover:bg-slate-50"
+            />
+          </div>
+        );
+
+      case "TRUE_FALSE":
+        return (
+          <div className="p-6 bg-white rounded-xl border shadow-sm">
+            <p className="text-lg mb-4">{q.prompt}</p>
+            <div className="flex gap-4">
+              {["True", "False"].map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
+                  className={`flex-1 px-4 py-3 rounded border text-lg font-medium ${
+                    selected === opt ? "bg-indigo-100 border-indigo-500" : "hover:bg-slate-50"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "LISTENING_MCQ":
+        return (
+          <div className="p-6 bg-white rounded-xl border shadow-sm">
+            {q.audioUrl && (
+              <audio controls className="mb-4 w-full">
+                <source src={q.audioUrl} type="audio/mpeg" />
+                Tu navegador no soporta audio.
+              </audio>
+            )}
+            <p className="text-lg mb-4">{q.prompt}</p>
+            <div className="space-y-2">
+              {q.options.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
+                  className={`w-full text-left px-4 py-2 rounded border ${
+                    selected === opt ? "bg-indigo-100 border-indigo-500" : "hover:bg-slate-50"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+      default: // MULTIPLE_CHOICE
+        return (
+          <div className="p-6 bg-white rounded-xl border shadow-sm">
+            <p className="text-lg mb-4">{q.prompt}</p>
+            {q.audioUrl && (
+              <audio controls className="mb-4 w-full">
+                <source src={q.audioUrl} type="audio/mpeg" />
+              </audio>
+            )}
+            <div className="space-y-2">
+              {q.options.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
+                  className={`w-full text-left px-4 py-2 rounded border ${
+                    selected === opt ? "bg-indigo-100 border-indigo-500" : "hover:bg-slate-50"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+    }
+  }
+
   async function submit() {
     setSubmitting(true);
     const payload = {
@@ -65,7 +166,6 @@ export default function TestPage() {
     });
     const data = await res.json();
     setResult(data);
-    // save level to localStorage
     if (typeof window !== "undefined") {
       localStorage.setItem("hisin_level", data.level);
     }
@@ -78,29 +178,9 @@ export default function TestPage() {
         <span>
           Pregunta {index + 1} de {questions.length}
         </span>
-        <span>{q.skill}</span>
+        <span className="capitalize">{q.type.replace("_", " ").toLowerCase()}</span>
       </div>
-      <div className="p-6 bg-white rounded-xl border shadow-sm">
-        <p className="text-lg mb-4">{q.prompt}</p>
-        {q.audioUrl && (
-          <audio controls className="mb-4 w-full">
-            <source src={q.audioUrl} />
-          </audio>
-        )}
-        <div className="space-y-2">
-          {q.options.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
-              className={`w-full text-left px-4 py-2 rounded border ${
-                selected === opt ? "bg-indigo-100 border-indigo-500" : "hover:bg-slate-50"
-              }`}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-      </div>
+      {renderQuestion(q)}
       <div className="flex justify-between">
         <button
           disabled={index === 0}
