@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx prisma/seed.ts"
+    "test": "node --import tsx --test src/modules/vocabulary/srs.test.ts src/modules/ai/schema.test.ts src/modules/ai/gentle-shell.test.ts src/modules/ai/guard.test.ts",
+    "seed": "tsx prisma/seed.ts",
+    "db:migrate": "prisma migrate deploy",
+    "db:generate": "prisma generate"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.1",

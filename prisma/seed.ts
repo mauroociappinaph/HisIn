@@ -2,8 +2,6 @@ import { PrismaClient, CefrLevel, Skill, QuestionType } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const LEVELS: CefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
-
 async function main() {
   // Modules
   const modules = [
@@ -18,6 +16,14 @@ async function main() {
     await prisma.module.upsert({ where: { slug: m.slug }, update: m, create: m });
   }
 
+  // Local learner. VocabularyReview references User through a foreign key, so
+  // the app cannot attribute reviews to a magic string.
+  await prisma.user.upsert({
+    where: { email: "local@hisin.app" },
+    update: {},
+    create: { email: "local@hisin.app", name: "Local learner", level: "B1" },
+  });
+
   // Questions: build a bank
   const qBank: {
     level: CefrLevel;
@@ -27,11 +33,24 @@ async function main() {
     options: string[];
     answer: string;
     explanation?: string;
+    audioUrl?: string;
     tags: string[];
   }[] = [];
 
   const add = (level: CefrLevel, skill: Skill, prompt: string, options: string[], answer: string, tags: string[] = []) => {
     qBank.push({ level, skill, type: "MULTIPLE_CHOICE", prompt, options, answer, tags });
+  };
+
+  const addFillBlank = (level: CefrLevel, skill: Skill, prompt: string, answer: string, tags: string[] = []) => {
+    qBank.push({ level, skill, type: "FILL_BLANK", prompt, options: [], answer, tags });
+  };
+
+  const addTrueFalse = (level: CefrLevel, skill: Skill, prompt: string, answer: string, tags: string[] = []) => {
+    qBank.push({ level, skill, type: "TRUE_FALSE", prompt, options: ["True", "False"], answer, tags });
+  };
+
+  const addListeningMCQ = (level: CefrLevel, skill: Skill, prompt: string, options: string[], answer: string, audioUrl: string, tags: string[] = []) => {
+    qBank.push({ level, skill, type: "LISTENING_MCQ", prompt, options, answer, audioUrl, tags });
   };
 
   // VOCABULARY
@@ -85,6 +104,48 @@ async function main() {
   add("C1", "GRAMMAR", "Choose: 'Not only ___ the bug, but also improved performance.'", ["did we fix", "we fixed", "fixed we", "we did fix"], "did we fix", ["grammar", "inversion"]);
   add("C2", "VOCABULARY", "What is 'real-world evidence' in pharma?", ["Data from actual patient use", "Lab trial", "Opinion", "Marketing"], "Data from actual patient use", ["health", "regulatory"]);
 
+  // FILL_BLANK questions
+  addFillBlank("A1", "GRAMMAR", "Complete: 'I ___ a student.' (am/is/are)", "am", ["grammar"]);
+  addFillBlank("A1", "VOCABULARY", "Complete: 'The ___ is sick.' (patient/doctor/hospital)", "patient", ["health"]);
+  addFillBlank("A2", "GRAMMAR", "Complete: 'She ___ working now.' (is/are/am)", "is", ["grammar", "progressive"]);
+  addFillBlank("A2", "BUSINESS", "Complete: 'Our ___ is 12 months.' (runway/burn rate/revenue)", "runway", ["business", "finance"]);
+  addFillBlank("B1", "GRAMMAR", "Complete: 'The report ___ finished yesterday.' (was/were/is)", "was", ["grammar", "passive"]);
+  addFillBlank("B1", "VOCABULARY", "Complete: 'HIPAA protects ___ information.' (patient/doctor/hospital)", "patient", ["legal", "health"]);
+  addFillBlank("B2", "GRAMMAR", "Complete: 'If we ___ earlier, we would have more share.' (invested/invest/had invested)", "had invested", ["grammar", "conditional"]);
+  addFillBlank("B2", "CONTRACTS", "Complete: 'An NDA is a ___ agreement.' (non-disclosure/new drug/network data)", "non-disclosure", ["legal"]);
+  addFillBlank("C1", "GRAMMAR", "Complete: 'Not only ___ the bug, but also improved performance.' (did we fix/we fixed/fixed we)", "did we fix", ["grammar", "inversion"]);
+  addFillBlank("C1", "BUSINESS", "Complete: 'A term sheet is ___ binding.' (non-binding/final/invoice)", "non-binding", ["business", "legal"]);
+  addFillBlank("C2", "GRAMMAR", "Complete: 'Had the audit been completed, the deal ___.' (would have closed/will close/closes)", "would have closed", ["grammar", "inversion"]);
+  addFillBlank("C2", "VOCABULARY", "Complete: 'Pharmacovigilance monitors drug ___.' (safety/efficacy/cost)", "safety", ["health", "regulatory"]);
+
+  // TRUE_FALSE questions
+  addTrueFalse("A1", "VOCABULARY", "'Patient' means a person receiving medical care.", "True", ["health"]);
+  addTrueFalse("A1", "GRAMMAR", "'She are a doctor' is correct.", "False", ["grammar"]);
+  addTrueFalse("A2", "VOCABULARY", "'Telemedicine' means medicine delivered by phone or online.", "True", ["health", "tech"]);
+  addTrueFalse("A2", "BUSINESS", "'Startup' means a large established company.", "False", ["business"]);
+  addTrueFalse("B1", "VOCABULARY", "'HIPAA' is a US health privacy law.", "True", ["legal", "health"]);
+  addTrueFalse("B1", "GRAMMAR", "'The report were finished' is correct for singular subject.", "False", ["grammar"]);
+  addTrueFalse("B2", "VOCABULARY", "'Interoperability' means systems cannot exchange data.", "False", ["tech", "health"]);
+  addTrueFalse("B2", "BUSINESS", "'Burn rate' means how fast a company spends cash.", "True", ["business", "finance"]);
+  addTrueFalse("C1", "VOCABULARY", "'FHIR' is a health data exchange standard.", "True", ["tech", "health"]);
+  addTrueFalse("C1", "CONTRACTS", "'Indemnification' means a payment for services.", "False", ["legal"]);
+  addTrueFalse("C2", "VOCABULARY", "'Pharmacovigilance' monitors drug safety after approval.", "True", ["health", "regulatory"]);
+  addTrueFalse("C2", "GRAMMAR", "'Had we known, we would act differently' uses correct inversion.", "False", ["grammar", "inversion"]);
+
+  // LISTENING_MCQ questions (audioUrl placeholders - replace with real audio files)
+  addListeningMCQ("A1", "LISTENING", "Listen: 'The patient has an appointment at 3 PM.' What time is the appointment?", ["2 PM", "3 PM", "4 PM", "5 PM"], "3 PM", "/audio/appointment-a1.mp3", ["listening"]);
+  addListeningMCQ("A1", "LISTENING", "Listen: 'Take this medicine twice a day.' How often?", ["Once a day", "Twice a day", "Three times a day", "Every hour"], "Twice a day", "/audio/medicine-a1.mp3", ["listening", "health"]);
+  addListeningMCQ("A2", "LISTENING", "Listen: 'We offer telemedicine consultations on Fridays.' When are consultations?", ["Mondays", "Wednesdays", "Fridays", "Weekends"], "Fridays", "/audio/telemedicine-a2.mp3", ["listening", "health", "tech"]);
+  addListeningMCQ("A2", "LISTENING", "Listen: 'The startup raised Series A funding last month.' What did they raise?", ["Series A", "Series B", "Seed", "IPO"], "Series A", "/audio/startup-a2.mp3", ["listening", "business"]);
+  addListeningMCQ("B1", "LISTENING", "Listen: 'Let's circle back to the compliance issue next week.' What will they discuss next week?", ["Budget", "Compliance", "Hiring", "Marketing"], "Compliance", "/audio/meeting-b1.mp3", ["listening", "business"]);
+  addListeningMCQ("B1", "LISTENING", "Listen: 'HIPAA requires encryption for patient data.' What does HIPAA require?", ["Encryption", "Paper records", "Verbal consent", "No security"], "Encryption", "/audio/hipaa-b1.mp3", ["listening", "legal", "health"]);
+  addListeningMCQ("B2", "LISTENING", "Listen: 'Our burn rate is $50k/month, giving us 18 months runway.' How many months of runway?", ["12", "15", "18", "24"], "18", "/audio/burnrate-b2.mp3", ["listening", "business", "finance"]);
+  addListeningMCQ("B2", "LISTENING", "Listen: 'We need FHIR APIs for interoperability with EHR systems.' What standard is needed?", ["HL7 v2", "FHIR", "DICOM", "CDA"], "FHIR", "/audio/fhir-b2.mp3", ["listening", "tech", "health"]);
+  addListeningMCQ("C1", "LISTENING", "Listen: 'Due diligence revealed three material risks in the term sheet.' What was reviewed?", ["Term sheet", "NDA", "Employment contract", "SLA"], "Term sheet", "/audio/duediligence-c1.mp3", ["listening", "business", "legal"]);
+  addListeningMCQ("C1", "LISTENING", "Listen: 'The indemnification clause covers third-party IP claims.' What does the clause cover?", ["Third-party IP claims", "Employee salaries", "Office rent", "Marketing costs"], "Third-party IP claims", "/audio/indemnification-c1.mp3", ["listening", "legal"]);
+  addListeningMCQ("C2", "LISTENING", "Listen: 'Real-world evidence from post-market surveillance supports label expansion.' What supports label expansion?", ["RCT data", "Real-world evidence", "Animal studies", "Expert opinion"], "Real-world evidence", "/audio/rwe-c2.mp3", ["listening", "health", "regulatory"]);
+  addListeningMCQ("C2", "LISTENING", "Listen: 'Had the FDA approved the biomarker, the trial design would have changed.' What would have changed?", ["Trial design", "FDA policy", "Biomarker", "Patient consent"], "Trial design", "/audio/fda-c2.mp3", ["listening", "health", "regulatory", "grammar"]);
+
   // Insert questions
   for (const q of qBank) {
     await prisma.question.create({
@@ -96,6 +157,7 @@ async function main() {
         options: q.options,
         answer: q.answer,
         explanation: q.explanation ?? null,
+        audioUrl: q.audioUrl ?? null,
         tags: q.tags,
       },
     });

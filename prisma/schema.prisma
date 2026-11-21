@@ -69,6 +69,7 @@ model Vocabulary {
   module      String
   level       CefrLevel
   createdAt   DateTime   @default(now())
+  reviews     VocabularyReview[]
 
   @@index([module, level])
 }
@@ -80,4 +81,58 @@ model Module {
   description String
   icon        String
   order       Int        @default(0)
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  name          String?
+  level         CefrLevel  @default(B1)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  vocabReviews  VocabularyReview[]
+}
+
+enum GenerationStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+/// One Gentle Shell generation attempt, kept for audit even when it fails.
+model GenerationJob {
+  id           String           @id @default(cuid())
+  kind         String
+  status       GenerationStatus @default(PENDING)
+  request      Json
+  prompt       String           @db.Text
+  model        String
+  output       Json?
+  error        String?
+  createdCount Int              @default(0)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  startedAt    DateTime?
+  finishedAt   DateTime?
+
+  @@index([status, createdAt])
+}
+
+model VocabularyReview {
+  id              String     @id @default(cuid())
+  userId          String
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabularyId    String
+  vocabulary      Vocabulary @relation(fields: [vocabularyId], references: [id], onDelete: Cascade)
+  easeFactor      Float      @default(2.5)
+  interval        Int        @default(0)
+  repetitions     Int        @default(0)
+  nextReview      DateTime   @default(now())
+  lastReviewed    DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@unique([userId, vocabularyId])
+  @@index([userId, nextReview])
 }
