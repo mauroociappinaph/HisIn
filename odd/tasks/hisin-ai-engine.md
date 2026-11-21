@@ -85,7 +85,7 @@ The VTO increment is four smaller slices: `9b2c394` engine (~610 lines, includes
 
 Attempted twice and stopped: the four-lens review cannot run in this session.
 
-Evidence: `gentle_review_capture_group` returned `pi-host-relay-transport-failure` with `No model matches selection "nan/glm5.3" configured for review-risk`, `prepared_reviewers: 0`, `mutation_performered: false`. The on-disk reviewer definitions (`$GENTLE_PI_AGENT_HOME/agents/review-*.md` and `$GENTLE_PI_AGENT_HOME/subagents.json`) both pin `claude-bridge/claude-opus-5-5` with `high` effort, yet the relay resolved the live session profile instead, whose provider label is `nan` — an invalid provider that `pi --provider nan` rejects with `Unknown provider`.
+Evidence: `gentle_review_capture_group` returned `pi-host-relay-transport-failure` with `No model matches selection "nan/glm5.3" configured for review-risk`, `prepared_reviewers: 0`, `mutation_performed: false`. The on-disk reviewer definitions (`$GENTLE_PI_AGENT_HOME/agents/review-*.md` and `$GENTLE_PI_AGENT_HOME/subagents.json`) both pin `claude-bridge/claude-opus-5-5` with `high` effort, yet the relay resolved the live session profile instead, whose provider label is `nan` — an invalid provider that `pi --provider nan` rejects with `Unknown provider`.
 
 Consequence: review authority `review-658f55b95d96a088` (tier high, 34 files, 1998 lines) remains open in state `reviewing`, and receipt-driven development stays disabled for this clone only (`--scope clone`). The work was delivered self-verified: tsc, eslint, 52 unit tests, next build, and end-to-end generation against the local database.
 
