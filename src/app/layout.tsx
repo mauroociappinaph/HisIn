@@ -14,7 +14,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    // Browser extensions (LanguageTool and friends) inject attributes like
+    // data-lt-installed into <html> before React hydrates. That is outside the
+    // app's control, so the root element opts out of attribute diffing instead
+    // of throwing a hydration error that hides the whole page in dev.
+    <html lang="es" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 text-slate-900`}>
         <header className="border-b bg-white/80 backdrop-blur sticky top-0 z-10">
           <nav className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
