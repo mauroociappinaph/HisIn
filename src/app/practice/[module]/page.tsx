@@ -1,7 +1,8 @@
 "use client";
 import { useParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import type { QuestionDTO, VocabularyDTO, Skill } from "@/shared/types";
+import type { CefrLevel, QuestionDTO, VocabularyDTO, Skill } from "@/shared/types";
+import { presentOptions, resolveLevel } from "@/shared/lib/presentation";
 
 const SKILL_BY_MODULE: Record<string, Skill> = {
   vocabulary: "VOCABULARY",
@@ -17,6 +18,7 @@ function PracticeInner() {
   const moduleSlug = params.module as string;
   const skill = SKILL_BY_MODULE[moduleSlug] ?? "VOCABULARY";
   const [level, setLevel] = useState("B1");
+  const [requestedLevel, setRequestedLevel] = useState<string | null>(null);
   const [vocab, setVocab] = useState<VocabularyDTO[]>([]);
   const [questions, setQuestions] = useState<QuestionDTO[]>([]);
   const [index, setIndex] = useState(0);
@@ -26,15 +28,45 @@ function PracticeInner() {
   useEffect(() => {
     let active = true;
     void (async () => {
-      const storedLevel = localStorage.getItem("hisin_level") ?? "B1";
+      const storedLevel = (localStorage.getItem("hisin_level") ?? "B1") as CefrLevel;
+      // The full module vocabulary comes back at once so a level without its own
+      // content can fall back to the closest available level, in the page.
       const [vocabData, questionData] = await Promise.all([
-        fetch(`/api/vocabulary?module=${moduleSlug}&level=${storedLevel}`).then((r) => r.json()),
+        fetch(`/api/vocabulary?module=${moduleSlug}`).then((r) => r.json()),
         fetch(`/api/questions?skill=${skill}&level=${storedLevel}&limit=10`).then((r) => r.json()),
       ]);
       if (!active) return;
-      setLevel(storedLevel);
-      setVocab(vocabData as VocabularyDTO[]);
-      setQuestions(questionData as QuestionDTO[]);
+
+      const shownVocab = vocabData as VocabularyDTO[];
+      let shownQuestions = questionData as QuestionDTO[];
+      let quizLevel: CefrLevel | null = shownQuestions.length > 0 ? storedLevel : null;
+      if (shownQuestions.length === 0) {
+        // No questions at the requested level yet: use the closest level that
+        // actually has questions for this skill.
+        const allQuestions = (await fetch(`/api/questions?skill=${skill}`).then(
+          (r) => r.json(),
+        )) as QuestionDTO[];
+        if (!active) return;
+        const questionTarget = resolveLevel(
+          storedLevel,
+          [...new Set(allQuestions.map((q) => q.level))],
+        );
+        if (questionTarget) {
+          shownQuestions = allQuestions.filter((q) => q.level === questionTarget).slice(0, 10);
+          quizLevel = questionTarget;
+        }
+      }
+
+      const vocabLevel = resolveLevel(storedLevel, [...new Set(shownVocab.map((v) => v.level))]);
+      const displayedVocab = vocabLevel
+        ? shownVocab.filter((v) => v.level === vocabLevel)
+        : [];
+      const effectiveLevel = quizLevel ?? vocabLevel ?? storedLevel;
+
+      setLevel(effectiveLevel);
+      setRequestedLevel(effectiveLevel === storedLevel ? null : storedLevel);
+      setVocab(displayedVocab);
+      setQuestions(shownQuestions);
     })();
     return () => {
       active = false;
@@ -123,7 +155,7 @@ function PracticeInner() {
             )}
             <p className="mb-4">{q.prompt}</p>
             <div className="space-y-2">
-              {q.options.map((opt) => (
+              {presentOptions(q).map((opt) => (
                 <button
                   key={opt}
                   onClick={() => !showAnswer && setAnswers((a) => ({ ...a, [q.id]: opt }))}
@@ -156,7 +188,7 @@ function PracticeInner() {
               </audio>
             )}
             <div className="space-y-2">
-              {q.options.map((opt) => (
+              {presentOptions(q).map((opt) => (
                 <button
                   key={opt}
                   onClick={() => !showAnswer && setAnswers((a) => ({ ...a, [q.id]: opt }))}
@@ -206,6 +238,11 @@ function PracticeInner() {
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold capitalize">{moduleSlug} — Práctica ({level})</h2>
+      {requestedLevel && requestedLevel !== level && (
+        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
+          No hay contenido {requestedLevel} todavía; estás practicando con {level}.
+        </p>
+      )}
 
       {vocab.length > 0 && (
         <section>

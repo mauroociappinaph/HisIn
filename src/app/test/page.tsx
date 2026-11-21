@@ -14,6 +14,7 @@ interface AssessmentResult {
   bySkill: Record<string, AssessmentSkillResult>;
 }
 import Link from "next/link";
+import { presentOptions } from "@/shared/lib/presentation";
 
 export default function TestPage() {
   const [questions, setQuestions] = useState<QuestionDTO[]>([]);
@@ -112,7 +113,7 @@ export default function TestPage() {
             )}
             <p className="text-lg mb-4">{q.prompt}</p>
             <div className="space-y-2">
-              {q.options.map((opt) => (
+              {presentOptions(q).map((opt) => (
                 <button
                   key={opt}
                   onClick={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
@@ -137,7 +138,7 @@ export default function TestPage() {
               </audio>
             )}
             <div className="space-y-2">
-              {q.options.map((opt) => (
+              {presentOptions(q).map((opt) => (
                 <button
                   key={opt}
                   onClick={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}

@@ -1,24 +1,31 @@
 "use client";
 import { useParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import type { LessonDTO } from "@/shared/types";
+import type { CefrLevel, LessonDTO } from "@/shared/types";
+import { resolveLevel } from "@/shared/lib/presentation";
 
 function LessonsInner() {
   const params = useParams();
   const moduleSlug = params.module as string;
   const [lessons, setLessons] = useState<LessonDTO[]>([]);
   const [level, setLevel] = useState<string>("B1");
+  const [requestedLevel, setRequestedLevel] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     void (async () => {
-      const storedLevel = localStorage.getItem("hisin_level") ?? "B1";
-      const response = await fetch(`/api/lessons?module=${moduleSlug}&level=${storedLevel}`);
-      const data = (await response.json()) as LessonDTO[];
+      const storedLevel = (localStorage.getItem("hisin_level") ?? "B1") as CefrLevel;
+      // The full module listing comes back at once so a level without lessons
+      // can fall back to the closest available level, in the page.
+      const data = (await fetch(`/api/lessons?module=${moduleSlug}`).then(
+        (r) => r.json(),
+      )) as LessonDTO[];
       if (!active) return;
-      setLevel(storedLevel);
-      setLessons(data);
+      const target = resolveLevel(storedLevel, [...new Set(data.map((l) => l.level))]);
+      setLevel(target ?? storedLevel);
+      setRequestedLevel(target && target !== storedLevel ? storedLevel : null);
+      setLessons(target ? data.filter((l) => l.level === target) : []);
     })();
     return () => {
       active = false;
@@ -28,6 +35,11 @@ function LessonsInner() {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold capitalize">{moduleSlug} — Lecciones ({level})</h2>
+      {requestedLevel && requestedLevel !== level && (
+        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
+          No hay lecciones {requestedLevel} todavía; estás viendo lecciones {level}.
+        </p>
+      )}
       {lessons.length === 0 && <p className="text-slate-500">No hay lecciones para este nivel.</p>}
       <div className="space-y-4">
         {lessons.map((l) => (
