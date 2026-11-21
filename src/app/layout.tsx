@@ -34,6 +34,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/progress" className="hover:text-indigo-600">
                 Progreso
               </Link>
+              <Link href="/studio" className="hover:text-indigo-600">
+                Generar
+              </Link>
             </div>
           </nav>
         </header>
