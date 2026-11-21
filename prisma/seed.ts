@@ -1,6 +1,19 @@
+import { createHash } from "node:crypto";
 import { PrismaClient, CefrLevel, Skill, QuestionType } from "@prisma/client";
+import { loadLocalEnv } from "../src/shared/lib/load-env";
+
+loadLocalEnv();
 
 const prisma = new PrismaClient();
+
+/**
+ * Stable id for seeded content, so re-running the seed updates instead of
+ * duplicating. The hash is derived from the natural key of each row.
+ */
+function seedId(prefix: string, ...parts: string[]): string {
+  const digest = createHash("sha1").update(parts.join("|")).digest("hex").slice(0, 20);
+  return `seed_${prefix}_${digest}`;
+}
 
 async function main() {
   // Modules
@@ -146,21 +159,21 @@ async function main() {
   addListeningMCQ("C2", "LISTENING", "Listen: 'Real-world evidence from post-market surveillance supports label expansion.' What supports label expansion?", ["RCT data", "Real-world evidence", "Animal studies", "Expert opinion"], "Real-world evidence", "/audio/rwe-c2.mp3", ["listening", "health", "regulatory"]);
   addListeningMCQ("C2", "LISTENING", "Listen: 'Had the FDA approved the biomarker, the trial design would have changed.' What would have changed?", ["Trial design", "FDA policy", "Biomarker", "Patient consent"], "Trial design", "/audio/fda-c2.mp3", ["listening", "health", "regulatory", "grammar"]);
 
-  // Insert questions
+  // Upsert questions: re-running the seed must never duplicate the bank.
   for (const q of qBank) {
-    await prisma.question.create({
-      data: {
-        level: q.level,
-        skill: q.skill,
-        type: q.type,
-        prompt: q.prompt,
-        options: q.options,
-        answer: q.answer,
-        explanation: q.explanation ?? null,
-        audioUrl: q.audioUrl ?? null,
-        tags: q.tags,
-      },
-    });
+    const data = {
+      level: q.level,
+      skill: q.skill,
+      type: q.type,
+      prompt: q.prompt,
+      options: q.options,
+      answer: q.answer,
+      explanation: q.explanation ?? null,
+      audioUrl: q.audioUrl ?? null,
+      tags: q.tags,
+    };
+    const id = seedId("question", q.level, q.skill, q.type, q.prompt);
+    await prisma.question.upsert({ where: { id }, update: data, create: { id, ...data } });
   }
 
   // Lessons
@@ -177,7 +190,8 @@ async function main() {
     { module: "grammar", level: "B1" as CefrLevel, title: "Tiempos verbales profesionales", summary: "Present perfect, passive voice.", content: "Present perfect: 'We have launched the app.'\nPassive: 'The report was approved.'\nUseful for status updates.", order: 1 },
   ];
   for (const l of lessons) {
-    await prisma.lesson.create({ data: l });
+    const id = seedId("lesson", l.module, l.level, l.title);
+    await prisma.lesson.upsert({ where: { id }, update: l, create: { id, ...l } });
   }
 
   // Vocabulary
@@ -198,7 +212,8 @@ async function main() {
     { term: "due diligence", definition: "Investigation before a deal.", example: "Investors do due diligence.", module: "business-english", level: "C1" as CefrLevel },
   ];
   for (const v of vocab) {
-    await prisma.vocabulary.create({ data: v });
+    const id = seedId("vocabulary", v.term, v.module);
+    await prisma.vocabulary.upsert({ where: { id }, update: v, create: { id, ...v } });
   }
 
   console.log("Seed complete");
