@@ -57,6 +57,16 @@ export interface VocabularyDTO {
   level: CefrLevel;
 }
 
+export interface StoryDTO {
+  id: string;
+  module: string;
+  level: CefrLevel;
+  title: string;
+  body: string;
+  translation: string;
+  targetWords: string[];
+}
+
 export interface ModuleDTO {
   id: string;
   slug: string;

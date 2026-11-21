@@ -74,6 +74,21 @@ model Vocabulary {
   @@index([module, level])
 }
 
+/// A short generated narrative that recycles target vocabulary in context.
+model VocabularyStory {
+  id          String     @id @default(cuid())
+  module      String
+  level       CefrLevel
+  title       String
+  body        String     @db.Text
+  translation String     @db.Text
+  targetWords String[]
+  createdAt   DateTime   @default(now())
+
+  @@unique([module, level, title])
+  @@index([module, level])
+}
+
 model Module {
   id          String     @id @default(cuid())
   slug        String     @unique
