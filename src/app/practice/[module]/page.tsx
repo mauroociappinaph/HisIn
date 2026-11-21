@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import type { CefrLevel, QuestionDTO, VocabularyDTO, Skill } from "@/shared/types";
 import { presentOptions, resolveLevel } from "@/shared/lib/presentation";
+import { formatTimestamp, youtubeDeepLink } from "@/shared/lib/youtube";
 
 const SKILL_BY_MODULE: Record<string, Skill> = {
   vocabulary: "VOCABULARY",
@@ -159,6 +160,16 @@ function PracticeInner() {
                 Tu navegador no soporta audio.
               </audio>
             )}
+            {q.youtubeVideoId ? (
+              <a
+                href={youtubeDeepLink(q.youtubeVideoId, q.youtubeStartSec ?? 0)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-block mb-4 px-3 py-1.5 rounded-sm bg-rose-50 text-rose-700 text-xs font-semibold hover:bg-rose-100 transition"
+              >
+                ▶ Escucharlo en YouTube ({formatTimestamp(q.youtubeStartSec ?? 0)})
+              </a>
+            ) : null}
             <p className="mb-4">{q.prompt}</p>
             <div className="space-y-2">
               {presentOptions(q).map((opt) => (

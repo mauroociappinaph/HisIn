@@ -125,6 +125,16 @@ async function HomeContent() {
           <h3 className="font-semibold text-slate-800 mt-1">Patrones</h3>
           <p className="text-xs text-slate-500">estructura + función + error típico</p>
         </Link>
+        <Link
+          href="/news"
+          className="rounded-lg bg-white border border-slate-200 p-4 hover:border-indigo-300 transition"
+        >
+          <span className="text-2xl" aria-hidden="true">
+            📰
+          </span>
+          <h3 className="font-semibold text-slate-800 mt-1">Noticias</h3>
+          <p className="text-xs text-slate-500">lectura real, analizada palabra por palabra</p>
+        </Link>
       </section>
 
       <p className="text-xs text-slate-400">

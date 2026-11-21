@@ -67,6 +67,13 @@ async function LearnContent() {
           <p className="text-xs text-slate-500">{stories} relatos con audio y traducción</p>
         </Link>
         <Link
+          href="/news"
+          className="rounded-lg bg-white border border-slate-200 p-4 hover:border-indigo-300 transition"
+        >
+          <h2 className="font-semibold text-slate-800">Noticias</h2>
+          <p className="text-xs text-slate-500">inglés real de healthtech y startups, analizado por el motor</p>
+        </Link>
+        <Link
           href="/review/vocab"
           className="rounded-lg bg-white border border-slate-200 p-4 hover:border-indigo-300 transition"
         >

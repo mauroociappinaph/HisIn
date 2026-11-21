@@ -26,6 +26,8 @@ export type QuestionType =
   | "LISTENING_MCQ";
 
 export interface QuestionDTO {
+  youtubeVideoId?: string;
+  youtubeStartSec?: number;
   id: string;
   level: CefrLevel;
   skill: Skill;

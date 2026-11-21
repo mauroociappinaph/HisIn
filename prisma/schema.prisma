@@ -64,6 +64,22 @@ model LessonCompletion {
   @@index([userId])
 }
 
+/// A real article from a healthtech or startup feed, plus the analysis the engine
+/// extracted from it: the vocabulary and patterns a learner should notice.
+model NewsArticle {
+  id          String    @id @default(cuid())
+  url         String    @unique
+  title       String
+  source      String
+  excerpt     String    @db.Text
+  publishedAt DateTime?
+  analysis    Json?
+  analyzedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([publishedAt])
+}
+
 model Question {
   id          String       @id @default(cuid())
   level       CefrLevel
@@ -74,6 +90,10 @@ model Question {
   answer      String
   explanation String?
   audioUrl    String?
+  /// For listening items: the real video and the second where the line is said,
+  /// so the learner hears it in context instead of a synthesised clip.
+  youtubeVideoId String?
+  youtubeStartSec Int?
   tags        String[]
   createdAt   DateTime     @default(now())
 
