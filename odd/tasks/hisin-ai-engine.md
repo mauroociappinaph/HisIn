@@ -80,3 +80,13 @@ L13 decision: generated vocabulary and lessons are constrained to the real modul
 Branch `feat/gentle-shell-ai-engine`. The first delivery (`5d81645..7207c83`) is 1998 authored lines in seven slices: schema and env loading, SRS review, the Gentle Shell engine, question types, tests, lint compliance, docs.
 
 The VTO increment is four smaller slices: `9b2c394` engine (~610 lines, includes `package.json`), `db0ee8e` studio (~380), `bd9f945` CLI and idempotent seed (~140), `7b6ae0c` docs. One sequencing blemish: `9b2c394` adds the `ai:generate` script in `package.json` one slice before `scripts/generate.ts` lands in `bd9f945`, so that single intermediate commit references a file it does not yet contain. The final tree is correct and every slice types, lints and builds.
+
+## Unresolved: native review blocked at the environment level
+
+Attempted twice and stopped: the four-lens review cannot run in this session.
+
+Evidence: `gentle_review_capture_group` returned `pi-host-relay-transport-failure` with `No model matches selection "nan/glm5.3" configured for review-risk`, `prepared_reviewers: 0`, `mutation_performered: false`. The on-disk reviewer definitions (`$GENTLE_PI_AGENT_HOME/agents/review-*.md` and `$GENTLE_PI_AGENT_HOME/subagents.json`) both pin `claude-bridge/claude-opus-5-5` with `high` effort, yet the relay resolved the live session profile instead, whose provider label is `nan` — an invalid provider that `pi --provider nan` rejects with `Unknown provider`.
+
+Consequence: review authority `review-658f55b95d96a088` (tier high, 34 files, 1998 lines) remains open in state `reviewing`, and receipt-driven development stays disabled for this clone only (`--scope clone`). The work was delivered self-verified: tsc, eslint, 52 unit tests, next build, and end-to-end generation against the local database.
+
+Remediation is host-side, not repository-side: launch Pi with a valid provider/model so the inherited reviewer selection resolves, then re-enable the clone switch, reconcile the open lineage if STATUS asks for it, and review the committed range. Do not treat this note as authorization to reset or recover that lineage.
