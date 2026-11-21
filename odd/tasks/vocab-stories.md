@@ -47,3 +47,11 @@ L3 (usuario, textual): «Genrea el motor de la app y hace add push y commit»
 L4 (usuario, textual): «TOma el reol de CTO y de Profesor de Ingles con 20 anos de experiencia de Hardvar y toma todas las decisiones vos»
 
 L5 (decisión, CTO): el contenido de práctica sale del motor de la app, nunca hardcodeado; por eso el trabajo es `kind: story` + modo Historias, no texto inventado. El entrenador se entrega en la misma rama porque comparte la UI del modo.
+
+L6 (entrega): tres unidades sobre `feat/vocab-trainer-stories`.
+
+- `6611d86` feat(ai): generate and store vocabulary stories — T1–T4 (schema, migración, persistencia, lectura), 301 líneas.
+- `795a9af` feat(vocab): rebuild the review page as a multi-mode trainer — entrenador completo (Repaso, Explorar, Desafío), 1365 líneas; es la unidad grande de la rama porque la UI compartida no se puede partir sin dejar un commit que no compila.
+- `a1d5a5f` feat(vocab): read generated stories in the trainer — T5–T7 (resaltado, modo Historias, /studio, README), 375 líneas.
+
+Verificación observada en T8: `pnpm ai:generate --kind story --level B1 --count 2 --topic "a delayed flight and a missed layover in Lisbon"` → SUCCEEDED con `gemini-3.1-flash-lite`, `createdCount: 2`; `GET /api/stories` devuelve 2 historias con target words; el modo Historias las renderiza con las palabras resaltadas.
