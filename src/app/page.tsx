@@ -135,8 +135,19 @@ async function HomeContent() {
         </div>
 
         {syllabus.map((unit) => (
-          <div key={unit.unit} className="space-y-2">
-            <h3 className="text-xs uppercase tracking-widest text-slate-500">{unit.unit}</h3>
+          <div key={unit.unit} id={`module-${unit.order}`} className="space-y-2 scroll-mt-24">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="text-xs uppercase tracking-widest text-slate-500">{unit.unit}</h3>
+              <span className="flex items-center gap-2 text-[11px] text-slate-500">
+                {unit.topics.length} {unit.topics.length === 1 ? "submódulo" : "submódulos"}
+                <Link
+                  href={`/topics/${unit.topics[0]?.slug ?? ""}`}
+                  className="font-semibold text-indigo-600 hover:underline"
+                >
+                  Entrar →
+                </Link>
+              </span>
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {unit.topics.map((topic) => (
                 <Link

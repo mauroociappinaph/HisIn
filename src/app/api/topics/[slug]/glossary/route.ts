@@ -35,18 +35,28 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
   const row = await prisma.topic.findUnique({ where: { slug }, select: { id: true } });
   if (!row) return NextResponse.json({ error: "tema no encontrado" }, { status: 404 });
 
-  try {
-    const response = await runGentleShell({
-      prompt: buildGlossaryPrompt({ title: story.title, body: story.body, level: topic.level }),
-      system: GLOSSARY_SYSTEM_PROMPT,
-      model,
-      timeoutMs: resolveTimeoutMs() * 2,
-    });
-    const glossary = parseGlossary(response.text);
-    const saved = await repository.saveGlosses(row.id, glossary.entries);
-    return NextResponse.json({ saved, glosses: glossary.entries }, { status: 201 });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: message }, { status: 502 });
+  const basePrompt = buildGlossaryPrompt({ title: story.title, body: story.body, level: topic.level });
+
+  // One repair attempt: a reply that is structurally fine but breaks a rule is
+  // retried with its own rejection, instead of failing the topic forever.
+  let prompt = basePrompt;
+  let lastError = "";
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const response = await runGentleShell({
+        prompt,
+        system: GLOSSARY_SYSTEM_PROMPT,
+        model,
+        timeoutMs: resolveTimeoutMs() * 2,
+      });
+      const glossary = parseGlossary(response.text);
+      const saved = await repository.saveGlosses(row.id, glossary.entries);
+      return NextResponse.json({ saved, glosses: glossary.entries, attempts: attempt }, { status: 201 });
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+      prompt = `${basePrompt} Your previous reply was rejected: ${lastError}. Fix exactly that and return the JSON again.`;
+    }
   }
+
+  return NextResponse.json({ error: lastError }, { status: 502 });
 }
