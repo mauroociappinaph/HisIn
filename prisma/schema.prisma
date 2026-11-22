@@ -112,6 +112,23 @@ model Topic {
   focus     String?
   createdAt DateTime        @default(now())
   materials TopicMaterial[]
+  glosses   StoryGloss[]
+}
+
+/// Per-story glossary: the Spanish translation of the words worth knowing plus the
+/// multi-word units (phrasal verbs, patterns, idioms) that appear in the text.
+/// Stored instead of computed on hover so the reading stays instant.
+model StoryGloss {
+  id          String @id @default(cuid())
+  topicId     String
+  topic       Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  term        String
+  translation String
+  kind        String
+  note        String?
+
+  @@unique([topicId, term])
+  @@index([topicId])
 }
 
 model TopicMaterial {

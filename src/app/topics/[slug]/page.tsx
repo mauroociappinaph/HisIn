@@ -73,7 +73,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 <span className="text-[11px] text-slate-400">{material.title}</span>
               </div>
               {material.skill === "STORY" ? (
-                <StoryReader title={material.title} body={material.body} />
+                <StoryReader title={material.title} body={material.body} glosses={topic.glosses} />
               ) : (
                 <div className="whitespace-pre-wrap text-slate-800 text-sm leading-relaxed">{material.body}</div>
               )}

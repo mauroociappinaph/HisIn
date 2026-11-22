@@ -1,0 +1,75 @@
+name: CI
+
+# Why this exists: merging to main was the one step nobody verified. The build,
+# the type check and the 239 tests all ran locally, by hand, and "it worked on my
+# machine" was the only evidence a delivery had. This puts the same commands on
+# every pull request and on main, against a real Postgres, so a merge cannot land
+# silently broken.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: hisin
+          POSTGRES_PASSWORD: hisin
+          POSTGRES_DB: hisin
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hisin"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://hisin:hisin@localhost:5432/hisin
+      # The engine and every remote call are absent here: the checks below must
+      # pass without a model, a network dependency or a secret.
+      CI: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        run: pnpm exec prisma migrate deploy
+
+      - name: Generate client
+        run: pnpm exec prisma generate
+
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

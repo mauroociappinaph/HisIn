@@ -13,6 +13,7 @@ const topic = (over: Partial<TopicDTO>): TopicDTO => ({
   level: "A2",
   focus: null,
   materials: [],
+  glosses: [],
   missing: [],
 });
 

@@ -1,6 +1,7 @@
 import { prisma } from "@/shared/db/prisma";
 import type { CefrLevel } from "@/shared/types";
 import { TOPIC_SKILLS, type TopicMaterials, type TopicSkill } from "./schema";
+import type { GlossEntry } from "./glossary";
 
 export interface TopicMaterialDTO {
   skill: TopicSkill;
@@ -20,6 +21,8 @@ export interface TopicDTO {
   focus: string | null;
   materials: TopicMaterialDTO[];
   missing: TopicSkill[];
+  /** Per-story glossary: translations and the multi-word units of the story. */
+  glosses: GlossEntry[];
 }
 
 function toDTO(row: {
@@ -32,6 +35,7 @@ function toDTO(row: {
   level: string;
   focus: string | null;
   materials: { skill: string; title: string; body: string; keyPoints: string[] }[];
+  glosses: { term: string; translation: string; kind: string; note: string | null }[];
 }): TopicDTO {
   const materials = TOPIC_SKILLS.map((skill) => row.materials.find((m) => m.skill === skill)).filter(
     (m): m is NonNullable<typeof m> => Boolean(m),
@@ -53,6 +57,12 @@ function toDTO(row: {
       keyPoints: material.keyPoints,
     })),
     missing: TOPIC_SKILLS.filter((skill) => !materials.some((m) => m.skill === skill)),
+    glosses: row.glosses.map((gloss) => ({
+      term: gloss.term,
+      translation: gloss.translation,
+      kind: gloss.kind as GlossEntry["kind"],
+      ...(gloss.note ? { note: gloss.note } : {}),
+    })),
   };
 }
 
@@ -66,13 +76,16 @@ export class TopicRepository {
   async list(): Promise<TopicDTO[]> {
     const rows = await prisma.topic.findMany({
       orderBy: [{ unitOrder: "asc" }, { ord: "asc" }],
-      include: { materials: true },
+      include: { materials: true, glosses: true },
     });
     return rows.map(toDTO);
   }
 
   async findBySlug(slug: string): Promise<TopicDTO | null> {
-    const row = await prisma.topic.findUnique({ where: { slug }, include: { materials: true } });
+    const row = await prisma.topic.findUnique({
+      where: { slug },
+      include: { materials: true, glosses: true },
+    });
     return row ? toDTO(row) : null;
   }
 
@@ -126,6 +139,32 @@ export class TopicRepository {
           title: material.title,
           body: material.body,
           keyPoints: material.keyPoints,
+        },
+      });
+      saved += 1;
+    }
+    return saved;
+  }
+
+  /**
+   * Stores a glossary once per topic.
+   *
+   * A second run is a no-op: the learner may already have read the story, and the
+   * translations underneath their eyes must not change behind their back.
+   */
+  async saveGlosses(topicId: string, entries: GlossEntry[]): Promise<number> {
+    const existing = await prisma.storyGloss.count({ where: { topicId } });
+    if (existing > 0) return 0;
+
+    let saved = 0;
+    for (const entry of entries) {
+      await prisma.storyGloss.create({
+        data: {
+          topicId,
+          term: entry.term,
+          translation: entry.translation,
+          kind: entry.kind,
+          note: entry.note ?? null,
         },
       });
       saved += 1;
