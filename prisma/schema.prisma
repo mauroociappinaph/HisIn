@@ -49,8 +49,31 @@ model LearnerProfile {
   totalItems    Int       @default(0)
   totalCorrect  Int       @default(0)
   onboardedAt   DateTime?
+  discipline     String   @default("negocios")
+  educationLevel String   @default("grado_inicial")
+  classMinutes   Int      @default(60)
+  sequence       String   @default("semanal")
+  classPlans     ClassPlan[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+/// One designed session: the teaching context plus the minute-by-minute flow the
+/// app generated for it. Stored as a snapshot so a plan never changes under the
+/// learner when the algorithm is tuned later.
+model ClassPlan {
+  id             String   @id @default(cuid())
+  userId         String
+  user           LearnerProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  discipline     String
+  educationLevel String
+  minutes        Int
+  sequence       String
+  topic          String
+  flow           Json
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model LessonCompletion {

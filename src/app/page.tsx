@@ -126,6 +126,16 @@ async function HomeContent() {
           <p className="text-xs text-slate-500">estructura + función + error típico</p>
         </Link>
         <Link
+          href="/grammar"
+          className="rounded-lg bg-white border border-slate-200 p-4 hover:border-indigo-300 transition"
+        >
+          <span className="text-2xl" aria-hidden="true">
+            📐
+          </span>
+          <h3 className="font-semibold text-slate-800 mt-1">Gramática</h3>
+          <p className="text-xs text-slate-500">present perfect, pasado y compañía: dónde se usa cada tiempo</p>
+        </Link>
+        <Link
           href="/news"
           className="rounded-lg bg-white border border-slate-200 p-4 hover:border-indigo-300 transition"
         >

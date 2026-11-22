@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 const NAV = [
   { href: "/", label: "Hoy" },
   { href: "/learn", label: "Aprender" },
+  { href: "/grammar", label: "Gramática" },
   { href: "/review/vocab", label: "Repaso" },
   { href: "/progress", label: "Progreso" },
 ] as const;

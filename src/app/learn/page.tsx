@@ -67,6 +67,20 @@ async function LearnContent() {
           <p className="text-xs text-slate-500">{stories} relatos con audio y traducción</p>
         </Link>
         <Link
+          href="/grammar"
+          className="rounded-lg bg-white border border-slate-200 p-4 hover:border-indigo-300 transition"
+        >
+          <h2 className="font-semibold text-slate-800">Gramática</h2>
+          <p className="text-xs text-slate-500">tiempos, estructuras y reglas: dónde se usa cada uno</p>
+        </Link>
+        <Link
+          href="/class"
+          className="rounded-lg bg-white border border-slate-200 p-4 hover:border-indigo-300 transition"
+        >
+          <h2 className="font-semibold text-slate-800">Diseñar una clase</h2>
+          <p className="text-xs text-slate-500">contexto real: disciplina, nivel, duración y secuencia</p>
+        </Link>
+        <Link
           href="/news"
           className="rounded-lg bg-white border border-slate-200 p-4 hover:border-indigo-300 transition"
         >

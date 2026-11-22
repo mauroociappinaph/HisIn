@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { LessonDTO } from "@/shared/types";
 import { LevelBadge } from "@/components/vocab-ui";
+import { describeDesign, type ClassDesign } from "@/modules/classroom/design";
 import { resolveLevel } from "@/shared/lib/presentation";
 
 export default function LessonsPage() {
@@ -17,13 +18,19 @@ export default function LessonsPage() {
   const [open, setOpen] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [completed, setCompleted] = useState<string[]>([]);
+  const [designLine, setDesignLine] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     Promise.all([
       fetch(`/api/lessons?module=${moduleSlug}`).then((response) => response.json()),
       fetch("/api/progress").then((response) => response.json()),
+      fetch("/api/class").then((response) => response.json()),
     ])
+      .then(([all, progress, classroom]: [LessonDTO[], { profile: { level: string }; completedLessonIds: string[] }, { design: ClassDesign }]) => {
+        if (active) setDesignLine(describeDesign(classroom.design));
+        return [all, progress] as [LessonDTO[], { profile: { level: string }; completedLessonIds: string[] }];
+      })
       .then(([all, progress]: [LessonDTO[], { profile: { level: string }; completedLessonIds: string[] }]) => {
         if (!active) return;
         const target = resolveLevel(progress.profile.level as never, [
@@ -70,7 +77,18 @@ export default function LessonsPage() {
 
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl font-bold capitalize text-slate-900">{moduleSlug} — Lecciones</h1>
-        <LevelBadge level={level as never} />
+        <div className="flex items-center gap-2">
+          <LevelBadge level={level as never} />
+          {designLine ? (
+            <Link
+              href={`/class?tema=${encodeURIComponent(moduleSlug)}`}
+              className="text-[11px] px-2 py-1 rounded-sm bg-slate-100 text-slate-600 hover:bg-slate-200"
+              title="Contexto de clase con el que se diseñan las sesiones"
+            >
+              {designLine}
+            </Link>
+          ) : null}
+        </div>
       </header>
 
       {requestedLevel ? (
