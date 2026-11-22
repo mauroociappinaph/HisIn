@@ -63,11 +63,11 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
       const term = (entry?.term ?? raw).replace(/[^A-Za-z'’\- ]/g, "").trim();
       if (term.length < 2) return;
       if (!entry && STOP_WORDS.has(term.toLowerCase())) {
-        notify(`"${term}" es una palabra funcional: no vale la pena guardarla`, true);
+        notify(`"${term}" is a function word: not worth saving`, true);
         return;
       }
       if (saved.includes(term.toLowerCase())) {
-        notify(`"${term}" ya la guardaste en esta historia`);
+        notify(`"${term}" is already saved from this story`);
         return;
       }
 
@@ -102,7 +102,7 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
             definition: payload.entry.definition ?? "",
             ...(translated ? { translation: translated } : {}),
           });
-          notify(`"${payload.entry.term}" guardado · entra al repaso`);
+          notify(`"${payload.entry.term}" saved · it is now in the review queue`);
           return;
         }
         if (response.status === 409) {
@@ -111,12 +111,12 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
           const translated = entry ? entry.translation : await translationRequest;
           setSaved((previous) => [...previous, term.toLowerCase()]);
           setAnalysis({ term, definition: "", ...(translated ? { translation: translated } : {}) });
-          notify(`"${term}" ya estaba en tu vocabulario`);
+          notify(`"${term}" was already in your vocabulary`);
           return;
         }
-        notify(payload.error?.slice(0, 120) ?? "No pudimos analizar esa palabra", true);
+        notify(payload.error?.slice(0, 120) ?? "That word could not be analysed", true);
       } catch {
-        notify("No pudimos analizar esa palabra", true);
+        notify("That word could not be analysed", true);
       } finally {
         setBusy(null);
       }
@@ -135,17 +135,17 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
             onClick={() => speak(body)}
             className="px-3 py-1.5 rounded-sm bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition"
           >
-            🔊 Escuchar
+            🔊 Listen
           </button>
           <Link
             href="/review/vocab"
             className="px-3 py-1.5 rounded-sm border border-slate-300 text-xs font-medium hover:border-indigo-300 transition"
           >
-            Repasar este vocabulario →
+            Review this vocabulary →
           </Link>
         </div>
         <span className="text-[11px] text-slate-500">
-          {glosses.length > 0 ? `${glosses.length} términos anotados` : "sin glosario todavía"}
+          {glosses.length > 0 ? `${glosses.length} glossed terms` : "no glossary yet"}
         </span>
       </div>
 
@@ -207,7 +207,7 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
 
       <div className="min-h-[2.75rem] text-xs" aria-live="polite">
         {busy ? (
-          <span className="text-indigo-700">Analizando “{busy}” con Gentleman Shell…</span>
+          <span className="text-indigo-700">Analysing “{busy}” …</span>
         ) : analysis ? (
           <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <strong className="text-slate-900">{analysis.term}</strong>
@@ -217,10 +217,10 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
               <span className="text-slate-600">{analysis.definition}</span>
             ) : null}
             <span className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] uppercase tracking-wide">
-              guardada
+              saved
             </span>
             <Link href="/review/vocab" className="text-indigo-600 underline">
-              ir al repaso
+              go to review
             </Link>
           </span>
         ) : hint ? (
@@ -232,7 +232,7 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
               {GLOSS_KIND_LABELS[hint.kind]}
             </span>
             {hint.note ? <span className="text-slate-500">{hint.note}</span> : null}
-            <span className="text-slate-400">· click para guardarla</span>
+            <span className="text-slate-400">· click to save it</span>
           </span>
         ) : hoveredRaw ? (
           <span className="text-slate-500">
@@ -241,8 +241,8 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
           </span>
         ) : (
           <span className="text-slate-400">
-            Pasá el mouse por una palabra o por una frase subrayada: ves la traducción y, si hacés click, queda
-            en tu vocabulario y en el repaso.
+            Hover a word or an underlined phrase to see what it means; click it and it goes into your
+            vocabulary and the review queue.
           </span>
         )}
       </div>

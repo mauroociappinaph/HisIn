@@ -8,6 +8,7 @@ import {
   objectivesFor,
   parseLesson,
   readingMinutes,
+  splitIdea,
   splitParagraphs,
   timelineFor,
   wordCount,
@@ -130,4 +131,17 @@ test("extractFormula reads a template the material wrote unquoted", () => {
 
 test("extractFormula does not read arithmetic or a date range as a structure", () => {
   assert.deepEqual(extractFormula("We grew 20 + 30 in 2020 + 2021 and it cost 5 + 6.", []), []);
+});
+
+test("splitIdea turns one long paragraph into points", () => {
+  const points = splitIdea(
+    "We use 'to be' for status. In the negative we add 'not'. For interrogative we invert the subject. Example: 'Are you ready for the round?' We also use it for locations.",
+  );
+  assert.equal(points.length, 5);
+  assert.equal(points.filter((point) => point.kind === "example").length, 1);
+});
+
+test("splitIdea caps the number of points", () => {
+  const many = Array.from({ length: 12 }, (_, index) => `Sentence number ${index}.`).join(" ");
+  assert.equal(splitIdea(many, 6).length, 6);
 });

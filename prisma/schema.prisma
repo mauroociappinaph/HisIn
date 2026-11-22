@@ -113,10 +113,21 @@ model Topic {
   /// Opening line shown before the lesson: one quote tying this submodule to its
   /// module, so the first thing the learner reads has a voice.
   quote     String?
+  /// English prologue: what this submodule is for and why it matters at work.
+  prologue  String?
   createdAt DateTime        @default(now())
   materials TopicMaterial[]
   glosses   StoryGloss[]
   done      TopicCompletion[]
+}
+
+/// The prologue of one module: the map of what the module covers, in English.
+model UnitMeta {
+  id        String   @id @default(cuid())
+  unitOrder Int      @unique
+  unit      String
+  prologue  String   @db.Text
+  createdAt DateTime @default(now())
 }
 
 /// A lesson the learner marked as done. One row per learner and topic, so the

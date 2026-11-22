@@ -385,6 +385,12 @@ const TOPICS: SeedTopic[] = [
   { slug: "precise-verbs-phrasal", title: "Precise verbs and phrasal verbs instead of make/do/get", ord: 131, code: "35.2", unit: "35 · Fluency architecture: B1 to C1", unitOrder: 35, level: "B2", focus: "Swap generic verbs (make, do, get, fix) for exact action verbs and phrasal verbs, so 'fix the problem' becomes 'resolve the bottleneck'." },
   { slug: "past-modals-nuance", title: "Past modals: deduction and criticism", ord: 132, code: "35.3", unit: "35 · Fluency architecture: B1 to C1", unitOrder: 35, level: "B2", focus: "Go beyond can, should and must with past modals: 'it must have been a cache issue', 'we should have deployed earlier'." },
   { slug: "passive-reporting-systems", title: "Passive voice for processes and systems", ord: 133, code: "35.4", unit: "35 · Fluency architecture: B1 to C1", unitOrder: 35, level: "B2", focus: "Report what happens to a system when the actor does not matter: 'the payload is encrypted before it is sent to the server'." },
+  // ── Módulo 43: calibración de examinador ──
+  { slug: "examiner-requirements-ethics", title: "Examiner requirements, ethics and governance", ord: 134, code: "43.1", unit: "43 · Examiner calibration and diagnostic feedback", unitOrder: 43, level: "C1" },
+  { slug: "interlocutor-assessor-roles", title: "Room roles and oral format management", ord: 135, code: "43.2", unit: "43 · Examiner calibration and diagnostic feedback", unitOrder: 43, level: "C1" },
+  { slug: "oral-assessment-scales", title: "Oral assessment scales and official descriptors", ord: 136, code: "43.3", unit: "43 · Examiner calibration and diagnostic feedback", unitOrder: 43, level: "C1" },
+  { slug: "standardisation-bias-control", title: "Standardisation, calibration and bias control", ord: 137, code: "43.4", unit: "43 · Examiner calibration and diagnostic feedback", unitOrder: 43, level: "C1" },
+  { slug: "room-simulation-incidents", title: "Room simulation and incident handling", ord: 138, code: "43.5", unit: "43 · Examiner calibration and diagnostic feedback", unitOrder: 43, level: "C1" },
 ];
 
 async function main() {

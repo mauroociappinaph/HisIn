@@ -4,7 +4,14 @@ import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
 import { getLocalUser } from "@/modules/identity/service";
 import { ClassroomRepository } from "@/modules/classroom/repository";
 import { TopicRepository } from "@/modules/topics/repository";
-import { TOPIC_SKILLS, TOPIC_SYSTEM_PROMPT, buildTopicPrompt, parseTopicMaterials } from "@/modules/topics/schema";
+import {
+  TOPIC_SKILLS,
+  TOPIC_SYSTEM_PROMPT,
+  buildTopicPrompt,
+  parseTopicMaterials,
+  structureMarkers,
+  usesStructure,
+} from "@/modules/topics/schema";
 
 /**
  * Fills the missing skills of one topic with the engine.
@@ -40,7 +47,36 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
       timeoutMs: resolveTimeoutMs() * 3,
     });
 
-    const payload = parseTopicMaterials(response.text);
+    let payload = parseTopicMaterials(response.text);
+
+    // Consistency gate: the reading, the writing task and the story must actually
+    // use the structure the grammar teaches. A lesson that explains the third
+    // conditional and then never uses it teaches nothing, so the reply is retried
+    // once with that exact defect named.
+    const grammar = payload.materials.find((material) => material.skill === "GRAMMAR");
+    if (grammar) {
+      const markers = structureMarkers(grammar);
+      const offenders = payload.materials.filter(
+        (material) => material.skill !== "GRAMMAR" && !usesStructure(material.body, markers, 3),
+      );
+      if (offenders.length > 0 && markers.length > 0) {
+        const repair = `${buildTopicPrompt({
+          topic: topic.title,
+          level: topic.level,
+          skills: wanted,
+          focus: `${topic.focus ?? "healthtech"} · ${design.discipline} · ${design.educationLevel}`,
+        })} The previous reply taught ${JSON.stringify(markers.slice(0, 3))} in the GRAMMAR material but ${offenders
+          .map((material) => material.skill)
+          .join(", ")} never used it. Every material must use that structure at least three times, naturally.`;
+        const second = await runGentleShell({
+          prompt: repair,
+          system: TOPIC_SYSTEM_PROMPT,
+          model,
+          timeoutMs: resolveTimeoutMs() * 3,
+        });
+        payload = parseTopicMaterials(second.text);
+      }
+    }
     const row = await repository.ensureTopic({
       slug: topic.slug,
       title: topic.title,

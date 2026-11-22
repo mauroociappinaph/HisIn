@@ -24,6 +24,8 @@ export interface TopicDTO {
   missing: TopicSkill[];
   /** Opening line shown before the lesson starts. */
   quote: string | null;
+  /** English prologue of the submodule. */
+  prologue: string | null;
   /** Per-story glossary: translations and the multi-word units of the story. */
   glosses: GlossEntry[];
 }
@@ -39,6 +41,7 @@ function toDTO(row: {
   level: string;
   focus: string | null;
   quote: string | null;
+  prologue: string | null;
   materials: { skill: string; title: string; body: string; keyPoints: string[] }[];
   glosses: { term: string; translation: string; kind: string; note: string | null }[];
 }): TopicDTO {
@@ -63,6 +66,7 @@ function toDTO(row: {
       keyPoints: material.keyPoints,
     })),
     quote: row.quote,
+    prologue: row.prologue,
     missing: TOPIC_SKILLS.filter((skill) => !materials.some((m) => m.skill === skill)),
     glosses: row.glosses.map((gloss) => ({
       term: gloss.term,
@@ -128,6 +132,12 @@ export class TopicRepository {
         unitOrder: input.unitOrder ?? 0,
       },
     });
+  }
+
+  /** Prologues of every module, keyed by unit order. */
+  async unitPrologues(): Promise<Map<number, string>> {
+    const rows = await prisma.unitMeta.findMany({ select: { unitOrder: true, prologue: true } });
+    return new Map(rows.map((row) => [row.unitOrder, row.prologue]));
   }
 
   /** Topic ids the learner already marked as done. */

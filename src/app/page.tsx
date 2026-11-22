@@ -22,7 +22,13 @@ async function HomeContent() {
     return <Onboarding defaultLevel={profile.level} />;
   }
 
-  const syllabus = groupByUnit(await new TopicRepository().list());
+  const topicRepository = new TopicRepository();
+  const [allTopics, doneIds] = await Promise.all([
+    topicRepository.list(),
+    topicRepository.completions(user.id),
+  ]);
+  const syllabus = groupByUnit(allTopics);
+  const doneSet = new Set(doneIds);
 
   const [due, stories, completed, lessons, moduleRows] = await Promise.all([
     getDueReviews(user.id, 50),
@@ -139,7 +145,8 @@ async function HomeContent() {
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h3 className="text-xs uppercase tracking-widest text-slate-500">{unit.unit}</h3>
               <span className="flex items-center gap-2 text-[11px] text-slate-500">
-                {unit.topics.length} {unit.topics.length === 1 ? "submódulo" : "submódulos"}
+                {unit.topics.filter((entry) => doneSet.has(entry.id)).length}/{unit.topics.length}{" "}
+                {unit.topics.length === 1 ? "submódulo" : "submódulos"}
                 <Link
                   href={`/topics/${unit.topics[0]?.slug ?? ""}`}
                   className="font-semibold text-indigo-600 hover:underline"
@@ -156,8 +163,15 @@ async function HomeContent() {
                   className="rounded-lg bg-white border border-slate-200 p-4 space-y-2 hover:border-indigo-300 transition"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
-                      Submódulo {topicLabel(topic)}
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+                        Submódulo {topicLabel(topic)}
+                      </span>
+                      {doneSet.has(topic.id) ? (
+                        <span className="text-[11px] font-semibold text-emerald-700" title="Lección hecha">
+                          ✓
+                        </span>
+                      ) : null}
                     </span>
                     <span className="text-[11px] text-slate-500">{topic.level}</span>
                   </div>

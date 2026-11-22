@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { TOPIC_SKILLS, TOPIC_SYSTEM_PROMPT, buildTopicPrompt, parseTopicMaterials } from "./schema";
+import {
+  TOPIC_SKILLS,
+  TOPIC_SYSTEM_PROMPT,
+  buildTopicPrompt,
+  parseTopicMaterials,
+  structureMarkers,
+  usesStructure,
+} from "./schema";
 
 const material = (skill: string) => ({
   skill,
@@ -74,4 +81,20 @@ test("a long syllabus title echoed by the model does not reject the batch", () =
 
   assert.equal(parsed.topic, longTitle);
   assert.equal(parsed.materials.length, 2);
+});
+
+test("structureMarkers keeps the quoted structures of a grammar material", () => {
+  const markers = structureMarkers({
+    body: "Use 'would have + past participle' and 'if we had implemented circuit breakers' in a post-mortem.",
+    keyPoints: ["Say 'we should have deployed earlier'."],
+  });
+  assert.ok(markers.includes("would have + past participle"));
+  assert.ok(markers.includes("if we had implemented circuit breakers"));
+  assert.equal(markers.some((marker) => marker === "we should have deployed earlier"), true);
+});
+
+test("usesStructure detects a material that never uses what the grammar taught", () => {
+  const markers = ["would have + past participle", "if we had implemented circuit breakers"];
+  assert.equal(usesStructure("The outage started at 14:02 and the team paged the on-call engineer.", markers), false);
+  assert.equal(usesStructure("We would have + past participle avoided it if we had implemented circuit breakers.", markers), true);
 });

@@ -72,10 +72,10 @@ export function LessonDone({
         >
           {done ? "✓" : ""}
         </span>
-        {done ? "Lección hecha" : "Marcar como hecha"}
+        {done ? "Lesson done" : "Mark as done"}
       </button>
       <span className="text-[11px] text-slate-500">
-        {counts.completed} de {counts.total} del módulo hechas
+        {counts.completed} of {counts.total} in this module done
       </span>
       <span className="flex items-center gap-1" aria-hidden="true">
         {Array.from({ length: Math.min(counts.total, 12) }, (_, index) => (

@@ -160,6 +160,32 @@ export function pairCorrection(trap: string | null): Correction | null {
   return { wrong: first, right: second };
 }
 
+/**
+ * The lead paragraph, broken into the points it actually makes.
+ *
+ * One 90-word block is not didactic: nobody learns from a wall. Each sentence
+ * becomes a line, and the lines that carry an example are marked as such so the
+ * page can put them where examples belong instead of burying them mid-text.
+ */
+export interface IdeaPoint {
+  text: string;
+  kind: "point" | "example";
+}
+
+export function splitIdea(idea: string, max = 6): IdeaPoint[] {
+  // A quoted example ends with ?' or ." before the space, so the split has to
+  // allow a closing quote between the punctuation and the whitespace.
+  const sentences = idea
+    .split(/(?<=[.!?])\s+|(?<=[.!?]['"”’])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 0);
+
+  return sentences.slice(0, max).map((sentence) => ({
+    text: sentence,
+    kind: /\b(e\.g\.|for example|for instance|such as|example:)/i.test(sentence) ? "example" : "point",
+  }));
+}
+
 export type TimelineSpan = "past-point" | "past-to-now" | "now-forward" | "hypothetical";
 
 /**

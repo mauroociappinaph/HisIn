@@ -70,26 +70,26 @@ export function Drill({ slug }: { slug: string }) {
           onClick={() => void start()}
           className="px-4 py-2 rounded-sm bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition active:scale-95"
         >
-          Empezar el ejercicio
+          Start the drill
         </button>
       </div>
     );
   }
 
   if (status === "loading") {
-    return <p className="text-sm text-slate-500">Preparando cuatro preguntas…</p>;
+    return <p className="text-sm text-slate-500">Building four items…</p>;
   }
 
   if (status === "error") {
     return (
       <div className="space-y-2">
-        <p className="text-sm text-amber-700">No pudimos armar el ejercicio ahora.</p>
+        <p className="text-sm text-amber-700">The drill could not be built right now.</p>
         <button
           type="button"
           onClick={() => void start()}
           className="px-3 py-1.5 rounded-sm bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200"
         >
-          Reintentar
+          Try again
         </button>
       </div>
     );
@@ -101,12 +101,12 @@ export function Drill({ slug }: { slug: string }) {
     return (
       <div className="space-y-3">
         <p className="text-lg font-semibold text-slate-900">
-          {score.right} de {total} {perfect ? "· perfecto" : ""}
+          {score.right} de {total} {perfect ? "· perfect" : ""}
         </p>
         <p className="text-sm text-slate-600">
           {perfect
-            ? "La regla está sólida. Pasá al reading y volvé mañana, que ahí se fija."
-            : "Mirá otra vez la regla y la trampa del hispanohablante antes de seguir: lo que falla acá vuelve en el repaso."}
+            ? "The rule is solid. Move to the reading and come back tomorrow: that is where it sticks."
+            : "Read the rule and the trap again before moving on: what fails here comes back in the review queue."}
         </p>
         <div className="flex flex-wrap gap-2 text-xs font-semibold">
           <button
@@ -114,13 +114,13 @@ export function Drill({ slug }: { slug: string }) {
             onClick={() => void start()}
             className="px-3 py-1.5 rounded-sm bg-indigo-600 text-white hover:bg-indigo-700 transition"
           >
-            Otra tanda
+            Another round
           </button>
           <Link
             href="/review/vocab"
             className="px-3 py-1.5 rounded-sm bg-slate-100 text-slate-700 hover:bg-slate-200 transition"
           >
-            Ir al repaso
+            Go to review
           </Link>
         </div>
       </div>
@@ -131,7 +131,7 @@ export function Drill({ slug }: { slug: string }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
         <span>
-          Ítem {index + 1} de {items?.length ?? 0}
+          Item {index + 1} de {items?.length ?? 0}
         </span>
         <span className="flex gap-1" aria-hidden="true">
           {items?.map((entry, dot) => (
@@ -185,7 +185,7 @@ export function Drill({ slug }: { slug: string }) {
             }}
             className="px-3 py-1.5 rounded-sm bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition"
           >
-            {index + 1 >= (items?.length ?? 0) ? "Ver resultado" : "Siguiente"}
+            {index + 1 >= (items?.length ?? 0) ? "See result" : "Next"}
           </button>
         </div>
       ) : null}

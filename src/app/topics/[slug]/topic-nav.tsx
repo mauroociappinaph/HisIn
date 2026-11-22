@@ -8,7 +8,7 @@ interface TopicNavItem {
 }
 
 /**
- * "En esta página" for a lesson that is long enough to get lost in.
+ * "On this page" for a lesson that is long enough to get lost in.
  *
  * Research on long-form lesson pages agrees on three things: a sticky table of
  * contents that marks where you are, a position in the sequence, and a Next
@@ -49,7 +49,7 @@ export function TopicNav({ items }: { items: TopicNavItem[] }) {
       {/* Mobile: a strip of chips you can thumb through. A stacked card list at
           the top of a phone screen pushes the lesson below the fold, which is
           exactly the "horrible" the owner saw. */}
-      <nav aria-label="En esta página" className="lg:hidden -mx-1 overflow-x-auto">
+      <nav aria-label="On this page" className="lg:hidden -mx-1 overflow-x-auto">
         <ol className="flex gap-1.5 px-1">
           {items.map((item, index) => (
             <li key={item.id}>
@@ -71,10 +71,10 @@ export function TopicNav({ items }: { items: TopicNavItem[] }) {
       </nav>
 
       <nav
-        aria-label="En esta página"
+        aria-label="On this page"
         className="hidden lg:block lg:sticky lg:top-20 self-start rounded-lg bg-white border border-slate-200 p-3"
       >
-      <p className="px-2 pb-2 text-[11px] uppercase tracking-widest text-slate-500">En esta página</p>
+      <p className="px-2 pb-2 text-[11px] uppercase tracking-widest text-slate-500">On this page</p>
       <ol className="space-y-0.5">
         {items.map((item, index) => {
           const current = active === item.id;

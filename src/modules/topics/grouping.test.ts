@@ -14,6 +14,7 @@ const topic = (over: Partial<TopicDTO>): TopicDTO => ({
   level: "A2",
   focus: null,
   quote: null,
+  prologue: null,
   materials: [],
   glosses: [],
   missing: [],
