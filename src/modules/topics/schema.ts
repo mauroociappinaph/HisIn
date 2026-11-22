@@ -125,6 +125,55 @@ export function usesStructure(body: string, markers: readonly string[], min = 1)
   return markers.filter((marker) => text.includes(marker)).length >= min;
 }
 
+const TITLE_STOP = new Set([
+  "the", "and", "for", "with", "from", "into", "of", "in", "on", "to", "a", "an",
+  "basic", "advanced", "english", "lesson", "unit", "submodule",
+]);
+
+/**
+ * The words that identify a topic, taken from its own title.
+ *
+ * Used to catch drift: a lesson called "Curriculum design and programme
+ * evaluation" whose grammar material teaches "should have + past participle" is not
+ * a lesson, it is a different lesson with the wrong title.
+ */
+export function topicKeywords(title: string): string[] {
+  return [...new Set(
+    title
+      .toLowerCase()
+      .replace(/[^a-z\s-]/g, " ")
+      .split(/[\s-]+/)
+      .map((word) => word.trim())
+      .filter((word) => word.length > 3 && !TITLE_STOP.has(word)),
+  )];
+}
+
+/**
+ * Titles that name a language structure rather than a domain or a skill.
+ *
+ * Their materials are expected to be about the structure, so "does it repeat the
+ * title words" is the wrong question: a lesson on the present perfect uses it,
+ * it does not say its name six times.
+ */
+const GRAMMAR_TITLE = /\b(tense|tenses|conditional|modal|modals|passive|perfect|simple|continuous|present|past|future|clause|clauses|pronoun|pronouns|article|articles|inversion|ellipsis|subjunctive|gerund|infinitive|causative|reported|speech|preposition|prepositions|imperative|imperatives|question|questions|negatives?|relatives?|comparatives?|superlatives?|adverbs?|phrasal|verb|verbs|connectors?|quantifiers?|determiners?|punctuation|homophones|word formation|spelling)\b/i;
+
+export function isGrammarTopic(title: string): boolean {
+  return GRAMMAR_TITLE.test(title);
+}
+
+/**
+ * True when a material actually talks about its own topic.
+ *
+ * One keyword is enough: the point is to catch a material written for another
+ * lesson, not to demand that every paragraph repeat the title.
+ */
+export function mentionsTopic(body: string, title: string): boolean {
+  const keywords = topicKeywords(title);
+  if (keywords.length === 0) return true;
+  const text = body.toLowerCase();
+  return keywords.some((keyword) => text.includes(keyword.slice(0, Math.max(4, keyword.length - 2))));
+}
+
 export function parseTopicMaterials(raw: string): TopicMaterials {
   const cleaned = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
   const start = cleaned.indexOf("{");

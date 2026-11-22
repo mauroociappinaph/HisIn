@@ -395,6 +395,10 @@ const TOPICS: SeedTopic[] = [
   { slug: "pedagogical-grammar-discourse-analysis", title: "Pedagogical grammar and discourse analysis", ord: 139, code: "44.1", unit: "44 · Teacher development and language analysis", unitOrder: 44, level: "C2" },
   { slug: "advanced-phonology-suprasegmentals", title: "Advanced phonology and suprasegmental features", ord: 140, code: "44.2", unit: "44 · Teacher development and language analysis", unitOrder: 44, level: "C2" },
   { slug: "sla-diagnosis-error-treatment", title: "Second language acquisition, diagnosis and error treatment", ord: 141, code: "44.3", unit: "44 · Teacher development and language analysis", unitOrder: 44, level: "C2" },
+  // ── Módulo 44 (continuación): didáctica, currículum y desarrollo profesional ──
+  { slug: "methodological-approaches-reflective-practice", title: "Methodological approaches and reflective practice", ord: 142, code: "44.4", unit: "44 · Teacher development and language analysis", unitOrder: 44, level: "C2" },
+  { slug: "curriculum-design-program-evaluation", title: "Curriculum design and programme evaluation", ord: 143, code: "44.5", unit: "44 · Teacher development and language analysis", unitOrder: 44, level: "C2" },
+  { slug: "professional-development-academic-writing", title: "Professional development and academic writing", ord: 144, code: "44.6", unit: "44 · Teacher development and language analysis", unitOrder: 44, level: "C2" },
 ];
 
 async function main() {

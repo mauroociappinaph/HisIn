@@ -5,7 +5,9 @@ import {
   TOPIC_SYSTEM_PROMPT,
   buildTopicPrompt,
   parseTopicMaterials,
+  mentionsTopic,
   structureMarkers,
+  topicKeywords,
   usesStructure,
 } from "./schema";
 
@@ -97,4 +99,23 @@ test("usesStructure detects a material that never uses what the grammar taught",
   const markers = ["would have + past participle", "if we had implemented circuit breakers"];
   assert.equal(usesStructure("The outage started at 14:02 and the team paged the on-call engineer.", markers), false);
   assert.equal(usesStructure("We would have + past participle avoided it if we had implemented circuit breakers.", markers), true);
+});
+
+test("topicKeywords drops the words that do not identify a topic", () => {
+  assert.deepEqual(topicKeywords("Curriculum design and programme evaluation"), [
+    "curriculum",
+    "design",
+    "programme",
+    "evaluation",
+  ]);
+});
+
+test("mentionsTopic catches a material written for another lesson", () => {
+  const drifted =
+    "The structure 'should have + past participle' expresses regret about a past action in a healthtech startup.";
+  assert.equal(mentionsTopic(drifted, "Curriculum design and programme evaluation"), false);
+  assert.equal(
+    mentionsTopic("A needs analysis decides what the curriculum must cover before you write a syllabus.", "Curriculum design and programme evaluation"),
+    true,
+  );
 });
