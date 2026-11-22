@@ -23,6 +23,8 @@ const FUNDAMENTOS = "1 · Fundamentos: to be, pronombres, artículos y lugar";
 const PRESENT_SIMPLE = "6 · Present simple";
 const CAN = "7 · Can: habilidad y permiso";
 const CONTINUOUS = "8 · Present continuous e imperativos";
+const PAST_BE = "9 · Pasado de to be (was / were)";
+const VOCAB = "10 · Vocabulario esencial (A1-A2)";
 
 const TOPICS: SeedTopic[] = [
   {
@@ -168,6 +170,96 @@ const TOPICS: SeedTopic[] = [
     unit: CONTINUOUS,
     unitOrder: 8,
     level: "A2",
+  },
+  {
+    slug: "past-be-affirmative",
+    title: "Pasado de to be afirmativo: was (I, he, she, it) y were (you, we, they) para estados y lugares en el pasado",
+    ord: 17,
+    code: "9.1",
+    unit: PAST_BE,
+    unitOrder: 9,
+    level: "A2",
+  },
+  {
+    slug: "past-be-negative-questions",
+    title: "Pasado de to be negativo e interrogativo: wasn't / weren't, inversión, respuestas cortas y preguntas abiertas",
+    ord: 18,
+    code: "9.2",
+    unit: PAST_BE,
+    unitOrder: 9,
+    level: "A2",
+  },
+  {
+    slug: "past-be-context-contrast",
+    title: "Práctica en contexto y contraste con el presente: narración breve y am/is/are → was/were",
+    ord: 19,
+    code: "9.3",
+    unit: PAST_BE,
+    unitOrder: 9,
+    level: "A2",
+  },
+  {
+    slug: "numbers-days-months",
+    title: "Números cardinales (0-100 y base de mil), días de la semana, meses del año y expresiones de tiempo",
+    ord: 20,
+    code: "10.1",
+    unit: VOCAB,
+    unitOrder: 10,
+    level: "A1",
+  },
+  {
+    slug: "ordinals-dates-time",
+    title: "Números ordinales (1st-31st), fechas en formato británico y estadounidense, y la hora (o'clock, half past, quarter to)",
+    ord: 21,
+    code: "10.2",
+    unit: VOCAB,
+    unitOrder: 10,
+    level: "A1",
+  },
+  {
+    slug: "countries-nationalities-languages",
+    title: "Países, nacionalidades (-ish, -an, -ian, -ese) e idiomas: diferencia entre nacionalidad y lengua",
+    ord: 22,
+    code: "10.3",
+    unit: VOCAB,
+    unitOrder: 10,
+    level: "A1",
+  },
+  {
+    slug: "family-appearance-body",
+    title: "Familia nuclear y extendida, partes del cuerpo y del rostro, y adjetivos de apariencia física",
+    ord: 23,
+    code: "10.4",
+    unit: VOCAB,
+    unitOrder: 10,
+    level: "A1",
+  },
+  {
+    slug: "objects-colors-clothes-home",
+    title: "Objetos personales y de oficina, colores, prendas de vestir y habitaciones con mobiliario esencial",
+    ord: 24,
+    code: "10.5",
+    unit: VOCAB,
+    unitOrder: 10,
+    level: "A1",
+  },
+  {
+    slug: "food-drinks-daily-routines",
+    title: "Alimentos, frutas, verduras y bebidas, comidas del día y verbos de rutina (wake up, have lunch, go to bed)",
+    ord: 25,
+    code: "10.6",
+    unit: VOCAB,
+    unitOrder: 10,
+    level: "A1",
+  },
+  {
+    slug: "jobs-places-city",
+    title: "Profesiones comunes con a/an y lugares de la ciudad (hospital, bank, supermarket, station, park)",
+    ord: 26,
+    code: "10.7",
+    unit: VOCAB,
+    unitOrder: 10,
+    level: "A1",
   },
 ];
 

@@ -70,3 +70,13 @@ L6 (decisión de IA): cada módulo agrupa una estructura con sus reglas, usos e 
 
 L7 (bug): 7.3 falló dos veces porque su material de LISTENING era un drill de pronunciación (`can` /kən/ vs `can't` /kænt/) sin palabras de producto, y el anclaje de dominio lo rechazaba. Se amplió el anclaje al **lugar de trabajo** (office, meeting, team, client, demo, interview, sprint, hospital, clinic, hire, onboarding, launch): un drill ambientado en una daily es del dominio, un texto sobre vacaciones no.
 L8 (bug): 8.4 falló por timeout del motor (75 s) en la primera pasada y entró en el reintento; el timeout por intento se mantiene acotado a propósito.
+
+## Módulos 9 y 10 (26 temas / 104 materiales)
+
+| Módulo | Submódulos |
+| --- | --- |
+| **9 · Pasado de to be (was / were)** | 9.1 afirmativo por sujeto · 9.2 negativo e interrogativo (wasn't/weren't, inversión, respuestas cortas) · 9.3 práctica en contexto y contraste con el presente |
+| **10 · Vocabulario esencial (A1-A2)** | 10.1 cardinales, días, meses · 10.2 ordinales, fechas, la hora · 10.3 países, nacionalidades, idiomas · 10.4 familia, cuerpo, apariencia · 10.5 objetos, colores, ropa, hogar · 10.6 comidas y rutinas · 10.7 profesiones y lugares de la ciudad |
+
+L9 (decisión de IA): el bloque de vocabulario es temático, no gramatical, así que va como **un módulo con siete submódulos A1** (no siete módulos de un solo tema); las listas de contenidos clave del owner se pusieron en el título de cada submódulo para que el motor las cubra en los cuatro skills.
+L10 (verificación): generación en lote de 10 submódulos → 40/40 materiales, 0 fallos, 78 s totales.
