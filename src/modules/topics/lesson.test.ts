@@ -122,3 +122,12 @@ test("extractExamples drops the Spanish sentence quoted in a translation warning
   );
   assert.deepEqual(examples, ["I have worked here for three years"]);
 });
+
+test("extractFormula reads a template the material wrote unquoted", () => {
+  const formula = extractFormula("The Present Perfect (have/has + past participle) marks recent achievements.", []);
+  assert.deepEqual(formula, ["have/has", "past participle"]);
+});
+
+test("extractFormula does not read arithmetic or a date range as a structure", () => {
+  assert.deepEqual(extractFormula("We grew 20 + 30 in 2020 + 2021 and it cost 5 + 6.", []), []);
+});

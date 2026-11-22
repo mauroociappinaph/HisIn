@@ -372,6 +372,12 @@ const TOPICS: SeedTopic[] = [
   { slug: "agile-ceremonies-team-talk", title: "Agile methods and team ceremonies", ord: 123, code: "44.2", unit: "44 · Tech and software English", unitOrder: 44, level: "B2" },
   { slug: "technical-documentation-writing", title: "Technical documentation and written communication", ord: 124, code: "44.3", unit: "44 · Tech and software English", unitOrder: 44, level: "B2" },
   { slug: "technical-talks-incident-response", title: "Technical talks, architecture and incident response", ord: 125, code: "44.4", unit: "44 · Tech and software English", unitOrder: 44, level: "B2" },
+  // ── Módulo 45: exámenes internacionales ──
+  { slug: "exam-architecture-cefr-mapping", title: "Exam architecture and CEFR mapping", ord: 125, code: "45.1", unit: "45 · Exam and certification English", unitOrder: 45, level: "C1" },
+  { slug: "writing-rubrics-task-and-coherence", title: "Writing rubrics: task, content and coherence", ord: 126, code: "45.2", unit: "45 · Exam and certification English", unitOrder: 45, level: "C1" },
+  { slug: "writing-rubrics-lexis-and-grammar", title: "Writing rubrics: lexis and grammatical range", ord: 127, code: "45.3", unit: "45 · Exam and certification English", unitOrder: 45, level: "C1" },
+  { slug: "speaking-rubrics-fluency-and-pronunciation", title: "Speaking rubrics: fluency, discourse and pronunciation", ord: 128, code: "45.4", unit: "45 · Exam and certification English", unitOrder: 45, level: "C1" },
+  { slug: "speaking-rubrics-grammar-and-vocabulary", title: "Speaking rubrics: grammar and vocabulary under pressure", ord: 129, code: "45.5", unit: "45 · Exam and certification English", unitOrder: 45, level: "C1" },
 ];
 
 async function main() {

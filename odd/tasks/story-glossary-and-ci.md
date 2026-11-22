@@ -45,3 +45,9 @@ L9 (ejecución):
 - Bloque **Línea del tiempo** (SVG) que ubica el tiempo verbal, la **fórmula** cuando el material la cita, la tabla **✗ / ✓** sólo cuando la trampa declara el contraste, y ejemplos filtrados (sin fragmentos de dos palabras, sin frases en español).
 - El índice es una tira horizontal de chips en mobile y lista pegajosa en desktop.
 - Módulos 41-44: Medical, Legal, Aviation y Tech English (16 submódulos) con su glosario; el ancla de dominio se amplió a los dominios profesionales.
+
+## Cards visuales y módulo 45 (L10-L11)
+
+L10 (usuario, textual): «MEJOA TODAS LAS CARD ADENTRO DE TOPIC USA GRAFICOS MAS DESCRIPTIVOS , ILUSTRACIONES SI HACE FALTA SEPARA BIEN LOS TERMINOS SE MAS DIDACTICO EN EXPLICACIONES … AGREGA UN PAR DE CARD MAS UNA PARA LAS FRASES VERBALES SEGUN EL TOPICO QUE ESTA Y OTRA PARA DIVIDIR MEJOR EL PUNTO 1 LA REGLA».
+L11 (ejecución): la lección pasó de 5 a 8 pasos: **La idea** (párrafo grande + línea del tiempo ilustrada con zonas y guías) · **La estructura** (fórmula en bloques + ejemplos en filas con borde) · **El error** (tarjetas ✗ / ✓ o callout) · **Frases hechas del tema** (tabla término · español · tipo, desde el glosario, sólo unidades multipalabra) · **Practicá** · **Leé** (barra de largo + tabla de términos del texto) · **Escribí** (barra de objetivo de palabras) · **La historia**. Cada card tiene icono SVG propio, número, un hint de una línea y su esfuerzo. La fórmula ahora también se lee sin comillas (`have/has + past participle`).
+L12: módulo **45 · Exam and certification English** (5 submódulos: arquitectura y equivalencias MCER, rúbricas de writing por tarea/coherencia y por léxico/gramática, rúbricas de speaking por fluidez/pronunciación y por gramática/léxico).

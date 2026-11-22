@@ -51,7 +51,7 @@ export const topicMaterialsSchema = z
       // radio exchange about wind shear is on-domain for an aviation module, and a
       // text about holidays is on-domain for nobody.
       const anchor =
-        /health|clinical|patient|investor|startup|founder|saas|silicon valley|product|market|compliance|runway|pitch|office|meeting|team|client|demo|interview|sprint|hospital|clinic|hire|onboarding|launch|aviation|flight|aircraft|pilot|crew|atc|runway|tower|altitude|legal|law|contract|clause|court|liability|litigation|patent|trademark|jurisdiction|counsel|agreement|breach|medical|diagnosis|treatment|symptom|dose|prescription|trial|codebase|deployment|backend|frontend|database|api|server|incident|debug|repository/i;
+        /health|clinical|patient|investor|startup|founder|saas|silicon valley|product|market|compliance|runway|pitch|office|meeting|team|client|demo|interview|sprint|hospital|clinic|hire|onboarding|launch|aviation|flight|aircraft|pilot|crew|atc|runway|tower|altitude|legal|law|contract|clause|court|liability|litigation|patent|trademark|jurisdiction|counsel|agreement|breach|medical|diagnosis|treatment|symptom|dose|prescription|trial|codebase|deployment|backend|frontend|database|api|server|incident|debug|repository|exam|ielts|toefl|cambridge|pte|rubric|band|score|candidate|assessment/i;
       if (!anchor.test(material.body)) {
         ctx.addIssue({
           code: "custom",

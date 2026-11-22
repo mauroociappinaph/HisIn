@@ -112,6 +112,26 @@ export function extractFormula(body: string, keyPoints: readonly string[] = []):
       if (segments.length >= 2 && segments.length <= 5) return segments;
     }
   }
+
+  // The engine also writes the template without quotes: "have/has + past
+  // participle". The digits and the grammar vocabulary keep this from turning
+  // ordinary arithmetic or a date range into a formula.
+  const GRAMMAR_WORD = /\b(have|has|had|be|been|verb|participle|ing|to|will|would|modal|subject|object|past|present|base|noun|adjective|pronoun)\b/i;
+  for (const source of sources) {
+    // Each side is a short run of plain words (letters, slash, hyphen), started at
+    // a boundary: parentheses and punctuation end it, so "past participle) marks
+    // recent" never becomes the right side.
+    const match = source.match(
+      /(?:^|[(,;:.]|\s)([a-z][a-z/\-]*(?:\s+[a-z][a-z/\-]*){0,3})\s*\+\s*([a-z][a-z/\-]*(?:\s+[a-z][a-z/\-]*){0,3})/i,
+    );
+    if (!match) continue;
+    const left = match[1].trim().replace(/[\s]+/g, " ");
+    const right = match[2].trim().replace(/[\s]+/g, " ").replace(/\s+(is|are|for|with|the)$/i, "");
+    if (!GRAMMAR_WORD.test(left) && !GRAMMAR_WORD.test(right)) continue;
+    if (left.split(/\s+/).length > 4 || right.split(/\s+/).length > 4) continue;
+    return [left, right];
+  }
+
   return [];
 }
 
