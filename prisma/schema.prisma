@@ -102,6 +102,8 @@ model Topic {
   slug      String          @unique
   title     String
   ord       Int             @default(0)
+  /// Display code the owner uses ("6.1", "6.2") when a topic has parts.
+  code      String?
   level     CefrLevel
   focus     String?
   createdAt DateTime        @default(now())

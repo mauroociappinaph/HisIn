@@ -47,6 +47,7 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
       ord: topic.order,
       level: topic.level,
       focus: topic.focus ?? undefined,
+      code: topic.code ?? undefined,
     });
     const saved = await repository.saveMaterials(row.id, payload);
     const fresh = await repository.findBySlug(topic.slug);

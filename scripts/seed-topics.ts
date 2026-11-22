@@ -38,6 +38,20 @@ const TOPICS = [
     ord: 5,
     level: "A2" as const,
   },
+  {
+    slug: "present-simple-affirmative",
+    title: "Present simple: afirmativo y usos (rutinas, verdades generales, -s / -es / -ies)",
+    ord: 6,
+    code: "6.1",
+    level: "A2" as const,
+  },
+  {
+    slug: "present-simple-negative-questions",
+    title: "Present simple: negativo e interrogativo (don't / doesn't, Do / Does, preguntas abiertas)",
+    ord: 7,
+    code: "6.2",
+    level: "A2" as const,
+  },
 ];
 
 async function main() {
@@ -49,7 +63,7 @@ async function main() {
       ...topic,
       focus: "healthtech, emprendimiento y Silicon Valley",
     });
-    console.log(`ok ${topic.ord} · ${topic.slug}`);
+    console.log(`ok ${topic.code ?? topic.ord} · ${topic.slug}`);
   }
 }
 

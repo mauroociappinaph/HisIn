@@ -26,13 +26,13 @@ async function TopicBody({ slug }: { slug: string }) {
           Módulos
         </Link>
         <span aria-hidden="true">/</span>
-        <span className="text-slate-700">Tema {topic.order}</span>
+        <span className="text-slate-700">Tema {topic.code ?? topic.order}</span>
       </nav>
 
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700">
-            Tema {topic.order}
+            Tema {topic.code ?? topic.order}
           </span>
           <LevelBadge level={topic.level} />
           {topic.focus ? <span className="text-xs text-slate-500">{topic.focus}</span> : null}

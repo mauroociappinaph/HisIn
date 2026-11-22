@@ -13,6 +13,7 @@ export interface TopicDTO {
   slug: string;
   title: string;
   order: number;
+  code: string | null;
   level: CefrLevel;
   focus: string | null;
   materials: TopicMaterialDTO[];
@@ -23,6 +24,7 @@ function toDTO(row: {
   slug: string;
   title: string;
   ord: number;
+  code: string | null;
   level: string;
   focus: string | null;
   materials: { skill: string; title: string; body: string; keyPoints: string[] }[];
@@ -35,6 +37,7 @@ function toDTO(row: {
     slug: row.slug,
     title: row.title,
     order: row.ord,
+    code: row.code,
     level: row.level as CefrLevel,
     focus: row.focus,
     materials: materials.map((material) => ({
@@ -67,16 +70,30 @@ export class TopicRepository {
     return row ? toDTO(row) : null;
   }
 
-  async ensureTopic(input: { slug: string; title: string; ord: number; level: CefrLevel; focus?: string }) {
+  async ensureTopic(input: {
+    slug: string;
+    title: string;
+    ord: number;
+    level: CefrLevel;
+    focus?: string;
+    code?: string;
+  }) {
     return prisma.topic.upsert({
       where: { slug: input.slug },
-      update: { title: input.title, ord: input.ord, level: input.level, focus: input.focus ?? null },
+      update: {
+        title: input.title,
+        ord: input.ord,
+        level: input.level,
+        focus: input.focus ?? null,
+        code: input.code ?? null,
+      },
       create: {
         slug: input.slug,
         title: input.title,
         ord: input.ord,
         level: input.level,
         focus: input.focus ?? null,
+        code: input.code ?? null,
       },
     });
   }

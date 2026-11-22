@@ -40,3 +40,19 @@ L2 (ejecución): Tema 1 generado en vivo con `gemini-3.1-flash-lite`: 4/4 materi
 
 L3 (bug): el Tema 2 falló porque el modelo devolvía el título completo (94 caracteres) en el campo `topic` y el schema lo limitaba a 80. Era un límite sobre un campo informativo, no sobre el contenido: se subió a 200 y se agregó test de regresión.
 L4 (decisión): `scripts/seed-topics.ts` (expuesto como `pnpm seed:topics`) carga el temario de forma idempotente; los materiales se generan por tema con el botón de `/topics/[slug]`.
+
+## Temas 6.1 y 6.2 (present simple)
+
+| Código | Título | Materiales |
+| --- | --- | --- |
+| 6.1 | Present simple: afirmativo y usos (rutinas, verdades generales, -s / -es / -ies) | 4/4 |
+| 6.2 | Present simple: negativo e interrogativo (don't / doesn't, Do / Does, preguntas abiertas) | 4/4 |
+
+L5 (decisión): el owner numera por partes ("Tema 6.2"), así que `Topic.code String?` guarda el código de display (`6.1`, `6.2`) y la UI lo prefiere sobre `ord`. Migración aditiva.
+
+## Dónde se guarda todo esto
+
+- **Postgres local** — `DATABASE_URL` en `local.env` (raíz del repo), inyectado por `src/shared/lib/load-env.ts` vía `next.config.ts`.
+- `Topic` (una fila por tema: slug, título, orden, `code`, nivel CEFR, focus) y `TopicMaterial` (una fila por skill: GRAMMAR/READING/LISTENING/WRITING, título, body, keyPoints), con unique `(topicId, skill)`.
+- El resto del contenido: `Lesson`, `Question`, `Vocabulary`, `VocabularyStory`, `NewsArticle`; y `GenerationJob` guarda la auditoría de cada llamada al motor (prompt, modelo, estado, salida validada).
+- El **temario** (qué temas existen) vive en `scripts/seed-topics.ts` (`pnpm seed:topics`); los **materiales** los escribe el motor vía `POST /api/topics/[slug]/generate` y se persisten en `TopicMaterial`.
