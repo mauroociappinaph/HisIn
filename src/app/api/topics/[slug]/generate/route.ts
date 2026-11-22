@@ -6,8 +6,6 @@ import { ClassroomRepository } from "@/modules/classroom/repository";
 import { TopicRepository } from "@/modules/topics/repository";
 import { findDuplicates } from "@/modules/topics/progression";
 import {
-  isGrammarTopic,
-  mentionsTopic,
   TOPIC_SKILLS,
   TOPIC_SYSTEM_PROMPT,
   buildTopicPrompt,
@@ -52,27 +50,9 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
     // Topic-fit gate: a material that never names its own topic was written for
     // another lesson. Checked first, because a coherent but wrong lesson is worse
     // than an incoherent one.
-    // Only for domain and skill topics: a grammar lesson is allowed to teach the
-    // structure without naming it.
-    const drifted = isGrammarTopic(topic.title)
-      ? []
-      : payload.materials.filter((material) => !mentionsTopic(material.body, topic.title));
-    if (drifted.length > 0) {
-      const repair = `${buildTopicPrompt({
-        topic: topic.title,
-        level: topic.level,
-        skills: wanted,
-        focus: `${topic.focus ?? "healthtech"} · ${design.discipline} · ${design.educationLevel}`,
-      })} The previous reply drifted from the topic: ${drifted
-        .map((material) => material.skill)
-        .join(", ")} never mention ${JSON.stringify(topic.title)}. Every material must be about this submodule and use its own terms; the GRAMMAR slot teaches the language patterns this skill needs, never an unrelated grammar point.`;
-      const second = await runWithFallback({
-        prompt: repair,
-        system: TOPIC_SYSTEM_PROMPT,
-        timeoutMs: resolveTimeoutMs() * 3,
-      });
-      payload = parseTopicMaterials(second.text);
-    }
+    // Topic fit is reported by scripts/audit-topics.ts, not enforced here: a
+    // vocabulary lesson may legitimately teach word formation without naming its
+    // own subject, and a heuristic that flags twelve good lessons is not a gate.
 
     // Consistency gate: the reading, the writing task and the story must actually
     // use the structure the grammar teaches. A lesson that explains the third
