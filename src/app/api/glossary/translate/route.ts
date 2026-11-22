@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { runGentleShell } from "@/modules/ai/gentle-shell";
-import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
+import { runWithFallback } from "@/modules/ai/with-fallback";
+import { resolveTimeoutMs } from "@/modules/ai/models";
 
 /**
  * A short Spanish equivalent for one word or phrase the learner is reading.
@@ -24,11 +24,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "pasá una palabra o una frase" }, { status: 400 });
   }
 
-  const [model] = resolveModels();
-  if (!model) return NextResponse.json({ error: "no hay modelo configurado" }, { status: 500 });
-
   try {
-    const response = await runGentleShell({
+    const response = await runWithFallback({
       prompt: [
         `Term: ${JSON.stringify(parsed.data.term)}`,
         parsed.data.context ? `In this sentence: ${JSON.stringify(parsed.data.context.slice(0, 300))}` : "",
@@ -37,7 +34,6 @@ export async function POST(req: NextRequest) {
         .filter(Boolean)
         .join("\n"),
       system: SYSTEM_PROMPT,
-      model,
       timeoutMs: resolveTimeoutMs(),
     });
 

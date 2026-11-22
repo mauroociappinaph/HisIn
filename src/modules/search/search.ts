@@ -1,0 +1,184 @@
+/**
+ * Search across everything the course knows.
+ *
+ * Natural language in, ranked material out: the learner types the question the way
+ * they would say it in Spanish or English, and the index answers with the lesson,
+ * the word, the story or the news that covers it. No embedding model, no network
+ * call: normalisation, synonyms and BM25, which is deterministic and fast enough to
+ * run on every keystroke.
+ */
+
+const STOP_WORDS = new Set([
+  "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "of", "for", "with",
+  "is", "are", "was", "were", "be", "been", "it", "its", "this", "that", "these",
+  "those", "i", "you", "he", "she", "we", "they", "as", "by", "from", "so", "if",
+  "not", "no", "do", "does", "did", "how", "what", "when", "where", "who", "why",
+  "que", "como", "donde", "cuando", "cual", "los", "las", "el", "la", "un", "una",
+  "de", "del", "en", "por", "para", "con", "se", "su", "al", "y", "o", "es", "son",
+  "mi", "me", "te", "lo", "muy", "mas", "más", "sirve", "sirven", "dice", "decir",
+  "significa", "significado", "usar", "usa", "uso", "forma", "entre", "esta", "este",
+]);
+
+/**
+ * Domain synonyms, both directions.
+ *
+ * A learner searches with the words they have, not with the words the material uses:
+ * "disculpa" must find "apologise", "plata" must find "funding". This is the cheapest
+ * part of the system and the one that changes the results the most.
+ */
+const SYNONYMS: Record<string, string[]> = {
+  disculpa: ["apology", "apologise", "apologize", "sorry", "regret"],
+  disculpar: ["apology", "apologise", "regret"],
+  perdon: ["apology", "apologise", "sorry"],
+  plata: ["funding", "capital", "runway", "raise", "money", "budget"],
+  dinero: ["funding", "capital", "money", "budget"],
+  error: ["mistake", "blunder", "slip", "error"],
+  metida: ["blunder", "mistake"],
+  negativa: ["negative", "negatives", "deny", "refuse"],
+  pregunta: ["question", "questions", "ask"],
+  pasado: ["past", "perfect", "continuous"],
+  futuro: ["future", "will", "going"],
+  condicional: ["conditional", "if", "would"],
+  reunion: ["meeting", "stand-up", "retrospective", "board"],
+  clinica: ["clinic", "clinical", "patient", "hospital", "ward"],
+  paciente: ["patient", "clinical"],
+  inversor: ["investor", "funding", "pitch", "board", "raise"],
+  trabajo: ["work", "employment", "office", "team", "job"],
+  email: ["email", "corporate", "writing", "memo", "correspondence"],
+  correo: ["email", "corporate", "correspondence"],
+  entrevista: ["interview", "candidate", "hiring"],
+  regla: ["rule", "structure", "grammar"],
+  phrasal: ["phrasal", "particle", "verb"],
+  regaño: ["blunder", "criticism", "reprimand"],
+};
+
+export function normalise(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s'-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function tokenize(text: string): string[] {
+  return normalise(text)
+    .split(" ")
+    .filter((token) => token.length > 1 && !STOP_WORDS.has(token));
+}
+
+/** The query tokens plus their domain synonyms, deduplicated. */
+export function expand(tokens: readonly string[]): string[] {
+  const out = new Set<string>();
+  for (const token of tokens) {
+    out.add(token);
+    for (const synonym of SYNONYMS[token] ?? []) out.add(synonym);
+    // A gerund or a plural still has to find its base: "shipping" -> "ship".
+    if (token.length > 4 && token.endsWith("s")) {
+      const singular = token.slice(0, -1);
+      out.add(singular);
+      for (const synonym of SYNONYMS[singular] ?? []) out.add(synonym);
+    }
+    if (token.length > 5 && token.endsWith("ing")) {
+      let stem = token.slice(0, -3);
+      // "shipping" loses ing and keeps a doubled consonant: undo the doubling.
+      if (/([bdgklmnprt])\1$/.test(stem)) stem = stem.slice(0, -1);
+      out.add(stem);
+      for (const synonym of SYNONYMS[stem] ?? []) out.add(synonym);
+    }
+  }
+  return [...out];
+}
+
+export type DocumentKind = "topic" | "term" | "word" | "story" | "news" | "mistake";
+
+export interface SearchDocument {
+  id: string;
+  kind: DocumentKind;
+  title: string;
+  body: string;
+  /** Where the result sends the learner. */
+  href: string;
+  /** Module name, level or type, shown next to the result. */
+  meta?: string;
+  level?: string;
+}
+
+export interface SearchHit {
+  document: SearchDocument;
+  score: number;
+}
+
+/** How much a match in each field is worth: the title is the intent. */
+const FIELD_WEIGHT = { title: 3.2, body: 1 } as const;
+
+/**
+ * BM25 over the collection, with a title boost.
+ *
+ * BM25 rather than a plain token count because it damps very long documents and
+ * rarely used terms, which is exactly the difference between finding the lesson that
+ * explains a rule and finding the twelve that mention the word once.
+ */
+export function searchDocuments(
+  query: string,
+  documents: readonly SearchDocument[],
+  limit = 20,
+): SearchHit[] {
+  const terms = expand(tokenize(query));
+  if (terms.length === 0) return [];
+
+  const indexed = documents.map((document) => ({
+    document,
+    titleTokens: tokenize(document.title),
+    bodyTokens: tokenize(`${document.title} ${document.body}`),
+  }));
+
+  const averageLength =
+    indexed.reduce((total, entry) => total + entry.bodyTokens.length, 0) / Math.max(indexed.length, 1);
+  const documentFrequency = new Map<string, number>();
+  for (const entry of indexed) {
+    const unique = new Set(entry.bodyTokens);
+    for (const token of unique) documentFrequency.set(token, (documentFrequency.get(token) ?? 0) + 1);
+  }
+
+  const k1 = 1.4;
+  const b = 0.7;
+  const total = Math.max(indexed.length, 1);
+
+  const hits: SearchHit[] = [];
+  for (const entry of indexed) {
+    const length = entry.bodyTokens.length || 1;
+    const titleSet = new Set(entry.titleTokens);
+    let score = 0;
+
+    for (const term of terms) {
+      const frequency = entry.bodyTokens.filter((token) => token === term).length;
+      if (frequency === 0) continue;
+      const df = documentFrequency.get(term) ?? 0;
+      const idf = Math.log(1 + (total - df + 0.5) / (df + 0.5));
+      score += idf * ((frequency * (k1 + 1)) / (frequency + k1 * (1 - b + b * (length / averageLength))));
+      if (titleSet.has(term)) score *= FIELD_WEIGHT.title;
+    }
+
+    if (score > 0) hits.push({ document: entry.document, score });
+  }
+
+  return hits.sort((first, second) => second.score - first.score).slice(0, limit);
+}
+
+/** Results grouped by kind, in the order a learner wants to read them. */
+export function groupHits(hits: readonly SearchHit[]): { kind: DocumentKind; label: string; hits: SearchHit[] }[] {
+  const order: { kind: DocumentKind; label: string }[] = [
+    { kind: "topic", label: "Lessons" },
+    { kind: "term", label: "Terms in the stories" },
+    { kind: "word", label: "Your vocabulary" },
+    { kind: "mistake", label: "Your mistakes" },
+    { kind: "story", label: "Stories" },
+    { kind: "news", label: "News" },
+  ];
+
+  return order
+    .map((entry) => ({ ...entry, hits: hits.filter((hit) => hit.document.kind === entry.kind) }))
+    .filter((group) => group.hits.length > 0);
+}
