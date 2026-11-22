@@ -19,7 +19,7 @@ export interface LessonPart {
 }
 
 const TRAP_MARKERS =
-  /spanish speaker|hispanohablante|common mistake|typical error|frequent error|error común|confunden/i;
+  /spanish[-\s]?speaker|hispanohablante|common mistake|typical error|frequent error|error común|confunden/i;
 
 // Two characters minimum: at six, a short label like 'did' is skipped as an
 // opening quote and the scanner then swallows the real example as an orphan.
@@ -172,6 +172,15 @@ export function extractFormula(body: string, keyPoints: readonly string[] = []):
     if (!GRAMMAR_WORD.test(left) && !GRAMMAR_WORD.test(right)) continue;
     if (left.split(/\s+/).length > 4 || right.split(/\s+/).length > 4) continue;
     return [left, right];
+  }
+
+  // An auxiliary lesson writes its structure in prose ("the main verb stays in the
+  // base form"), so the two halves are taken from the words it uses when it names
+  // an auxiliary and a base form.
+  for (const source of sources) {
+    if (/auxiliary/i.test(source) && /base form|base verb/i.test(source)) {
+      return ["do / does", "base verb"];
+    }
   }
 
   return [];

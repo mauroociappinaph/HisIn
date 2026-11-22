@@ -24,7 +24,7 @@ import { Drill } from "./drill";
 import { LessonDone } from "./lesson-done";
 import { RolePlay } from "./role-play";
 import { TrendChart } from "./charts";
-import { ConditionalFlow, QuoteBanner } from "./lesson-visuals";
+import { ConditionalFlow, DoSupportGrid, QuoteBanner } from "./lesson-visuals";
 
 /** Where this submodule sits in its module, and which ones come next. */
 function placement(topics: TopicDTO[], slug: string) {
@@ -323,6 +323,9 @@ async function TopicBody({ slug }: { slug: string }) {
     ? { kind: "conditional" as const, variant: /third|mixed/.test(lower) ? ("third" as const) : /second/.test(lower) ? ("second" as const) : /first/.test(lower) ? ("first" as const) : ("zero" as const) }
     : null;
   const showsChart = /data commentary|results|statistic|chart|trend|mrr|revenue/.test(lower);
+  // Only for lessons that actually teach do-support: the grid shows the same
+  // sentence in four forms, which is the fastest way to answer "when do I use it".
+  const showsDoSupport = /emphatic|do have|don't have|do you have|do\/does/.test(lower);
   const examples = (lesson?.examples ?? []).filter(
     (example) => example.trim().split(/\s+/).length >= 3 && !example.trim().endsWith("+"),
   );
@@ -501,6 +504,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 <IdeaPoints points={ideaPoints} />
                 <Prose paragraphs={lesson.body} />
                 {timeline ? <Timeline span={timeline.span} caption={timeline.caption} /> : null}
+                {showsDoSupport ? <DoSupportGrid /> : null}
                 {conditional ? <ConditionalFlow kind={conditional.variant} /> : null}
                 {showsChart ? (
                   <TrendChart caption="Say the jump, not every bar: the pilots doubled in the last two quarters." />

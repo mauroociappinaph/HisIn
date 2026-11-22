@@ -167,3 +167,18 @@ test("toParagraphs keeps the paragraphs the text already has", () => {
   const paragraphs = toParagraphs("First paragraph here.\n\nSecond paragraph here.");
   assert.deepEqual(paragraphs, ["First paragraph here.", "Second paragraph here."]);
 });
+
+test("findTrap accepts the hyphenated Spanish-speaker wording", () => {
+  const trap = findTrap(
+    "Never say 'The patient does not presents symptoms', as this is a common Spanish-speaker error.",
+  );
+  assert.ok(trap?.includes("present"));
+});
+
+test("extractFormula reads the structure of an auxiliary lesson from its prose", () => {
+  const formula = extractFormula(
+    "We use do and does as an auxiliary verb. The main verb stays in the base form, so the auxiliary carries the marker.",
+    ["Use 'do/does' to build questions and negatives."],
+  );
+  assert.deepEqual(formula, ["do / does", "base verb"]);
+});

@@ -203,3 +203,80 @@ export function DiagramBlock({ diagram }: { diagram: Diagram }): ReactNode {
     />
   );
 }
+
+/**
+ * The four forms of one idea, side by side.
+ *
+ * This is the block that answers "what is it and when do I use it" for do-support:
+ * the same sentence in neutral, emphatic, negative and question form, plus the two
+ * places where `do` must not appear. Reading them in a column is faster than any
+ * paragraph about them.
+ */
+export function DoSupportGrid() {
+  const rows = [
+    {
+      label: "Neutral",
+      example: "I have the clinical data.",
+      when: "You inform. No doubt on the table.",
+      tone: "border-slate-200 bg-white text-slate-800",
+    },
+    {
+      label: "Emphatic",
+      example: "I DO have the clinical data.",
+      when: "Someone doubted it, or you insist. The stress falls on do.",
+      tone: "border-indigo-300 bg-indigo-50/70 text-slate-900",
+    },
+    {
+      label: "Negative",
+      example: "I don't have the clinical data.",
+      when: "You deny it. Never 'I have not the data'.",
+      tone: "border-rose-200 bg-rose-50/60 text-slate-800",
+    },
+    {
+      label: "Question",
+      example: "Do you have the clinical data?",
+      when: "You ask. Do moves to the front, the verb stays in base form.",
+      tone: "border-emerald-200 bg-emerald-50/60 text-slate-800",
+    },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <p className="text-[11px] uppercase tracking-widest text-slate-500">One sentence, four jobs</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {rows.map((row) => (
+          <div key={row.label} className={`space-y-1 rounded-sm border p-3 ${row.tone}`}>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500">{row.label}</p>
+            <p className="text-sm font-medium">{row.example}</p>
+            <p className="text-xs text-slate-600">{row.when}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="rounded-sm border border-slate-200 p-3">
+          <p className="text-[11px] uppercase tracking-widest text-slate-500">Never with do</p>
+          <ul className="mt-1 space-y-1 text-xs text-slate-700">
+            <li>
+              ❌ I do am ready · ✅ <b>I am ready</b> (be never takes do)
+            </li>
+            <li>
+              ❌ I do can help · ✅ <b>I can help</b> (modals never take do)
+            </li>
+            <li>
+              ❌ Have you the data? · ✅ <b>Do you have…?</b> / <b>Have you got…?</b> (UK)
+            </li>
+          </ul>
+        </div>
+        <div className="rounded-sm border border-slate-200 p-3">
+          <p className="text-[11px] uppercase tracking-widest text-slate-500">Where it shows up at work</p>
+          <ul className="mt-1 space-y-1 text-xs text-slate-700">
+            <li>«We <b>do</b> have FDA clearance for that indication.» — the investor doubted it.</li>
+            <li>«I <b>do</b> have one concern about the timeline.» — firm, still polite.</li>
+            <li>«— Do you have a minute? / — I <b>do</b> have five.» — accepting with a limit.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
