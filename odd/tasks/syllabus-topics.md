@@ -56,3 +56,17 @@ L5 (decisión): el owner numera por partes ("Tema 6.2"), así que `Topic.code St
 - `Topic` (una fila por tema: slug, título, orden, `code`, nivel CEFR, focus) y `TopicMaterial` (una fila por skill: GRAMMAR/READING/LISTENING/WRITING, título, body, keyPoints), con unique `(topicId, skill)`.
 - El resto del contenido: `Lesson`, `Question`, `Vocabulary`, `VocabularyStory`, `NewsArticle`; y `GenerationJob` guarda la auditoría de cada llamada al motor (prompt, modelo, estado, salida validada).
 - El **temario** (qué temas existen) vive en `scripts/seed-topics.ts` (`pnpm seed:topics`); los **materiales** los escribe el motor vía `POST /api/topics/[slug]/generate` y se persisten en `TopicMaterial`.
+
+## Reorganización en módulos y submódulos (16 temas / 64 materiales)
+
+| Módulo | Submódulos |
+| --- | --- |
+| **1 · Fundamentos: to be, pronombres, artículos y lugar** | 1.1 to be · 1.2 pronombres y posesivos · 1.3 artículos y plurales · 1.4 demostrativos · 1.5 there is/are + lugar |
+| **6 · Present simple** | 6.1 afirmativo y usos · 6.2 negativo e interrogativo · 6.3 adverbios de frecuencia · 6.4 excepciones e integración |
+| **7 · Can: habilidad y permiso** | 7.1 estructura del modal · 7.2 habilidad y permiso · 7.3 pronunciación e integración |
+| **8 · Present continuous e imperativos** | 8.1 afirmativo y ortografía -ing · 8.2 negativo e interrogativo · 8.3 imperativos · 8.4 contraste e integración |
+
+L6 (decisión de IA): cada módulo agrupa una estructura con sus reglas, usos e integración; cada submódulo es una unidad de ~90 minutos. `Topic.unit` + `Topic.unitOrder` sostienen la jerarquía y la home agrupa con `groupByUnit` (probado: orden de módulos, orden interno, fallback "Otros temas" al final).
+
+L7 (bug): 7.3 falló dos veces porque su material de LISTENING era un drill de pronunciación (`can` /kən/ vs `can't` /kænt/) sin palabras de producto, y el anclaje de dominio lo rechazaba. Se amplió el anclaje al **lugar de trabajo** (office, meeting, team, client, demo, interview, sprint, hospital, clinic, hire, onboarding, launch): un drill ambientado en una daily es del dominio, un texto sobre vacaciones no.
+L8 (bug): 8.4 falló por timeout del motor (75 s) en la primera pasada y entró en el reintento; el timeout por intento se mantiene acotado a propósito.

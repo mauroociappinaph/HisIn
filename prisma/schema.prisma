@@ -104,6 +104,10 @@ model Topic {
   ord       Int             @default(0)
   /// Display code the owner uses ("6.1", "6.2") when a topic has parts.
   code      String?
+  /// Module this submodule belongs to ("6 · Present simple"), so the syllabus
+  /// reads as modules with submodules instead of a flat list.
+  unit      String?
+  unitOrder Int             @default(0)
   level     CefrLevel
   focus     String?
   createdAt DateTime        @default(now())

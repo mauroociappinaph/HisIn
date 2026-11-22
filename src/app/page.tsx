@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { prisma } from "@/shared/db/prisma";
 import { TopicRepository } from "@/modules/topics/repository";
 import { SKILL_LABELS } from "@/modules/topics/schema";
+import { groupByUnit, topicLabel } from "@/modules/topics/grouping";
 import { getLocalUser } from "@/modules/identity/service";
 import { ProgressRepository } from "@/modules/progress/repository";
 import { goalRatio, nextAction } from "@/modules/progress/service";
@@ -20,7 +21,7 @@ async function HomeContent() {
     return <Onboarding defaultLevel={profile.level} />;
   }
 
-  const topics = await new TopicRepository().list();
+  const syllabus = groupByUnit(await new TopicRepository().list());
 
   const [due, stories, completed, lessons, moduleRows] = await Promise.all([
     getDueReviews(user.id, 50),
@@ -106,33 +107,39 @@ async function HomeContent() {
         </span>
       </Link>
 
-      <section className="space-y-3">
+      <section className="space-y-4">
         <div className="flex items-baseline justify-between gap-2">
-          <h2 className="font-semibold text-slate-800">Temas del curso</h2>
-          <span className="text-[11px] text-slate-500">temario oficial, material generado por Gentleman Shell</span>
+          <h2 className="font-semibold text-slate-800">Temario por módulos</h2>
+          <span className="text-[11px] text-slate-500">cada submódulo trae grammar, reading, listening y writing</span>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {topics.map((topic) => (
-            <Link
-              key={topic.slug}
-              href={`/topics/${topic.slug}`}
-              className="rounded-lg bg-white border border-slate-200 p-4 space-y-2 hover:border-indigo-300 transition"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
-                  Tema {topic.code ?? topic.order}
-                </span>
-                <span className="text-[11px] text-slate-500">{topic.level}</span>
-              </div>
-              <h3 className="font-semibold text-slate-900 leading-tight">{topic.title}</h3>
-              <p className="text-[11px] text-slate-500">
-                {topic.materials.length === 0
-                  ? "Sin material todavía: se genera con el motor"
-                  : topic.materials.map((material) => SKILL_LABELS[material.skill]).join(" · ")}
-              </p>
-            </Link>
-          ))}
-        </div>
+
+        {syllabus.map((unit) => (
+          <div key={unit.unit} className="space-y-2">
+            <h3 className="text-xs uppercase tracking-widest text-slate-500">{unit.unit}</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {unit.topics.map((topic) => (
+                <Link
+                  key={topic.slug}
+                  href={`/topics/${topic.slug}`}
+                  className="rounded-lg bg-white border border-slate-200 p-4 space-y-2 hover:border-indigo-300 transition"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+                      Submódulo {topicLabel(topic)}
+                    </span>
+                    <span className="text-[11px] text-slate-500">{topic.level}</span>
+                  </div>
+                  <h4 className="font-semibold text-slate-900 leading-tight">{topic.title}</h4>
+                  <p className="text-[11px] text-slate-500">
+                    {topic.materials.length === 0
+                      ? "Sin material todavía: se genera con el motor"
+                      : topic.materials.map((material) => SKILL_LABELS[material.skill]).join(" · ")}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
       </section>
 
       <section className="space-y-3">

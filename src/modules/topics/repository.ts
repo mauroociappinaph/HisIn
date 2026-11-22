@@ -14,6 +14,8 @@ export interface TopicDTO {
   title: string;
   order: number;
   code: string | null;
+  unit: string | null;
+  unitOrder: number;
   level: CefrLevel;
   focus: string | null;
   materials: TopicMaterialDTO[];
@@ -25,6 +27,8 @@ function toDTO(row: {
   title: string;
   ord: number;
   code: string | null;
+  unit: string | null;
+  unitOrder: number;
   level: string;
   focus: string | null;
   materials: { skill: string; title: string; body: string; keyPoints: string[] }[];
@@ -38,6 +42,8 @@ function toDTO(row: {
     title: row.title,
     order: row.ord,
     code: row.code,
+    unit: row.unit,
+    unitOrder: row.unitOrder,
     level: row.level as CefrLevel,
     focus: row.focus,
     materials: materials.map((material) => ({
@@ -59,7 +65,7 @@ function toDTO(row: {
 export class TopicRepository {
   async list(): Promise<TopicDTO[]> {
     const rows = await prisma.topic.findMany({
-      orderBy: { ord: "asc" },
+      orderBy: [{ unitOrder: "asc" }, { ord: "asc" }],
       include: { materials: true },
     });
     return rows.map(toDTO);
@@ -77,6 +83,8 @@ export class TopicRepository {
     level: CefrLevel;
     focus?: string;
     code?: string;
+    unit?: string;
+    unitOrder?: number;
   }) {
     return prisma.topic.upsert({
       where: { slug: input.slug },
@@ -86,6 +94,8 @@ export class TopicRepository {
         level: input.level,
         focus: input.focus ?? null,
         code: input.code ?? null,
+        unit: input.unit ?? null,
+        unitOrder: input.unitOrder ?? 0,
       },
       create: {
         slug: input.slug,
@@ -94,6 +104,8 @@ export class TopicRepository {
         level: input.level,
         focus: input.focus ?? null,
         code: input.code ?? null,
+        unit: input.unit ?? null,
+        unitOrder: input.unitOrder ?? 0,
       },
     });
   }

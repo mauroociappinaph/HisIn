@@ -46,7 +46,11 @@ export const topicMaterialsSchema = z
       seen.add(material.skill);
       // Without a domain anchor the material is generic filler, which is the
       // exact failure the owner rejected.
-      const anchor = /health|clinical|patient|investor|startup|founder|saas|silicon valley|product|market|compliance|runway|pitch/i;
+      // Domain anchor: the product world OR the workplace where it is spoken.
+      // A pronunciation drill set in a stand-up is on-domain; a text about
+      // holidays is not.
+      const anchor =
+        /health|clinical|patient|investor|startup|founder|saas|silicon valley|product|market|compliance|runway|pitch|office|meeting|team|client|demo|interview|sprint|hospital|clinic|hire|onboarding|launch/i;
       if (!anchor.test(material.body)) {
         ctx.addIssue({
           code: "custom",
