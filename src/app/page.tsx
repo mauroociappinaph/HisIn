@@ -6,6 +6,7 @@ import { ProgressRepository } from "@/modules/progress/repository";
 import { goalRatio, nextAction } from "@/modules/progress/service";
 import { getDueReviews } from "@/modules/vocabulary/srs";
 import { Onboarding } from "@/components/onboarding";
+import { ContextBar } from "@/components/context-bar";
 import { ProgressBar } from "@/app/review/vocab/_components/ui";
 
 async function HomeContent() {
@@ -41,6 +42,15 @@ async function HomeContent() {
 
   return (
     <div className="space-y-6">
+      <ContextBar
+        initial={{
+          discipline: profile.classDesign.discipline,
+          educationLevel: profile.classDesign.educationLevel,
+          minutes: profile.classDesign.minutes,
+          sequence: profile.classDesign.sequence,
+        }}
+      />
+
       <section className="rounded-lg bg-white border border-slate-200 p-5 md:p-6 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">

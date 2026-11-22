@@ -21,6 +21,28 @@ export const NEWS_FEEDS = [
   { source: "STAT News", url: "https://www.statnews.com/feed/" },
 ] as const;
 
+/**
+ * Which feeds a discipline should read.
+ *
+ * "Noticias" is not one list for everyone: a health cohort needs FDA and
+ * reimbursement coverage, a contracts cohort needs deal and liability news. The
+ * default set stays as the fallback for disciplines without a specific press.
+ */
+const DISCIPLINE_SOURCES: Record<string, string[]> = {
+  salud: ["Fierce Healthcare", "MobiHealthNews", "STAT News"],
+  negocios: ["TechCrunch Startups", "Sifted", "STAT News"],
+  derecho: ["Sifted", "TechCrunch Startups"],
+  ingenieria: ["TechCrunch Startups", "Sifted"],
+  lenguas: ["STAT News", "Sifted", "TechCrunch Startups", "Fierce Healthcare"],
+};
+
+export function feedsForDiscipline(discipline: string): typeof NEWS_FEEDS[number][] {
+  const wanted = DISCIPLINE_SOURCES[discipline];
+  if (!wanted) return [...NEWS_FEEDS];
+  const selected = NEWS_FEEDS.filter((feed) => wanted.includes(feed.source));
+  return selected.length > 0 ? selected : [...NEWS_FEEDS];
+}
+
 export function stripHtml(value: string): string {
   return value
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")

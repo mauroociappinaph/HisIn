@@ -52,12 +52,24 @@ export class ProgressRepository {
    * at prerender time and broke the build of static routes. The header does not
    * need that value, so it does not ask for it.
    */
-  async getShellCounters(userId: string): Promise<{ streak: number; xp: number }> {
+  async getShellCounters(userId: string): Promise<{
+    streak: number;
+    xp: number;
+    discipline: string;
+    educationLevel: string;
+    minutes: number;
+  }> {
     const row = await prisma.learnerProfile.findUnique({
       where: { userId },
-      select: { streak: true, xp: true },
+      select: { streak: true, xp: true, discipline: true, educationLevel: true, classMinutes: true },
     });
-    return { streak: row?.streak ?? 0, xp: row?.xp ?? 0 };
+    return {
+      streak: row?.streak ?? 0,
+      xp: row?.xp ?? 0,
+      discipline: row?.discipline ?? "negocios",
+      educationLevel: row?.educationLevel ?? "grado_inicial",
+      minutes: row?.classMinutes ?? 60,
+    };
   }
 
   /** One profile per learner, created on first read so onboarding never 500s. */

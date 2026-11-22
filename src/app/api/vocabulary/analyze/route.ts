@@ -7,6 +7,8 @@ import { getLocalUser } from "@/modules/identity/service";
 import { analyzeEntry } from "@/modules/vocabulary/analyze";
 import { ENTRY_SYSTEM_PROMPT, sectionFor } from "@/modules/vocabulary/analysis";
 import { VocabularyRepository } from "@/modules/vocabulary/repository";
+import { ClassroomRepository } from "@/modules/classroom/repository";
+import { contextPromptFragment } from "@/modules/classroom/design";
 
 const inputSchema = z.object({ input: z.string().trim().min(2).max(120) });
 
@@ -30,6 +32,10 @@ export async function POST(req: NextRequest) {
 
   // One repair attempt: a structurally fine reply that mislabels the term is
   // fixed with its own rejection reason instead of being thrown back at the user.
+  const design = await new ClassroomRepository().getDesign(
+    (await getLocalUser()).id,
+  );
+
   const outcome = await analyzeEntry(parsed.data.input, async (prompt) => {
     const response = await runGentleShell({
       prompt,
@@ -38,7 +44,7 @@ export async function POST(req: NextRequest) {
       timeoutMs: resolveTimeoutMs() * 2,
     });
     return response.text;
-  });
+  }, 2, contextPromptFragment(design));
 
   if (!outcome.ok || !outcome.analysis) {
     return NextResponse.json(

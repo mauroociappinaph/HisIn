@@ -92,3 +92,26 @@ test("a reply that is not JSON is repaired too", async () => {
   assert.equal(outcome.attempts, 2);
   assert.match(prompts[1] ?? "", /JSON/);
 });
+
+test("the class context travels into the analysis prompt", async () => {
+  const prompts: string[] = [];
+  await analyzeEntry(
+    "in charge of",
+    async (prompt) => {
+      prompts.push(prompt);
+      return JSON.stringify({
+        term: "be in charge of + noun/gerund",
+        kind: "PATTERN",
+        definition: "To have responsibility for something.",
+        example: "The lead is in charge of the rollout.",
+        level: "B1",
+        module: "business-english",
+        function: "express",
+      });
+    },
+    2,
+    "Audience: salud posgrado students. Session length: 90 minutes.",
+  );
+
+  assert.match(prompts[0] ?? "", /Audience: salud posgrado students/);
+});

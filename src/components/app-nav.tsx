@@ -22,7 +22,16 @@ const NAV = [
  * patterns, progress, generator) and every one of them asked for the same
  * attention. "Aprender" is the hub where the rest live.
  */
-export function AppNav({ streak, xp }: { streak: number; xp: number }) {
+export function AppNav({
+  streak,
+  xp,
+  context,
+}: {
+  streak: number;
+  xp: number;
+  /** "salud · 90 min": the class context, visible and one tap from editing. */
+  context?: { discipline: string; minutes: number };
+}) {
   const pathname = usePathname();
   const params = useSearchParams();
   const focus = params.get("focus") === "1";
@@ -54,7 +63,16 @@ export function AppNav({ streak, xp }: { streak: number; xp: number }) {
             );
           })}
         </div>
-        <div className="hidden sm:flex items-center gap-3 text-xs text-slate-500 shrink-0">
+        <div className="hidden md:flex items-center gap-3 text-xs text-slate-500 shrink-0">
+          {context ? (
+            <Link
+              href="/class"
+              className="px-2 py-1 rounded-sm bg-slate-100 text-slate-600 hover:bg-slate-200"
+              title="Contexto de clase: disciplina y duración. Cambialo acá."
+            >
+              {context.discipline} · {context.minutes} min
+            </Link>
+          ) : null}
           <span title="Racha de días">
             🔥 <span className="font-semibold text-slate-700">{streak}</span>
           </span>

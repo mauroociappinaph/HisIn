@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { paginate, parsePage, wantsPage } from "@/shared/lib/pagination";
 import { NewsRepository } from "@/modules/news/repository";
-import { NEWS_FEEDS, newest, parseFeed, uniqueByUrl, type FeedItem } from "@/modules/news/feed";
+import { feedsForDiscipline, newest, parseFeed, uniqueByUrl, type FeedItem } from "@/modules/news/feed";
+import { getLocalUser } from "@/modules/identity/service";
+import { ClassroomRepository } from "@/modules/classroom/repository";
 
 export async function GET(req: NextRequest) {
   const params = new URL(req.url).searchParams;
@@ -25,8 +27,12 @@ export async function GET(req: NextRequest) {
  * thrown.
  */
 export async function POST() {
+  const user = await getLocalUser();
+  const design = await new ClassroomRepository().getDesign(user.id);
+  const feeds = feedsForDiscipline(design.discipline);
+
   const results = await Promise.allSettled(
-    NEWS_FEEDS.map(async (feed) => {
+    feeds.map(async (feed) => {
       const response = await fetch(feed.url, {
         headers: { "user-agent": "HisIn/0.1 (+learning app)" },
         signal: AbortSignal.timeout(8000),
@@ -47,5 +53,5 @@ export async function POST() {
   const repository = new NewsRepository();
   const created = await repository.upsert(newest(uniqueByUrl(items), 40));
 
-  return NextResponse.json({ created, failed, fetched: items.length });
+  return NextResponse.json({ created, failed, fetched: items.length, discipline: design.discipline });
 }

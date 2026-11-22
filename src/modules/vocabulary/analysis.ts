@@ -49,7 +49,7 @@ export const ENTRY_SYSTEM_PROMPT = [
   "Return ONLY a JSON object. No prose, no markdown fences, no comments.",
 ].join(" ");
 
-export function buildEntryPrompt(input: string, retryReason?: string): string {
+export function buildEntryPrompt(input: string, retryReason?: string, context?: string): string {
   return [
     `Entry: ${JSON.stringify(input.trim())}`,
     'Return this shape: {"term","kind","definition","example","level","module","particle","separable","register","function","notes"}.',
@@ -63,6 +63,7 @@ export function buildEntryPrompt(input: string, retryReason?: string): string {
     'For PHRASAL_VERB: always send "particle" (the last word), "separable" (true/false) and "register" ("neutral" | "informal" | "formal").',
     'For PATTERN: the term MUST be the full frame with slots separated by +, for example "be interested in + noun/gerund", "make + object + verb", "is expected to + verb". A two-word fragment is not a PATTERN. Always send "function", exactly one of "hedge" (no comprometerse), "soften" (suavizar), "persuade" (empujar una decisión), "report" (atribuir lo que otro dijo), "compare" (medir dos cosas), "express" (declarar interés, necesidad o postura, como "be interested in").',
     'notes: in Spanish, the mistake a Spanish speaker makes with this entry.',
+    context ? `Reader context: ${context}` : "",
     retryReason
       ? `Your previous answer was rejected: ${retryReason}. Rewrite the entry so it passes every rule, especially the term shape for its kind.`
       : "",

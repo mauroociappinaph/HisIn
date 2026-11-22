@@ -26,13 +26,14 @@ export async function analyzeEntry(
   input: string,
   run: EntryRunner,
   maxAttempts = 2,
+  context?: string,
 ): Promise<AnalyzeOutcome> {
   let reason: string | undefined;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     let raw: string;
     try {
-      raw = await run(buildEntryPrompt(input, reason));
+      raw = await run(buildEntryPrompt(input, reason, context));
     } catch (error) {
       return {
         ok: false,

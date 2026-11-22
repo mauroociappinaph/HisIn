@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { newest, parseFeed, stripHtml, uniqueByUrl } from "./feed";
+import { NEWS_FEEDS, feedsForDiscipline, newest, parseFeed, stripHtml, uniqueByUrl } from "./feed";
 
 const rss = `<?xml version="1.0"?>
 <rss version="2.0"><channel><title>Feed</title>
@@ -88,4 +88,15 @@ test("HTML entities are decoded, including numeric ones", () => {
   assert.equal(stripHtml("R&amp;D &quot;spend&quot;"), 'R&D "spend"');
   assert.equal(stripHtml("Capricor&#8217;s therapy"), "Capricor\u2019s therapy");
   assert.equal(stripHtml("caf&#xe9;"), "caf\u00e9");
+});
+
+test("a discipline reads its own feeds, and unknown ones fall back to all", () => {
+  const salud = feedsForDiscipline("salud");
+  const derecho = feedsForDiscipline("derecho");
+  const desconocida = feedsForDiscipline("astronomia");
+
+  assert.ok(salud.some((feed) => feed.source === "Fierce Healthcare"));
+  assert.ok(!derecho.some((feed) => feed.source === "MobiHealthNews"));
+  assert.equal(desconocida.length, NEWS_FEEDS.length);
+  assert.ok(salud.length > 0 && derecho.length > 0);
 });

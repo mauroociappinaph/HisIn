@@ -67,7 +67,12 @@ export const NEWS_SYSTEM_PROMPT = [
 ].join(" ");
 
 /** Builds the analysis prompt for one article. */
-export function buildNewsPrompt(article: { title: string; source: string; excerpt: string }): string {
+export function buildNewsPrompt(article: {
+  title: string;
+  source: string;
+  excerpt: string;
+  context?: string;
+}): string {
   return [
     `Article title: ${JSON.stringify(article.title)}`,
     `Source: ${JSON.stringify(article.source)}`,
@@ -77,7 +82,10 @@ export function buildNewsPrompt(article: { title: string; source: string; excerp
     "vocabulary: 3 to 8 domain terms the learner would not know, each with a one-sentence English definition and an example copied or adapted from the article that uses the exact term.",
     'patterns: 1 to 4 sentence structures the article uses that transfer to the learner\'s own writing. "function" must be exactly one of: "hedge", "soften", "persuade", "report", "compare". frame uses slots with +, e.g. "is expected to + verb".',
     "commonError: the mistake a Spanish speaker makes with that pattern, in Spanish.",
-  ].join(" ");
+    article.context ? `Reader context: ${article.context}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 /** Parses and validates the model's reply; throws with the exact reason. */

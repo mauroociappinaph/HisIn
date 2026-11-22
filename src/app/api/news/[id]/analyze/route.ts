@@ -3,6 +3,9 @@ import { runGentleShell } from "@/modules/ai/gentle-shell";
 import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
 import { buildNewsPrompt, NEWS_SYSTEM_PROMPT, parseNewsAnalysis } from "@/modules/news/analysis";
 import { NewsRepository } from "@/modules/news/repository";
+import { getLocalUser } from "@/modules/identity/service";
+import { ClassroomRepository } from "@/modules/classroom/repository";
+import { contextPromptFragment } from "@/modules/classroom/design";
 
 /**
  * Runs Gentle Shell over one article and keeps the extracted vocabulary and
@@ -16,6 +19,9 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ id: s
 
   if (!article) return NextResponse.json({ error: "article not found" }, { status: 404 });
 
+  const user = await getLocalUser();
+  const design = await new ClassroomRepository().getDesign(user.id);
+
   const [model] = resolveModels();
   if (!model) return NextResponse.json({ error: "no model configured" }, { status: 500 });
 
@@ -25,6 +31,7 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ id: s
         title: article.title,
         source: article.source,
         excerpt: article.excerpt,
+        context: contextPromptFragment(design),
       }),
       system: NEWS_SYSTEM_PROMPT,
       model,

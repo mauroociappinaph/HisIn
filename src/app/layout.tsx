@@ -25,7 +25,13 @@ async function NavData() {
   await connection();
   const user = await getLocalUser();
   const counters = await new ProgressRepository().getShellCounters(user.id);
-  return <AppNav streak={counters.streak} xp={counters.xp} />;
+  return (
+    <AppNav
+      streak={counters.streak}
+      xp={counters.xp}
+      context={{ discipline: counters.discipline, minutes: counters.minutes }}
+    />
+  );
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
