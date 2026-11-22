@@ -49,7 +49,7 @@ export function TopicNav({ items }: { items: TopicNavItem[] }) {
       {/* Mobile: a strip of chips you can thumb through. A stacked card list at
           the top of a phone screen pushes the lesson below the fold, which is
           exactly the "horrible" the owner saw. */}
-      <nav aria-label="On this page" className="lg:hidden -mx-1 overflow-x-auto">
+      <nav aria-label="On this page" className="min-w-0 max-w-full overflow-x-auto lg:hidden">
         <ol className="flex gap-1.5 px-1">
           {items.map((item, index) => (
             <li key={item.id}>

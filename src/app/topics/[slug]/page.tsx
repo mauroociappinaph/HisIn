@@ -359,7 +359,7 @@ async function TopicBody({ slug }: { slug: string }) {
   ].filter((anchor): anchor is { id: string; label: string } => Boolean(anchor));
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-full space-y-6 overflow-x-clip">
       {/* Breadcrumb: module above, the whole chain clickable, no dead ends. */}
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
         <Link href="/" className="rounded-sm px-1.5 py-0.5 hover:bg-slate-100 hover:text-indigo-700">
