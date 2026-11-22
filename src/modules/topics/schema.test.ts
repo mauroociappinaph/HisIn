@@ -57,9 +57,9 @@ test("a reply without JSON is rejected with a readable reason", () => {
 });
 
 test("the prompt asks only for the missing skills and anchors the domain", () => {
-  const prompt = buildTopicPrompt({ topic: "Verbo to be", level: "A2", skills: ["GRAMMAR", "LISTENING"] });
+  const prompt = buildTopicPrompt({ topic: "Verbo to be", level: "A2", skills: ["GRAMMAR", "STORY"] });
 
-  assert.match(prompt, /Produce exactly these skills: GRAMMAR, LISTENING/);
+  assert.match(prompt, /Produce exactly these skills: GRAMMAR, STORY/);
   assert.match(prompt, /2 to 6 short English takeaways/);
   assert.match(TOPIC_SYSTEM_PROMPT, /healthtech founders/);
   assert.match(TOPIC_SYSTEM_PROMPT, /Never write generic textbook examples/);

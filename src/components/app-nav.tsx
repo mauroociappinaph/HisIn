@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { levelFromXp } from "@/modules/progress/game";
 
 /**
  * Four destinations, one idea each: what to do now, where to learn, where to
@@ -79,6 +80,12 @@ export function AppNav({
           </span>
           <span title="Experiencia">
             ⚡ <span className="font-semibold text-slate-700">{xp}</span>
+          </span>
+          <span
+            title={`Nivel ${levelFromXp(xp).level} · faltan ${levelFromXp(xp).remaining} XP para el próximo`}
+            className="px-2 py-1 rounded-sm bg-indigo-50 text-indigo-700 font-semibold"
+          >
+            Nv {levelFromXp(xp).level}
           </span>
         </div>
       </nav>

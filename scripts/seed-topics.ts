@@ -26,6 +26,13 @@ const CAN = "7 · Can: habilidad y permiso";
 const CONTINUOUS = "8 · Present continuous e imperativos";
 const PAST_BE = "9 · Pasado de to be (was / were)";
 const VOCAB = "10 · Vocabulario esencial (A1-A2)";
+const PAST_FUTURE = "11 · Pasado y futuro";
+const QUANTITY = "12 · Cantidad y comparación";
+const EXPERIENCE = "13 · Experiencia y obligación";
+const VERBS = "14 · Verbos y condicionales";
+const PRONOUNS = "15 · Pronombres";
+const LIFE = "16 · Vocabulario: vida cotidiana";
+const WORLD = "17 · Vocabulario: entorno y personas";
 
 const TOPICS: SeedTopic[] = [
   {
@@ -262,6 +269,29 @@ const TOPICS: SeedTopic[] = [
     unitOrder: 10,
     level: "A1",
   },
+  // ── Módulo 11 · Pasado y futuro ──
+  { slug: "past-simple-used-to", title: "Pasado simple y used to: regulares (-ed) e irregulares, didn't y Did...?, hábitos que ya no ocurren", ord: 27, code: "11.1", unit: PAST_FUTURE, unitOrder: 11, level: "B1" },
+  { slug: "past-continuous-when-while", title: "Pasado continuo (was/were + -ing) y contraste con pasado simple mediante when y while", ord: 28, code: "11.2", unit: PAST_FUTURE, unitOrder: 11, level: "B1" },
+  { slug: "future-expressions", title: "Be going to, will y presente continuo: planes, decisiones espontáneas, promesas y acuerdos con hora", ord: 29, code: "11.3", unit: PAST_FUTURE, unitOrder: 11, level: "B1" },
+  // ── Módulo 12 · Cantidad y comparación ──
+  { slug: "countable-uncountable-quantifiers", title: "Contables e incontables (water, money, advice) con some/any, much/many/a lot of, a few y a little", ord: 30, code: "12.1", unit: QUANTITY, unitOrder: 12, level: "B1" },
+  { slug: "comparatives-superlatives", title: "Comparativos y superlativos (-er/more, the -est/the most), irregulares y as...as / not as...as", ord: 31, code: "12.2", unit: QUANTITY, unitOrder: 12, level: "B1" },
+  // ── Módulo 13 · Experiencia y obligación ──
+  { slug: "present-perfect-simple", title: "Presente perfecto (have/has + participio): ever/never, just/already/yet, for y since", ord: 32, code: "13.1", unit: EXPERIENCE, unitOrder: 13, level: "B1" },
+  { slug: "modals-obligation-advice-possibility", title: "Modales: have to vs must, don't have to vs mustn't, should y might", ord: 33, code: "13.2", unit: EXPERIENCE, unitOrder: 13, level: "B1" },
+  // ── Módulo 14 · Verbos y condicionales ──
+  { slug: "gerund-infinitive", title: "Gerundio e infinitivo: verbos con -ing (enjoy, avoid, suggest) y con to + verbo (want, decide, plan)", ord: 34, code: "14.1", unit: VERBS, unitOrder: 14, level: "B1" },
+  { slug: "conditionals-0-1", title: "Condicionales 0 (If + presente, presente) y 1 (If + presente, will + verbo)", ord: 35, code: "14.2", unit: VERBS, unitOrder: 14, level: "B1" },
+  // ── Módulo 15 · Pronombres ──
+  { slug: "object-possessive-pronouns", title: "Pronombres objeto (me, him, them) y posesivos (mine, yours) frente a adjetivos posesivos", ord: 36, code: "15.1", unit: PRONOUNS, unitOrder: 15, level: "B1" },
+  // ── Módulo 16 · Vocabulario: vida cotidiana ──
+  { slug: "travel-transport-accommodation", title: "Viajes, transporte y alojamiento: flight, ticket, platform, check-in, hotel/hostel, equipaje", ord: 37, code: "16.1", unit: LIFE, unitOrder: 16, level: "A2" },
+  { slug: "shopping-money-stores", title: "Compras, dinero y tiendas: receipt, cash, card, discount, afford, spend, borrow, lend", ord: 38, code: "16.2", unit: LIFE, unitOrder: 16, level: "A2" },
+  { slug: "health-symptoms-lifestyle", title: "Salud, síntomas y estilo de vida: headache, fever, sore throat, sleep, stress, balanced diet", ord: 39, code: "16.3", unit: LIFE, unitOrder: 16, level: "A2" },
+  // ── Módulo 17 · Vocabulario: entorno y personas ──
+  { slug: "weather-seasons-nature", title: "Clima, estaciones y naturaleza: sunny, storm, breeze, temperature, mountain, river, coast", ord: 40, code: "17.1", unit: WORLD, unitOrder: 17, level: "A2" },
+  { slug: "sports-leisure-technology", title: "Deportes, ocio y tecnología: go + -ing, play, do; password, upload, download, app, Wi-Fi", ord: 41, code: "17.2", unit: WORLD, unitOrder: 17, level: "A2" },
+  { slug: "personality-feelings", title: "Personalidad y sentimientos: shy, outgoing, generous, nervous, relieved, disappointed", ord: 42, code: "17.3", unit: WORLD, unitOrder: 17, level: "A2" },
 ];
 
 async function main() {

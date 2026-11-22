@@ -17,7 +17,7 @@ async function LearnContent() {
   const completed = await progress.completedLessonIds(user.id);
 
   const [modules, lessons, counts] = await Promise.all([
-    prisma.module.findMany({ orderBy: { order: "asc" } }),
+    prisma.module.findMany({ where: { slug: { not: "listening" } }, orderBy: { order: "asc" } }),
     prisma.lesson.findMany({ select: { id: true, module: true, level: true } }),
     Promise.all([
       prisma.vocabulary.count({ where: { kind: "PHRASAL_VERB" } }),

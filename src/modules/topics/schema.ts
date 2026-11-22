@@ -9,14 +9,14 @@ import { CEFR_LEVELS } from "@/modules/ai/schema";
  * work, never for a generic learner. A topic is therefore four materials -
  * grammar, reading, listening, writing - that share the topic and the domain.
  */
-export const TOPIC_SKILLS = ["GRAMMAR", "READING", "LISTENING", "WRITING"] as const;
+export const TOPIC_SKILLS = ["GRAMMAR", "READING", "WRITING", "STORY"] as const;
 export type TopicSkill = (typeof TOPIC_SKILLS)[number];
 
 export const SKILL_LABELS: Record<TopicSkill, string> = {
   GRAMMAR: "Gramática",
   READING: "Reading",
-  LISTENING: "Listening",
   WRITING: "Writing",
+  STORY: "Historia",
 };
 
 const materialShape = z.object({
@@ -89,7 +89,7 @@ export function buildTopicPrompt(input: {
     input.focus ? `Course focus: ${JSON.stringify(input.focus)}.` : "",
     `Produce exactly these skills: ${skills}.`,
     'Return this shape: {"topic","level","materials":[{"skill","title","body","keyPoints"}]}.',
-    'Each "body" is 120-400 words. GRAMMAR explains the rule, when it is used at work, and gives the Spanish-speaker error. READING is a short article or memo with the target structure. LISTENING is a dialogue or meeting script with speaker lines. WRITING is a task with an explicit prompt and the structure to use.',
+    'Each "body" is 120-400 words. GRAMMAR explains the rule, when it is used at work, and gives the Spanish-speaker error. READING is a short article or memo with the target structure. WRITING is a task with an explicit prompt and the structure to use. STORY is a 150-250 word narrative that uses the structure repeatedly in a healthtech or Silicon Valley situation, with a person, a problem and a decision.',
     "keyPoints: 2 to 6 short English takeaways the learner can apply tomorrow.",
     "Set every material's skill to exactly the requested value, in the requested order.",
   ]
