@@ -130,6 +130,28 @@ model UnitMeta {
   createdAt DateTime @default(now())
 }
 
+/// One mistake taken from the learner's own writing, scheduled like a vocabulary
+/// card: what you got wrong is what you review.
+model Mistake {
+  id         String    @id @default(cuid())
+  userId     String
+  kind       String
+  original   String
+  corrected  String
+  why        String
+  /// Submodule that explains the rule, so the mistake links back to the lesson.
+  topicSlug  String?
+  source     String    @default("email")
+  easeFactor Float     @default(2.5)
+  interval   Int       @default(1)
+  repetitions Int      @default(0)
+  nextReview DateTime  @default(now())
+  resolved   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, nextReview])
+}
+
 /// A lesson the learner marked as done. One row per learner and topic, so the
 /// checkbox is idempotent and the progress of a module is a count, not a guess.
 model TopicCompletion {
