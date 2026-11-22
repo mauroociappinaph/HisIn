@@ -27,6 +27,9 @@ function looksPhrasal(term: string): boolean {
 export default function NewsPage() {
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [analyzing, setAnalyzing] = useState<string | null>(null);
   const [toast, setToast] = useState<{ id: number; message: string; bad?: boolean } | null>(null);
@@ -43,10 +46,13 @@ export default function NewsPage() {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/news")
+    fetch("/api/news?limit=12&offset=0")
       .then((response) => response.json())
-      .then((data: NewsItem[]) => {
-        if (active) setItems(Array.isArray(data) ? data : []);
+      .then((data: { items: NewsItem[]; total: number; hasMore: boolean }) => {
+        if (!active) return;
+        setItems(data.items ?? []);
+        setTotal(data.total ?? 0);
+        setHasMore(Boolean(data.hasMore));
       })
       .catch(() => {
         if (active) setItems([]);
@@ -64,8 +70,14 @@ export default function NewsPage() {
     try {
       const response = await fetch("/api/news", { method: "POST" });
       const body = (await response.json()) as { created: number; failed: string[]; fetched: number };
-      const list = (await fetch("/api/news").then((r) => r.json())) as NewsItem[];
-      setItems(list);
+      const page = (await fetch("/api/news?limit=12&offset=0").then((r) => r.json())) as {
+        items: NewsItem[];
+        total: number;
+        hasMore: boolean;
+      };
+      setItems(page.items ?? []);
+      setTotal(page.total ?? 0);
+      setHasMore(Boolean(page.hasMore));
       notify(
         body.created > 0
           ? `${body.created} noticias nuevas`
@@ -154,6 +166,24 @@ export default function NewsPage() {
     },
     [notify],
   );
+
+  const loadMore = useCallback(async () => {
+    setLoadingMore(true);
+    try {
+      const page = (await fetch(`/api/news?limit=12&offset=${items.length}`).then((r) => r.json())) as {
+        items: NewsItem[];
+        total: number;
+        hasMore: boolean;
+      };
+      setItems((previous) => [...previous, ...(page.items ?? [])]);
+      setTotal(page.total ?? 0);
+      setHasMore(Boolean(page.hasMore));
+    } catch {
+      notify("No pudimos traer más noticias", true);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [items.length, notify]);
 
   return (
     <div className="space-y-6">
@@ -294,6 +324,22 @@ export default function NewsPage() {
           ))}
         </div>
       )}
+
+      {hasMore ? (
+        <div className="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            disabled={loadingMore}
+            className="px-4 py-2 rounded-sm border border-slate-300 text-sm font-medium hover:border-indigo-300 disabled:opacity-50"
+          >
+            {loadingMore ? "Trayendo…" : "Cargar más noticias"}
+          </button>
+          <span className="text-xs text-slate-500">
+            {items.length} de {total}
+          </span>
+        </div>
+      ) : null}
 
       <p className="text-xs text-slate-400">
         ¿Querés practicar lo guardado?{" "}

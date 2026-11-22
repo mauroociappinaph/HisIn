@@ -126,6 +126,24 @@ export class VocabularyRepository {
     return toDTO(created);
   }
 
+  /** Applies a validated patch to a user entry and returns the fresh DTO. */
+  async updateEntry(id: string, update: Partial<CreateEntryInput> & { notes?: string | null }): Promise<VocabularyDTO> {
+    const row = await prisma.vocabulary.update({
+      where: { id },
+      data: {
+        ...(update.term !== undefined ? { term: update.term } : {}),
+        ...(update.definition !== undefined ? { definition: update.definition } : {}),
+        ...(update.example !== undefined ? { example: update.example } : {}),
+        ...(update.notes !== undefined ? { notes: update.notes } : {}),
+        ...(update.particle !== undefined ? { particle: update.particle } : {}),
+        ...(update.separable !== undefined ? { separable: update.separable } : {}),
+        ...(update.register !== undefined ? { register: update.register } : {}),
+        ...(update.function !== undefined ? { function: update.function } : {}),
+      },
+    });
+    return toDTO(row);
+  }
+
   async findById(id: string) {
     return prisma.vocabulary.findUnique({ where: { id } });
   }

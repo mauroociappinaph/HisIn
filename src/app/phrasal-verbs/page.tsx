@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { VocabularyDTO } from "@/shared/types";
 import { EntryForm } from "@/components/entry-form";
 import { KindTag, LevelBadge, ModuleTag, SpeakButton } from "@/components/vocab-ui";
+import { ChipsLegend } from "@/components/chips-legend";
 
 /** What each particle tends to mean, so the list teaches the system and not a list. */
 const PARTICLE_MEANINGS: Record<string, string> = {
@@ -65,10 +66,14 @@ function ChunksInner() {
     return [...seen.entries()].sort((a, b) => b[1] - a[1]);
   }, [entries]);
 
-  const visible = useMemo(
+  const filtered = useMemo(
     () => (particle === "all" ? entries : entries.filter((entry) => (entry.particle ?? "otras") === particle)),
     [entries, particle],
   );
+  // The counts above stay exact because the whole list is loaded; only the
+  // rendering is windowed, so nobody scrolls 60 cards to find yesterday's word.
+  const [shown, setShown] = useState(12);
+  const visible = filtered.slice(0, shown);
 
   const remove = useCallback(async (entry: VocabularyDTO) => {
     if (!window.confirm(`¿Borrar "${entry.term}" de tus phrasal verbs?`)) return;
@@ -111,6 +116,8 @@ function ChunksInner() {
           </button>
         ))}
       </div>
+
+      <ChipsLegend />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
@@ -217,6 +224,18 @@ function ChunksInner() {
           ))}
         </div>
       )}
+
+      {!loading && shown < filtered.length ? (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setShown((value) => value + 12)}
+            className="px-4 py-2 rounded-sm border border-slate-300 text-sm font-medium hover:border-indigo-300"
+          >
+            Mostrar más ({filtered.length - shown} restantes)
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

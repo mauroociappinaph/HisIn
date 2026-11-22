@@ -5,6 +5,7 @@ import { getLocalUser } from "@/modules/identity/service";
 import { ENTRY_KINDS, validateEntry } from "@/modules/vocabulary/entry";
 import { VocabularyRepository } from "@/modules/vocabulary/repository";
 import { CEFR_LEVELS, type CefrLevel } from "@/shared/types";
+import { paginate, parsePage, wantsPage } from "@/shared/lib/pagination";
 
 const createEntrySchema = z.object({
   term: z.string(),
@@ -33,11 +34,12 @@ export async function GET(req: NextRequest) {
     if (!(ENTRY_KINDS as readonly string[]).includes(kind)) {
       return NextResponse.json({ error: "kind must be WORD, PHRASAL_VERB or PATTERN" }, { status: 400 });
     }
-    if (moduleSlug) {
-      const entries = await repository.findByModule(moduleSlug, level ?? undefined);
-      return NextResponse.json(entries.filter((entry) => entry.kind === kind));
-    }
-    return NextResponse.json(await repository.findByKind(kind as (typeof ENTRY_KINDS)[number]));
+    const entries = moduleSlug
+      ? (await repository.findByModule(moduleSlug, level ?? undefined)).filter((entry) => entry.kind === kind)
+      : await repository.findByKind(kind as (typeof ENTRY_KINDS)[number]);
+
+    if (!wantsPage(searchParams)) return NextResponse.json(entries);
+    return NextResponse.json(paginate(entries, parsePage(searchParams)));
   }
 
   if (!moduleSlug) return NextResponse.json({ error: "module required" }, { status: 400 });

@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { VocabularyDTO } from "@/shared/types";
 import { EntryForm } from "@/components/entry-form";
 import { LevelBadge, ModuleTag, SpeakButton } from "@/components/vocab-ui";
+import { ChipsLegend } from "@/components/chips-legend";
 
 /** What each function does in a sentence, in the learner's terms. */
 const FUNCTION_MEANINGS: Record<string, string> = {
@@ -49,10 +50,26 @@ export default function PatternsPage() {
     return [...seen.entries()].sort((a, b) => b[1] - a[1]);
   }, [entries]);
 
-  const visible = useMemo(
+  const filtered = useMemo(
     () => (fn === "all" ? entries : entries.filter((entry) => (entry.function ?? "unclassified") === fn)),
     [entries, fn],
   );
+  const [shown, setShown] = useState(12);
+  const visible = filtered.slice(0, shown);
+
+  /** Corrige la función que el motor pudo haber etiquetado mal. */
+  const fixFunction = useCallback(async (entry: VocabularyDTO, value: string) => {
+    const next = value === "" ? null : value;
+    const response = await fetch(`/api/vocabulary/${entry.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ function: next }),
+    });
+    if (!response.ok) return;
+    setEntries((previous) =>
+      previous.map((item) => (item.id === entry.id ? { ...item, function: next ?? undefined } : item)),
+    );
+  }, []);
 
   const remove = useCallback(async (entry: VocabularyDTO) => {
     if (!window.confirm(`¿Borrar "${entry.term}" de tus patrones?`)) return;
@@ -72,6 +89,8 @@ export default function PatternsPage() {
           reusar cien palabras en lugar de memorizar cien oraciones.
         </p>
       </header>
+
+      <ChipsLegend />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
@@ -165,18 +184,47 @@ export default function PatternsPage() {
               ) : null}
 
               {entry.source === "USER" ? (
-                <button
-                  type="button"
-                  onClick={() => void remove(entry)}
-                  className="mt-auto self-start text-xs font-semibold text-rose-600 hover:text-rose-700"
-                >
-                  Borrar
-                </button>
+                <div className="mt-auto flex flex-wrap items-center gap-3">
+                  <label className="flex items-center gap-1 text-xs text-slate-500">
+                    Corregir función
+                    <select
+                      value={entry.function ?? ""}
+                      onChange={(event) => void fixFunction(entry, event.target.value)}
+                      className="px-2 py-1 rounded-sm border border-slate-300 bg-white text-xs"
+                    >
+                      <option value="">sin clasificar</option>
+                      {Object.keys(FUNCTION_MEANINGS).map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => void remove(entry)}
+                    className="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                  >
+                    Borrar
+                  </button>
+                </div>
               ) : null}
             </article>
           ))}
         </div>
       )}
+
+      {!loading && shown < filtered.length ? (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setShown((value) => value + 12)}
+            className="px-4 py-2 rounded-sm border border-slate-300 text-sm font-medium hover:border-indigo-300"
+          >
+            Mostrar más ({filtered.length - shown} restantes)
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

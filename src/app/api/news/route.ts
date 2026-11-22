@@ -1,10 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { paginate, parsePage, wantsPage } from "@/shared/lib/pagination";
 import { NewsRepository } from "@/modules/news/repository";
 import { NEWS_FEEDS, newest, parseFeed, uniqueByUrl, type FeedItem } from "@/modules/news/feed";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const params = new URL(req.url).searchParams;
   const repository = new NewsRepository();
-  return NextResponse.json(await repository.list());
+
+  // Without limit/offset the response stays the plain array existing callers
+  // read; with them it becomes a page with its real total.
+  if (!wantsPage(params)) {
+    return NextResponse.json(await repository.list());
+  }
+
+  const all = await repository.list(500);
+  return NextResponse.json(paginate(all, parsePage(params)));
 }
 
 /**
