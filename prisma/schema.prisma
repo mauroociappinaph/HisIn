@@ -88,6 +88,40 @@ model LessonCompletion {
   @@index([userId])
 }
 
+enum TopicSkill {
+  GRAMMAR
+  READING
+  LISTENING
+  WRITING
+}
+
+/// A syllabus topic (Tema 1: verb to be) whose four skill materials are written
+/// by the engine for healthtech founders, never for a generic learner.
+model Topic {
+  id        String          @id @default(cuid())
+  slug      String          @unique
+  title     String
+  ord       Int             @default(0)
+  level     CefrLevel
+  focus     String?
+  createdAt DateTime        @default(now())
+  materials TopicMaterial[]
+}
+
+model TopicMaterial {
+  id        String     @id @default(cuid())
+  topicId   String
+  topic     Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  skill     TopicSkill
+  title     String
+  body      String     @db.Text
+  keyPoints String[]
+  createdAt DateTime   @default(now())
+
+  @@unique([topicId, skill])
+  @@index([topicId])
+}
+
 /// A real article from a healthtech or startup feed, plus the analysis the engine
 /// extracted from it: the vocabulary and patterns a learner should notice.
 model NewsArticle {

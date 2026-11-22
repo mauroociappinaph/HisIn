@@ -9,8 +9,9 @@ import { usePathname, useSearchParams } from "next/navigation";
  * inside Estudiar with the rest of the material.
  */
 const NAV = [
-  { href: "/", label: "Hoy" },
-  { href: "/learn", label: "Estudiar" },
+  { href: "/", label: "Módulos" },
+  { href: "/library", label: "Mi vocabulario" },
+  { href: "/grammar", label: "Gramática" },
   { href: "/review/vocab", label: "Repasar" },
   { href: "/progress", label: "Progreso" },
 ] as const;
