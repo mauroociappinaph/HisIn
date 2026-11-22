@@ -3,6 +3,7 @@ import { prisma } from "@/shared/db/prisma";
 import type {
   GeneratedLesson,
   GeneratedQuestion,
+  GeneratedStory,
   GeneratedVocabulary,
   GenerationKind,
   GenerationRequest,
@@ -86,7 +87,7 @@ export async function listJobs(limit: number) {
  */
 export async function persistContent(
   kind: GenerationKind,
-  items: GeneratedQuestion[] | GeneratedVocabulary[] | GeneratedLesson[],
+  items: GeneratedQuestion[] | GeneratedVocabulary[] | GeneratedLesson[] | GeneratedStory[],
 ): Promise<number> {
   if (items.length === 0) return 0;
 
@@ -145,6 +146,34 @@ export async function persistContent(
             example: entry.example,
             module: entry.module,
             level: entry.level,
+          },
+        }),
+      ),
+    );
+    return result.length;
+  }
+
+  if (kind === "story") {
+    const stories = items as GeneratedStory[];
+    const fresh: GeneratedStory[] = [];
+    for (const story of stories) {
+      const existing = await prisma.vocabularyStory.findFirst({
+        where: { module: story.module, level: story.level, title: story.title },
+        select: { id: true },
+      });
+      if (!existing) fresh.push(story);
+    }
+    if (fresh.length === 0) return 0;
+    const result = await prisma.$transaction(
+      fresh.map((story) =>
+        prisma.vocabularyStory.create({
+          data: {
+            module: story.module,
+            level: story.level,
+            title: story.title,
+            body: story.body,
+            translation: story.translation,
+            targetWords: story.targetWords,
           },
         }),
       ),

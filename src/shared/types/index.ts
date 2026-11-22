@@ -26,6 +26,8 @@ export type QuestionType =
   | "LISTENING_MCQ";
 
 export interface QuestionDTO {
+  youtubeVideoId?: string;
+  youtubeStartSec?: number;
   id: string;
   level: CefrLevel;
   skill: Skill;
@@ -48,6 +50,9 @@ export interface LessonDTO {
   order: number;
 }
 
+export type VocabularyKind = "WORD" | "PHRASAL_VERB" | "PATTERN" | "IDIOM";
+export type VocabularySource = "SEED" | "GENERATED" | "USER";
+
 export interface VocabularyDTO {
   id: string;
   term: string;
@@ -55,6 +60,24 @@ export interface VocabularyDTO {
   example: string;
   module: string;
   level: CefrLevel;
+  kind: VocabularyKind;
+  source: VocabularySource;
+  particle?: string;
+  separable?: boolean;
+  register?: string;
+  function?: string;
+  extraExample?: string;
+  notes?: string;
+}
+
+export interface StoryDTO {
+  id: string;
+  module: string;
+  level: CefrLevel;
+  title: string;
+  body: string;
+  translation: string;
+  targetWords: string[];
 }
 
 export interface ModuleDTO {

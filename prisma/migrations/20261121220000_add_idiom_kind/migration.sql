@@ -1,0 +1,1 @@
+ALTER TYPE "VocabularyKind" ADD VALUE 'IDIOM';

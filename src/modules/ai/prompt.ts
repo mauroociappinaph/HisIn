@@ -40,6 +40,19 @@ function vocabularyPrompt(request: GenerationRequest): string {
   ].join(" ");
 }
 
+function storyPrompt(request: GenerationRequest): string {
+  return [
+    `Write ${request.count} short English stories for learners.`,
+    `CEFR level: ${request.level}.${topicRule(request)}`,
+    'Return this shape: {"stories":[{"module","level","title","body","translation","targetWords"}]}.',
+    `Every story must use level "${request.level}" and set "module" to one of: ${CONTENT_MODULES.join(", ")}.`,
+    "body: 120 to 200 words of connected narrative that shows the target vocabulary in at least two different situations.",
+    "translation: one or two sentences in Spanish summarising the story, so the learner can check comprehension.",
+    "targetWords: 3 to 8 words or phrases copied exactly as they appear in the body; the words the learner should notice.",
+    "Use real people in concrete situations, not definitions or lists.",
+  ].join(" ");
+}
+
 function lessonPrompt(request: GenerationRequest): string {
   return [
     `Generate ${request.count} short English lessons.`,
@@ -51,13 +64,25 @@ function lessonPrompt(request: GenerationRequest): string {
   ].join(" ");
 }
 
-/** Builds the user prompt for one generation request. */
+/**
+ * Builds the user prompt for one generation request.
+ *
+ * The teaching context travels with every kind: generated items for a
+ * postgraduate health cohort must not read like generic B1 filler.
+ */
 export function buildPrompt(request: GenerationRequest): string {
+  const base = buildBasePrompt(request);
+  return request.context ? `${base} ${request.context}` : base;
+}
+
+function buildBasePrompt(request: GenerationRequest): string {
   switch (request.kind) {
     case "vocabulary":
       return vocabularyPrompt(request);
     case "lesson":
       return lessonPrompt(request);
+    case "story":
+      return storyPrompt(request);
     default:
       return questionPrompt(request);
   }

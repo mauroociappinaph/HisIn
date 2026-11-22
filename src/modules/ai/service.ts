@@ -14,6 +14,7 @@ import type { GenerationKind, GenerationRequest } from "./schema";
 import {
   parseGeneratedBatch,
   parseGeneratedLessons,
+  parseGeneratedStories,
   parseGeneratedVocabulary,
 } from "./schema";
 
@@ -23,6 +24,8 @@ function parseByKind(kind: GenerationKind, raw: string): unknown[] {
       return parseGeneratedVocabulary(raw);
     case "lesson":
       return parseGeneratedLessons(raw);
+    case "story":
+      return parseGeneratedStories(raw);
     default:
       return parseGeneratedBatch(raw);
   }

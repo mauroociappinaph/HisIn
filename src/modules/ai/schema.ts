@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { usesTerm } from "@/shared/lib/text";
 
 export const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 export const SKILLS = [
@@ -15,7 +16,7 @@ export const QUESTION_TYPES = [
   "TRUE_FALSE",
   "LISTENING_MCQ",
 ] as const;
-export const GENERATION_KINDS = ["question", "vocabulary", "lesson"] as const;
+export const GENERATION_KINDS = ["question", "vocabulary", "lesson", "story"] as const;
 
 /**
  * Module slugs that real pages render. Generated content outside this set would
@@ -45,6 +46,8 @@ export const generationRequestSchema = z
     type: questionTypeSchema.optional(),
     count: z.number().int().min(1).max(5).default(3),
     topic: z.string().trim().min(3).max(120).optional(),
+    /** Teaching context (discipline, educational level, session length). */
+    context: z.string().trim().max(400).optional(),
   })
   .superRefine((request, ctx) => {
     if (request.kind !== "question") return;
@@ -123,15 +126,57 @@ export const generatedLessonSchema = z.object({
   order: z.number().int().min(0).max(99).default(0),
 });
 
+const generatedStoryShape = z.object({
+  module: contentModuleSchema,
+  level: cefrLevelSchema,
+  title: z.string().min(5).max(120),
+  body: z.string().min(400).max(3000),
+  translation: z.string().min(20).max(900),
+  targetWords: z.array(z.string().min(2).max(40)).min(3).max(12),
+});
+
+/**
+ * A story only teaches the words it actually uses.
+ *
+ * Structural checks alone would accept a story that declares ten target words
+ * and uses none of them, so every declared word must appear in the body. Repeat
+ * declarations are rejected instead of silently deduplicated: a duplicated word
+ * means the model lost track of its own list.
+ */
+export const generatedStorySchema = generatedStoryShape.superRefine((story, ctx) => {
+  const seen = new Set<string>();
+  for (const word of story.targetWords) {
+    const key = word.trim().toLowerCase();
+    if (seen.has(key)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["targetWords"],
+        message: `target words must be unique: "${word}" repeats`,
+      });
+      continue;
+    }
+    seen.add(key);
+    if (!usesTerm(story.body, word)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["targetWords"],
+        message: `target word "${word}" must appear in the body`,
+      });
+    }
+  }
+});
+
 export type GeneratedQuestion = z.infer<typeof generatedQuestionShape>;
 export type GeneratedVocabulary = z.infer<typeof generatedVocabularySchema>;
 export type GeneratedLesson = z.infer<typeof generatedLessonSchema>;
+export type GeneratedStory = z.infer<typeof generatedStorySchema>;
 
 /** The batch key and item schema each kind must return. */
 export const BATCH_KEY: Record<GenerationKind, string> = {
   question: "questions",
   vocabulary: "vocabulary",
   lesson: "lessons",
+  story: "stories",
 };
 
 function extractJsonObject(raw: string): unknown {
@@ -180,4 +225,8 @@ export function parseGeneratedVocabulary(raw: string): GeneratedVocabulary[] {
 
 export function parseGeneratedLessons(raw: string): GeneratedLesson[] {
   return parseBatch(raw, BATCH_KEY.lesson, generatedLessonSchema);
+}
+
+export function parseGeneratedStories(raw: string): GeneratedStory[] {
+  return parseBatch(raw, BATCH_KEY.story, generatedStorySchema);
 }

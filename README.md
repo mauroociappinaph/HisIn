@@ -56,7 +56,9 @@ curl -X POST http://localhost:3000/api/ai/generate \
 
 It answers `202 {jobId, status}` immediately and the work continues in the same Node process; a second request while one is running gets `429 {error, jobId}`. Poll `GET /api/ai/jobs/{id}` for `status` and the validated `output`, and `GET /api/ai/jobs?limit=20` for recent runs.
 
-`kind` selects what is produced: `question`, `vocabulary` or `lesson`. Each kind has its own schema, prompt and table.
+`kind` selects what is produced: `question`, `vocabulary`, `lesson` or `story`. Each kind has its own schema, prompt and table.
+
+Stories are short narratives (120–200 words) that recycle target vocabulary in context, with a Spanish one-paragraph translation and 3–8 `targetWords`. The engine rejects a story that declares a target word it never uses in the body, so persisted stories are always usable for reading practice. They are read back with `GET /api/stories?module=&level=` (both optional) and rendered by the "Historias" mode of `/review/vocab`.
 
 The same flow is available in the app at `/studio`, which is operator-only: it relies on `AI_ALLOW_LOCAL=1` on a trusted server or the service token.
 
@@ -66,6 +68,7 @@ For cron, CI or a one-off without a server, use the CLI:
 pnpm ai:generate --kind question --level B2 --skill BUSINESS \
   --type MULTIPLE_CHOICE --count 3 --topic "investor updates"
 pnpm ai:generate --kind vocabulary --level B2 --count 5 --topic "clinical trials"
+pnpm ai:generate --kind story --level B1 --count 2 --topic "a delayed flight and a missed layover"
 ```
 
 It exits `0` on success and `1` on failure. Content is deduplicated against its natural key, so re-running a generation does not duplicate the bank, and lessons or vocabulary outside the real module list are rejected instead of being written as unreachable rows.
@@ -95,6 +98,17 @@ Every attempt is recorded in `GenerationJob`. A generation that fails, times out
 
 Vocabulary reviews use the SM-2 algorithm (`src/modules/vocabulary/srs.ts`). Grades run from 0 to 5; a grade below 3 resets repetitions and schedules the word for tomorrow, and the ease factor never drops below 1.3. Progress belongs to the single persisted local learner (`src/modules/identity/service.ts`).
 
+## Vocabulary trainer
+
+`/review/vocab` is the practice surface for the vocabulary bank and has three modes:
+
+- **Repaso SRS** — the real SM-2 queue: flip the card, grade recall from 0 to 5, and the schedule moves. Grades are the only thing written to the database; XP and streaks are local counters in `localStorage`.
+- **Explorar** — every word in the bank with level, module, definition, example, browser speech and search/filters.
+- **Desafío** — a ten-question round built from the bank: cloze on the word's own example (falling back to the definition when the example never uses the term), four options, streak and XP.
+- **Historias** — generated stories with their target words highlighted, audio and a translation toggle. Empty until the engine produces stories.
+
+The game rules live in `src/modules/vocabulary/quiz.ts` (cloze extraction, option sampling, scoring) and `src/modules/stories/highlight.ts` (word highlighting), both covered by `pnpm test`.
+
 ## Known gaps
 
 - **Listening audio is synthesized, not recorded**: the twelve clips in `public/audio` are spoken by the macOS `say` voice at a deliberately slow rate. Regenerate them with `pnpm audio:generate` (`--force` to overwrite); a different voice or rate is a one-line change in `scripts/generate-audio.ts`. They are committed so cloning the repo needs no TTS step.
@@ -105,7 +119,7 @@ Vocabulary reviews use the SM-2 algorithm (`src/modules/vocabulary/srs.ts`). Gra
 
 ```
 src/app            Routes, pages and API handlers
-src/modules        Bounded contexts: assessment, ai, identity, lessons, modules, vocabulary
+src/modules        Bounded contexts: assessment, ai, identity, lessons, modules, stories, vocabulary
 src/shared         Prisma client, types and helpers
 prisma             Schema, migrations and seed
 odd/tasks          Feature specifications for tracked work

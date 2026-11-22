@@ -122,7 +122,7 @@ export async function runGentleShell(options: RunGentleShellOptions): Promise<Ge
   const executable = options.executable ?? process.env.AI_CLI ?? "pi";
   const startedAt = Date.now();
 
-  const child = spawn(executable, buildArgs({ prompt: options.prompt, system: options.system, model }), {
+  const child = spawn(/* turbopackIgnore: true */ executable, buildArgs({ prompt: options.prompt, system: options.system, model }), {
     stdio: ["ignore", "pipe", "pipe"],
     env: process.env,
   });

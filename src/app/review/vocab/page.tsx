@@ -1,226 +1,322 @@
 "use client";
-import { Suspense, useEffect, useState } from "react";
+
+import { Suspense, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useSearchParams } from "next/navigation";
 import type { VocabularyDTO } from "@/shared/types";
-import Link from "next/link";
+import { ChallengeMode } from "./_components/ChallengeMode";
+import { itemsForMinutes } from "@/modules/classroom/design";
+import { ExploreMode } from "./_components/ExploreMode";
+import { ReviewMode } from "./_components/ReviewMode";
+import { StoryMode } from "./_components/StoryMode";
+import { ProgressBar, Stat } from "./_components/ui";
+import { getTrainerServerSnapshot, getTrainerSnapshot, subscribeTrainer, toggleKnown } from "./_components/store";
+import type { ReviewStats, TrainerMode, VocabReviewItem } from "./_components/types";
 
-interface VocabReviewItem {
-  id: string;
-  easeFactor: number;
-  interval: number;
-  repetitions: number;
-  nextReview: string;
-  vocabulary: VocabularyDTO;
+const TOAST_MS = 2200;
+
+const MODES: { id: TrainerMode; label: string; icon: string }[] = [
+  { id: "review", label: "Repaso SRS", icon: "🧠" },
+  { id: "explore", label: "Explorar", icon: "🗂️" },
+  { id: "challenge", label: "Desafío", icon: "⚡" },
+  { id: "stories", label: "Historias", icon: "📖" },
+];
+
+type ToastTone = "success" | "info" | "warning";
+
+const EMPTY_STATS: ReviewStats = { total: 0, due: 0, learning: 0, mature: 0 };
+
+async function fetchReviewData(): Promise<{ due: VocabReviewItem[]; stats: ReviewStats }> {
+  const [dueResponse, statsResponse] = await Promise.all([
+    fetch("/api/srs/vocab/due?limit=20"),
+    fetch("/api/srs/vocab/stats"),
+  ]);
+  return {
+    due: (await dueResponse.json()) as VocabReviewItem[],
+    stats: (await statsResponse.json()) as ReviewStats,
+  };
 }
 
-interface ReviewStats {
-  total: number;
-  due: number;
-  learning: number;
-  mature: number;
+interface ProfileDTO {
+  xp: number;
+  streak: number;
+  bestStreak: number;
+  level: string;
+  itemsToday: number;
+  dailyGoal: number;
+  classDesign: { minutes: 45 | 60 | 90 | 120 };
 }
 
-function ReviewInner() {
-  const [items, setItems] = useState<VocabReviewItem[]>([]);
-  const [stats, setStats] = useState<ReviewStats>({ total: 0, due: 0, learning: 0, mature: 0 });
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [showAnswer, setShowAnswer] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [reviewing, setReviewing] = useState(false);
+function TrainerInner() {
+  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<TrainerMode>(
+    searchParams.get("modo") === "historias" ? "stories" : "review",
+  );
+  const [profile, setProfile] = useState<ProfileDTO | null>(null);
+  const [bank, setBank] = useState<VocabularyDTO[]>([]);
+  const [bankLoading, setBankLoading] = useState(true);
+  const [due, setDue] = useState<VocabReviewItem[]>([]);
+  const [stats, setStats] = useState<ReviewStats>(EMPTY_STATS);
+  const [reviewLoading, setReviewLoading] = useState(true);
+  const [toast, setToast] = useState<{ id: number; message: string; tone: ToastTone } | null>(null);
 
-  async function fetchReviewData() {
-    const [dueRes, statsRes] = await Promise.all([
-      fetch("/api/srs/vocab/due?limit=20"),
-      fetch("/api/srs/vocab/stats"),
-    ]);
-    const dueData = (await dueRes.json()) as VocabReviewItem[];
-    const statsData = (await statsRes.json()) as ReviewStats;
-    return { dueData, statsData };
-  }
+  const local = useSyncExternalStore(subscribeTrainer, getTrainerSnapshot, getTrainerServerSnapshot);
+  const known = useMemo(() => new Set(local.known), [local.known]);
+  const score = {
+    xp: profile?.xp ?? 0,
+    streak: profile?.streak ?? 0,
+    best: profile?.bestStreak ?? 0,
+  };
+  // La duración de la clase decide cuánto entra en una sesión de práctica.
+  const sessionItems = profile ? itemsForMinutes(profile.classDesign.minutes) : 10;
 
-  async function loadData() {
-    setLoading(true);
-    try {
-      const { dueData, statsData } = await fetchReviewData();
-      setItems(dueData);
-      setStats(statsData);
-      setCurrentIndex(0);
-      setShowAnswer(false);
-    } catch (e) {
-      console.error("Failed to load review data:", e);
-    }
-    setLoading(false);
-  }
+  const showToast = useCallback((message: string, tone: ToastTone = "success") => {
+    setToast({ id: Date.now(), message, tone });
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   useEffect(() => {
     let active = true;
-    void (async () => {
-      try {
-        const { dueData, statsData } = await fetchReviewData();
-        if (!active) return;
-        setItems(dueData);
-        setStats(statsData);
-      } catch (e) {
-        console.error("Failed to load review data:", e);
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
+    fetch("/api/progress")
+      .then((response) => response.json())
+      .then((data: { profile: ProfileDTO }) => {
+        if (active) setProfile(data.profile);
+      })
+      .catch(() => {
+        if (active) setProfile(null);
+      });
     return () => {
       active = false;
     };
   }, []);
 
-  const current = items[currentIndex];
+  const record = useCallback(
+    async (event: { event: "practice" | "review" | "story"; items: number; correct: number; xp: number }) => {
+      try {
+        const response = await fetch("/api/progress", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(event),
+        });
+        if (response.ok) setProfile((await response.json()) as ProfileDTO);
+      } catch {
+        // A failed counter must never block the practice the learner is doing.
+      }
+    },
+    [],
+  );
 
-  async function submitReview(q: number) {
-    if (!current) return;
-    setReviewing(true);
-    try {
-      await fetch("/api/srs/vocab/review", {
+  useEffect(() => {
+    let active = true;
+    fetch("/api/vocabulary/all")
+      .then((response) => response.json())
+      .then((data: VocabularyDTO[]) => {
+        if (!active) return;
+        setBank(Array.isArray(data) ? data : []);
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to load vocabulary:", error);
+        if (active) showToast("No pudimos cargar el vocabulario", "warning");
+      })
+      .finally(() => {
+        if (active) setBankLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [showToast]);
+
+  useEffect(() => {
+    let active = true;
+    fetchReviewData()
+      .then((data) => {
+        if (!active) return;
+        setDue(data.due);
+        setStats(data.stats);
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to load review data:", error);
+        if (active) showToast("No pudimos cargar el repaso", "warning");
+      })
+      .finally(() => {
+        if (active) setReviewLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [showToast]);
+
+  /** Event handler: persists one SRS grade; the SM-2 math lives in the API. */
+  const gradeVocabulary = useCallback(
+    async (vocabularyId: string, quality: number) => {
+      const response = await fetch("/api/srs/vocab/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vocabularyId: current.vocabulary.id,
-          quality: q,
-        }),
+        body: JSON.stringify({ vocabularyId, quality }),
       });
-      // Move to next or reload if done
-      if (currentIndex < items.length - 1) {
-        setCurrentIndex((i) => i + 1);
-        setShowAnswer(false);
-      } else {
-        await loadData();
+      if (!response.ok) {
+        showToast("No pudimos guardar ese repaso", "warning");
+        throw new Error(`Review failed with ${response.status}`);
       }
-    } catch (e) {
-      console.error("Review failed:", e);
+      await record({ event: "review", items: 1, correct: quality >= 3 ? 1 : 0, xp: quality >= 3 ? 10 : 2 });
+    },
+    [record, showToast],
+  );
+
+  /** Event handler: refetches due words and stats after a finished session. */
+  const reloadReview = useCallback(async () => {
+    setReviewLoading(true);
+    try {
+      const data = await fetchReviewData();
+      setDue(data.due);
+      setStats(data.stats);
+    } catch (error) {
+      console.error("Failed to reload review data:", error);
+      showToast("No pudimos cargar el repaso", "warning");
+    } finally {
+      setReviewLoading(false);
     }
-    setReviewing(false);
-  }
+  }, [showToast]);
 
-  if (loading) return <p className="text-center py-12">Cargando repaso...</p>;
-
-  if (items.length === 0) {
-    return (
-      <div className="max-w-2xl mx-auto text-center space-y-6">
-        <h2 className="text-2xl font-bold">Repaso de vocabulario</h2>
-        <p className="text-slate-600">
-          ¡No hay palabras para repasar ahora! Vuelve más tarde.
-        </p>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="p-3 bg-white rounded border">
-            <div className="font-medium">Total aprendido</div>
-            <div className="text-2xl font-bold text-indigo-600">{stats.total}</div>
-          </div>
-          <div className="p-3 bg-white rounded border">
-            <div className="font-medium">Maduros (21+ días)</div>
-            <div className="text-2xl font-bold text-green-600">{stats.mature}</div>
-          </div>
-        </div>
-        <Link
-          href="/dashboard"
-          className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg"
-        >
-          Volver al dashboard
-        </Link>
-      </div>
-    );
-  }
-
-  const progress = ((currentIndex + 1) / items.length) * 100;
+  const matureRatio = stats.total === 0 ? 0 : Math.round((stats.mature / stats.total) * 100);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Repaso SRS</h2>
-        <div className="text-sm text-slate-500">
-          {currentIndex + 1} / {items.length}
-        </div>
-      </div>
-
-      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-indigo-600 transition-all duration-300"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
-      <div className="p-6 bg-white rounded-xl border shadow-sm space-y-6">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-4xl">{current.vocabulary.term}</span>
-            <span className="text-sm text-slate-500 capitalize">{current.vocabulary.level}</span>
-            <span className="text-xs px-2 py-1 bg-slate-100 rounded">
-              Rep: {current.repetitions} • Intervalo: {current.interval}d • EF: {current.easeFactor.toFixed(2)}
+    <div className="space-y-6">
+      <section className="rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-600 to-violet-600 text-white p-5 md:p-6 shadow-lg shadow-indigo-600/20">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 md:justify-between">
+          <div className="space-y-1.5">
+            <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-widest text-white/70">
+              Vocabulario
             </span>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Entrenador de vocabulario</h1>
+            <p className="text-white/80 max-w-lg text-sm">
+              Repaso espaciado real sobre tu banco de HisIn, con explorador de tarjetas y desafío rápido para
+              reforzar cada palabra en contexto.
+            </p>
           </div>
-          <p className="text-slate-700">{current.vocabulary.definition}</p>
-          <p className="text-sm text-slate-500 italic mt-1">{current.vocabulary.example}</p>
+          <div className="grid grid-cols-3 gap-2 text-center shrink-0">
+            <div className="px-3 py-1.5 rounded-xl bg-white/15">
+              <div className="text-[10px] uppercase tracking-wide text-white/70">XP</div>
+              <div className="text-lg font-bold">{score.xp}</div>
+            </div>
+            <div className="px-3 py-1.5 rounded-xl bg-white/15">
+              <div className="text-[10px] uppercase tracking-wide text-white/70">Racha</div>
+              <div className="text-lg font-bold">{score.streak}</div>
+            </div>
+            <div className="px-3 py-1.5 rounded-xl bg-white/15">
+              <div className="text-[10px] uppercase tracking-wide text-white/70">Mejor</div>
+              <div className="text-lg font-bold">{score.best}</div>
+            </div>
+          </div>
         </div>
 
-        {!showAnswer ? (
-          <div className="space-y-4">
-            <p className="text-slate-600">¿Recuerdas el significado? Intenta recordarlo antes de voltear.</p>
-            <button
-              onClick={() => setShowAnswer(true)}
-              className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700"
-            >
-              Mostrar respuesta
-            </button>
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center justify-between text-xs text-white/75">
+            <span>
+              {stats.due} {stats.due === 1 ? "pendiente" : "pendientes"} hoy · {stats.total} en repaso
+            </span>
+            <span>{matureRatio}% maduras</span>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="p-4 bg-slate-50 rounded-lg border">
-              <p className="font-semibold text-slate-700">{current.vocabulary.definition}</p>
-              <p className="text-sm text-slate-500 italic mt-1">{current.vocabulary.example}</p>
-            </div>
-            <p className="text-sm text-slate-600">
-              ¿Qué tan fácil fue recordarlo? (0 = nada, 5 = perfecto)
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { q: 0, label: "Nada (0)", color: "bg-red-600" },
-                { q: 1, label: "Muy difícil (1)", color: "bg-red-500" },
-                { q: 2, label: "Difícil (2)", color: "bg-orange-500" },
-                { q: 3, label: "Con esfuerzo (3)", color: "bg-yellow-500" },
-                { q: 4, label: "Fácil (4)", color: "bg-lime-500" },
-                { q: 5, label: "Perfecto (5)", color: "bg-green-600" },
-              ].map(({ q, label, color }) => (
-                <button
-                  key={q}
-                  onClick={() => submitReview(q)}
-                  disabled={reviewing}
-                  className={`px-3 py-2 rounded text-white text-sm font-medium ${color} hover:opacity-90 disabled:opacity-50`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+          <ProgressBar value={matureRatio} onDark />
+        </div>
+      </section>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <Stat label="Banco total" value={bank.length} hint="palabras cargadas" />
+        <Stat label="Pendientes hoy" value={stats.due} />
+        <Stat label="Aprendiendo" value={stats.learning} />
+        <Stat label="Maduras" value={stats.mature} hint="21+ días" />
       </div>
 
-      <div className="flex gap-3">
-        <Link
-          href="/dashboard"
-          className="flex-1 text-center px-4 py-2 border rounded"
-        >
-          Volver
-        </Link>
-        <Link
-          href="/practice/vocabulary"
-          className="flex-1 text-center px-4 py-2 bg-indigo-600 text-white rounded"
-        >
-          Practicar más
-        </Link>
+      <div role="tablist" aria-label="Modos del entrenador" className="flex flex-wrap gap-2">
+        {MODES.map((item) => {
+          const active = mode === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setMode(item.id)}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+                active
+                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/30"
+                  : "bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600"
+              }`}
+            >
+              <span aria-hidden="true" className="mr-1.5">
+                {item.icon}
+              </span>
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {mode === "review" ? (
+        <ReviewMode
+          loading={reviewLoading}
+          items={due}
+          onGrade={gradeVocabulary}
+          onReload={reloadReview}
+          onSwitchMode={setMode}
+        />
+      ) : null}
+
+      {mode === "explore" ? (
+        <ExploreMode
+          bank={bank}
+          loading={bankLoading}
+          recentlyMastered={known}
+          onToggleMastered={toggleKnown}
+          onCreated={(entry) => setBank((previous) => [entry, ...previous])}
+        />
+      ) : null}
+
+      {mode === "stories" ? <StoryMode /> : null}
+
+      {mode === "challenge" ? (
+        <ChallengeMode
+          bank={bank}
+          loading={bankLoading}
+          roundSize={sessionItems}
+          score={score}
+          onAnswered={(gained, correct) =>
+            void record({ event: "practice", items: 1, correct: correct ? 1 : 0, xp: gained })
+          }
+          onToast={showToast}
+        />
+      ) : null}
+
+
+      <div aria-live="polite" className="fixed bottom-24 right-6 z-20">
+        {toast ? (
+          <div
+            key={toast.id}
+            className={`px-4 py-3 rounded-xl text-white text-sm font-medium shadow-lg ${
+              toast.tone === "warning"
+                ? "bg-amber-600"
+                : toast.tone === "info"
+                  ? "bg-indigo-600"
+                  : "bg-emerald-600"
+            }`}
+          >
+            {toast.message}
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
 
-export default function VocabReviewPage() {
+export default function VocabTrainerPage() {
   return (
-    <Suspense fallback={<p className="p-8 text-center">Cargando...</p>}>
-      <ReviewInner />
+    <Suspense fallback={<div className="h-64 rounded-lg bg-white border border-slate-200 animate-pulse" />}>
+      <TrainerInner />
     </Suspense>
   );
 }

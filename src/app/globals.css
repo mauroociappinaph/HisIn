@@ -1,26 +1,275 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * HisIn's palette is HisMia's design system, not an approximation.
+ *
+ * The app grew on Tailwind's default scales (`indigo-600`, `slate-200`, ...), so
+ * instead of rewriting every component the scales are remapped to the brand
+ * tokens here: `indigo` is the teal primary, `slate` is the canvas/ink/border
+ * family, `emerald` is success, `amber` warning, `rose` danger. Utilities keep
+ * working and every screen lands on brand at once.
+ *
+ * Dark mode follows HisMia too: `.dark` on <html> overrides the same variables,
+ * because Tailwind emits utilities that reference them.
+ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Neutrals: canvas, card, ink, muted, border */
+  --color-slate-50: var(--brand-bg);
+  --color-slate-100: var(--brand-mint);
+  --color-slate-200: var(--brand-border);
+  --color-slate-300: var(--brand-border-soft);
+  --color-slate-400: var(--brand-muted);
+  --color-slate-500: var(--brand-muted);
+  --color-slate-600: var(--brand-secondary-ink);
+  --color-slate-700: var(--brand-fg);
+  --color-slate-800: var(--brand-fg);
+  --color-slate-900: var(--brand-fg);
+
+  /* Primary: teal */
+  --color-indigo-50: var(--brand-primary-soft);
+  --color-indigo-100: var(--brand-secondary);
+  --color-indigo-200: var(--brand-accent);
+  --color-indigo-300: var(--brand-accent);
+  --color-indigo-400: var(--brand-ring);
+  --color-indigo-500: var(--brand-ring);
+  --color-indigo-600: var(--brand-primary);
+  --color-indigo-700: var(--brand-primary-strong);
+  --color-indigo-800: var(--brand-primary-strong);
+  --color-indigo-900: var(--brand-primary-strong);
+
+  /* Violet stands in for the old gradient end */
+  --color-violet-400: var(--brand-chart-5);
+  --color-violet-500: var(--brand-chart-5);
+  --color-violet-600: var(--brand-chart-5);
+
+  /* Semantic states */
+  --color-emerald-50: var(--brand-primary-soft);
+  --color-emerald-100: var(--brand-secondary);
+  --color-emerald-200: var(--brand-accent);
+  --color-emerald-500: var(--brand-success);
+  --color-emerald-600: var(--brand-success);
+  --color-emerald-700: var(--brand-success);
+  --color-emerald-800: var(--brand-success);
+
+  --color-teal-100: var(--brand-secondary);
+  --color-teal-600: var(--brand-primary);
+  --color-teal-700: var(--brand-primary-strong);
+
+  --color-amber-50: var(--brand-warning-soft);
+  --color-amber-100: var(--brand-warning-soft);
+  --color-amber-200: var(--brand-warning-soft);
+  --color-amber-300: var(--brand-warning);
+  --color-amber-400: var(--brand-warning);
+  --color-amber-500: var(--brand-warning);
+  --color-amber-600: var(--brand-warning);
+  --color-amber-700: var(--brand-warning-strong);
+  --color-amber-800: var(--brand-warning-strong);
+
+  --color-rose-50: var(--brand-danger-soft);
+  --color-rose-100: var(--brand-danger-soft);
+  --color-rose-200: var(--brand-danger-soft);
+  --color-rose-400: var(--brand-danger);
+  --color-rose-500: var(--brand-danger);
+  --color-rose-600: var(--brand-danger);
+  --color-rose-700: var(--brand-danger-strong);
+
+  --color-orange-500: var(--brand-warning);
+  --color-orange-600: var(--brand-warning-strong);
+
+  --color-lime-500: var(--brand-success);
+  --color-lime-600: var(--brand-success);
+  --color-lime-700: var(--brand-success);
+
+  --color-sky-50: var(--brand-primary-soft);
+  --color-sky-100: var(--brand-secondary);
+  --color-sky-200: var(--brand-secondary);
+  --color-sky-600: var(--brand-chart-3);
+  --color-sky-700: var(--brand-chart-3);
+
+  --color-fuchsia-100: var(--brand-secondary);
+  --color-fuchsia-700: var(--brand-chart-5);
+
+  /* Type scale and radii, so no screen improvises its own */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+
+  --radius-xs: 0.5rem;
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+
+  --shadow-sm: 0 1px 2px rgb(12 36 34 / 0.06);
+  --shadow-md: 0 8px 24px -12px rgb(12 36 34 / 0.18);
+  --shadow-lg: 0 16px 40px -20px rgb(12 36 34 / 0.22);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  color-scheme: light;
+
+  --brand-bg: #fbfefd;
+  --brand-card: #ffffff;
+  --brand-mint: #e3f8f2;
+  --brand-border: #dce7e5;
+  --brand-border-soft: #c6dad7;
+  --brand-fg: #0c2422;
+  --brand-heading: #15456f;
+  --brand-muted: #5b6d6d;
+
+  --brand-primary: #1a8276;
+  --brand-primary-strong: #00615a;
+  --brand-primary-soft: #ddf7f0;
+  --brand-primary-ink: #fafffd;
+  --brand-secondary: #e5f6f0;
+  --brand-secondary-ink: #12403c;
+  --brand-accent: #caf2e7;
+  --brand-ring: #1e8d80;
+
+  --brand-success: #31a773;
+  --brand-warning: #e8ab3e;
+  --brand-warning-soft: #fff4dc;
+  --brand-warning-strong: #7a4b00;
+  --brand-danger: #cf3f4c;
+  --brand-danger-soft: #ffedeb;
+  --brand-danger-strong: #a3202d;
+
+  --brand-chart-1: #1e8d80;
+  --brand-chart-2: #4fad83;
+  --brand-chart-3: #57b1d4;
+  --brand-chart-4: #e8ab3e;
+  --brand-chart-5: #9372c8;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --brand-bg: #0b1620;
+  --brand-card: #13252d;
+  --brand-mint: #0e2328;
+  --brand-border: #27424b;
+  --brand-border-soft: #3b5f68;
+  --brand-fg: #e7f1f3;
+  --brand-heading: #a8d1f5;
+  --brand-muted: #a0b6bb;
+
+  --brand-primary: #3cc9b0;
+  --brand-primary-strong: #6fdcc7;
+  --brand-primary-soft: #15403d;
+  --brand-primary-ink: #062320;
+  --brand-secondary: #17323a;
+  --brand-secondary-ink: #bfe7de;
+  --brand-accent: #1a3f3b;
+  --brand-ring: #4fd6bd;
+
+  --brand-success: #52c98f;
+  --brand-warning: #e9b44c;
+  --brand-warning-soft: #342a12;
+  --brand-warning-strong: #f3c770;
+  --brand-danger: #ff7b72;
+  --brand-danger-soft: #3b1b20;
+  --brand-danger-strong: #ffb4ab;
+
+  --brand-chart-1: #3cc9b0;
+  --brand-chart-2: #6fcf97;
+  --brand-chart-3: #6cc4e8;
+  --brand-chart-4: #e9b44c;
+  --brand-chart-5: #b195e8;
+}
+
+/* Palette variants, same four the owner picked in HisMia. */
+[data-palette="rosa"] {
+  --brand-primary: #902558;
+  --brand-primary-strong: #6d1c43;
+  --brand-primary-soft: #ffe9f2;
+}
+
+[data-palette="celeste"] {
+  --brand-primary: #0195ca;
+  --brand-primary-strong: #016f97;
+  --brand-primary-soft: #e0f7ff;
+}
+
+[data-palette="violeta"] {
+  --brand-primary: #7e5acc;
+  --brand-primary-strong: #5f3fa3;
+  --brand-primary-soft: #f3e8ff;
+}
+
+[data-palette="azul-fuerte"] {
+  --brand-primary: #2858cd;
+  --brand-primary-strong: #1c3f9c;
+  --brand-primary-soft: #d0e4ff;
+}
+
+.dark[data-palette="rosa"] {
+  --brand-primary: #f07bab;
+  --brand-primary-soft: #3a1526;
+}
+
+.dark[data-palette="celeste"] {
+  --brand-primary: #4fc3e8;
+  --brand-primary-soft: #0d2f3d;
+}
+
+.dark[data-palette="violeta"] {
+  --brand-primary: #b195e8;
+  --brand-primary-soft: #241a3a;
+}
+
+.dark[data-palette="azul-fuerte"] {
+  --brand-primary: #7fa7ff;
+  --brand-primary-soft: #16233f;
+}
+
+[data-contrast="high"] {
+  --brand-bg: #ffffff;
+  --brand-fg: #090909;
+  --brand-primary: #0f5f56;
+  --brand-border: #4d5660;
+  --brand-danger: #a9000c;
+}
+
+/*
+ * `bg-white` is every card in this app. Tailwind's own theme keeps `--color-white`
+ * literal, so dark mode overrides the utility directly instead of fighting the
+ * framework: a white card on a navy canvas is unreadable, which is exactly what
+ * happened before this rule existed.
+ */
+.dark .bg-white {
+  background-color: var(--brand-card);
+}
+
+.dark .bg-white\/80 {
+  background-color: color-mix(in srgb, var(--brand-card) 80%, transparent);
+}
+
+.dark .bg-white\/15,
+.dark .bg-white\/20,
+.dark .bg-white\/25,
+.dark .bg-white\/30 {
+  background-color: rgb(255 255 255 / 0.16);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--brand-bg);
+  color: var(--brand-fg);
+  font-family:
+    var(--font-geist-sans),
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+
+/* One visible focus ring everywhere, in the brand's own ring colour. */
+:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: 2px;
 }

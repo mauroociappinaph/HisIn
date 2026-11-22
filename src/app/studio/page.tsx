@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type Kind = "question" | "vocabulary" | "lesson";
+type Kind = "question" | "vocabulary" | "lesson" | "story";
 type JobStatus = "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED";
 
 interface JobSummary {
@@ -191,6 +191,7 @@ export default function StudioPage() {
               <option value="question">Ejercicios</option>
               <option value="vocabulary">Vocabulario</option>
               <option value="lesson">Lecciones</option>
+              <option value="story">Historias</option>
             </select>
           </label>
 

@@ -32,6 +32,118 @@ enum QuestionType {
   LISTENING_MCQ
 }
 
+/// Durable learner state. XP, streak and level lived in localStorage before this,
+/// which meant clearing the browser erased months of practice.
+model LearnerProfile {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level         CefrLevel @default(B1)
+  goal          String    @default("interviews")
+  dailyGoal     Int       @default(10)
+  xp            Int       @default(0)
+  streak        Int       @default(0)
+  bestStreak    Int       @default(0)
+  lastActiveDay String?
+  itemsToday    Int       @default(0)
+  totalItems    Int       @default(0)
+  totalCorrect  Int       @default(0)
+  onboardedAt   DateTime?
+  discipline     String   @default("negocios")
+  educationLevel String   @default("grado_inicial")
+  educationMix   Json?
+  classMinutes   Int      @default(60)
+  sequence       String   @default("semanal")
+  classPlans     ClassPlan[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+/// One designed session: the teaching context plus the minute-by-minute flow the
+/// app generated for it. Stored as a snapshot so a plan never changes under the
+/// learner when the algorithm is tuned later.
+model ClassPlan {
+  id             String   @id @default(cuid())
+  userId         String
+  user           LearnerProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  discipline     String
+  educationLevel String
+  minutes        Int
+  sequence       String
+  topic          String
+  flow           Json
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model LessonCompletion {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  completedAt DateTime @default(now())
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+}
+
+enum TopicSkill {
+  GRAMMAR
+  READING
+  WRITING
+  STORY
+}
+
+/// A syllabus topic (Tema 1: verb to be) whose four skill materials are written
+/// by the engine for healthtech founders, never for a generic learner.
+model Topic {
+  id        String          @id @default(cuid())
+  slug      String          @unique
+  title     String
+  ord       Int             @default(0)
+  /// Display code the owner uses ("6.1", "6.2") when a topic has parts.
+  code      String?
+  /// Module this submodule belongs to ("6 · Present simple"), so the syllabus
+  /// reads as modules with submodules instead of a flat list.
+  unit      String?
+  unitOrder Int             @default(0)
+  level     CefrLevel
+  focus     String?
+  createdAt DateTime        @default(now())
+  materials TopicMaterial[]
+}
+
+model TopicMaterial {
+  id        String     @id @default(cuid())
+  topicId   String
+  topic     Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  skill     TopicSkill
+  title     String
+  body      String     @db.Text
+  keyPoints String[]
+  createdAt DateTime   @default(now())
+
+  @@unique([topicId, skill])
+  @@index([topicId])
+}
+
+/// A real article from a healthtech or startup feed, plus the analysis the engine
+/// extracted from it: the vocabulary and patterns a learner should notice.
+model NewsArticle {
+  id          String    @id @default(cuid())
+  url         String    @unique
+  title       String
+  source      String
+  excerpt     String    @db.Text
+  publishedAt DateTime?
+  analysis    Json?
+  analyzedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([publishedAt])
+}
+
 model Question {
   id          String       @id @default(cuid())
   level       CefrLevel
@@ -42,6 +154,10 @@ model Question {
   answer      String
   explanation String?
   audioUrl    String?
+  /// For listening items: the real video and the second where the line is said,
+  /// so the learner hears it in context instead of a synthesised clip.
+  youtubeVideoId String?
+  youtubeStartSec Int?
   tags        String[]
   createdAt   DateTime     @default(now())
 
@@ -61,16 +177,53 @@ model Lesson {
   @@index([module, level])
 }
 
+enum VocabularyKind {
+  WORD
+  PHRASAL_VERB
+  PATTERN
+  IDIOM
+}
+
+enum VocabularySource {
+  SEED
+  GENERATED
+  USER
+}
+
 model Vocabulary {
+  id           String           @id @default(cuid())
+  term         String
+  definition   String
+  example      String
+  module       String
+  level        CefrLevel
+  kind         VocabularyKind   @default(WORD)
+  particle     String?
+  source       VocabularySource @default(SEED)
+  extraExample String?
+  notes        String?
+  separable    Boolean?
+  register     String?
+  function     String?
+  createdAt    DateTime         @default(now())
+  reviews      VocabularyReview[]
+
+  @@index([module, level])
+  @@index([kind])
+}
+
+/// A short generated narrative that recycles target vocabulary in context.
+model VocabularyStory {
   id          String     @id @default(cuid())
-  term        String
-  definition  String
-  example     String
   module      String
   level       CefrLevel
+  title       String
+  body        String     @db.Text
+  translation String     @db.Text
+  targetWords String[]
   createdAt   DateTime   @default(now())
-  reviews     VocabularyReview[]
 
+  @@unique([module, level, title])
   @@index([module, level])
 }
 
@@ -91,6 +244,8 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   vocabReviews  VocabularyReview[]
+  profile       LearnerProfile?
+  completions   LessonCompletion[]
 }
 
 enum GenerationStatus {
