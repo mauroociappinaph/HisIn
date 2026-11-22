@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { runGentleShell } from "@/modules/ai/gentle-shell";
-import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
+import { runWithFallback } from "@/modules/ai/with-fallback";
+import { resolveTimeoutMs } from "@/modules/ai/models";
 import { TopicRepository } from "@/modules/topics/repository";
 
 /**
@@ -41,13 +41,10 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
   const topic = await new TopicRepository().findBySlug(slug);
   if (!topic) return NextResponse.json({ error: "topic not found" }, { status: 404 });
 
-  const [model] = resolveModels();
-  if (!model) return NextResponse.json({ error: "no model configured" }, { status: 500 });
-
   const grammar = topic.materials.find((material) => material.skill === "GRAMMAR");
 
   try {
-    const response = await runGentleShell({
+    const response = await runWithFallback({
       prompt: [
         `Lesson: ${JSON.stringify(topic.title)} at CEFR ${topic.level}.`,
         grammar ? `Structure to use: ${JSON.stringify(grammar.keyPoints.slice(0, 3).join(" | "))}` : "",
@@ -61,7 +58,6 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
         .filter(Boolean)
         .join("\n"),
       system: SYSTEM_PROMPT,
-      model,
       timeoutMs: resolveTimeoutMs() * 2,
     });
 

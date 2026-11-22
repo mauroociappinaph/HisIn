@@ -73,3 +73,6 @@ L22 (defecto encontrado durante la verificación): `curriculum-design-program-ev
 
 L23 (historias conectadas ejecutadas): las 145 historias se reescribieron en orden de temario con continuidad de mundo (Elena y Marcus atraviesan 43.1 → 43.5 con la misma empresa). Todas entre **293 y 390 palabras**. 144 prólogos y 144 citas; 43 prólogos de módulo.
 L24 (reparación de deriva): `scripts/repair-drift.ts` borra **solo** los materiales desviados de temas de dominio cuando 3 o más de 4 se desviaron, y el generador rellena esas ranuras. Dry-run primero, `--apply` después; después se re-ejecuta `audit:topics` para confirmar.
+
+L25 (defecto de resiliencia encontrado): `resolveModels()` devuelve una cadena ordenada de modelos, pero **todas las rutas usaban `const [model] = resolveModels()`**, así que el primer 429 terminaba la generación. `runWithFallback` recorre la cadena (presupuesto completo para el primero, 45 s para los siguientes) y las ocho rutas de contenido lo usan. La generación de un tema pasó de 502 a 201 con el proveedor principal agotado.
+L26 (borrado seguro): `repair-drift` ahora escribe un backup JSON en `odd/backups/drift-<timestamp>.json` **antes** de borrar y acepta `--restore <archivo>`; sin `--apply` solo reporta. Motivo: una corrida anterior borró materiales y la generación falló por cuota, dejando 13 temas incompletos.

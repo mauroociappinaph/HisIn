@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/shared/db/prisma";
-import { runGentleShell } from "@/modules/ai/gentle-shell";
-import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
+import { runWithFallback } from "@/modules/ai/with-fallback";
+import { resolveTimeoutMs } from "@/modules/ai/models";
 import { TopicRepository } from "@/modules/topics/repository";
 
 /** The English prologue of one submodule: what it is for, in the learner's world. */
@@ -16,13 +16,10 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
   const row = await prisma.topic.findUnique({ where: { slug }, select: { id: true, prologue: true } });
   if (row?.prologue) return NextResponse.json({ prologue: row.prologue, saved: false }, { status: 200 });
 
-  const [model] = resolveModels();
-  if (!model) return NextResponse.json({ error: "no model configured" }, { status: 500 });
-
   const grammar = topic.materials.find((material) => material.skill === "GRAMMAR");
 
   try {
-    const response = await runGentleShell({
+    const response = await runWithFallback({
       prompt: [
         `Module: ${JSON.stringify(topic.unit ?? "")}`,
         `Submodule: ${JSON.stringify(topic.title)} at CEFR ${topic.level}`,
@@ -33,7 +30,6 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
         .filter(Boolean)
         .join("\n"),
       system: SYSTEM_PROMPT,
-      model,
       timeoutMs: resolveTimeoutMs(),
     });
 

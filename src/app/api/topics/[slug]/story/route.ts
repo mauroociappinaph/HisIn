@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/shared/db/prisma";
-import { runGentleShell } from "@/modules/ai/gentle-shell";
-import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
+import { runWithFallback } from "@/modules/ai/with-fallback";
+import { resolveTimeoutMs } from "@/modules/ai/models";
 import { TopicRepository } from "@/modules/topics/repository";
 
 /**
@@ -53,9 +53,6 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
   const previousStory = previous?.materials.find((material) => material.skill === "STORY");
   const grammar = topic.materials.find((material) => material.skill === "GRAMMAR");
 
-  const [model] = resolveModels();
-  if (!model) return NextResponse.json({ error: "no hay modelo configurado" }, { status: 500 });
-
   const prompt = [
     `This submodule: ${JSON.stringify(topic.title)} (module ${JSON.stringify(topic.unit ?? "")}, CEFR ${topic.level}).`,
     grammar ? `It teaches: ${JSON.stringify(grammar.keyPoints.slice(0, 3).join(" | "))}` : "",
@@ -76,10 +73,9 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
   let currentPrompt = prompt;
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     try {
-      const response = await runGentleShell({
+      const response = await runWithFallback({
         prompt: currentPrompt,
         system: SYSTEM_PROMPT,
-        model,
         timeoutMs: resolveTimeoutMs() * 4,
       });
       const story = parse(response.text);

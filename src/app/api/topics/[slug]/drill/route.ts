@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runGentleShell } from "@/modules/ai/gentle-shell";
-import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
+import { runWithFallback } from "@/modules/ai/with-fallback";
+import { resolveTimeoutMs } from "@/modules/ai/models";
 import { parseGeneratedBatch } from "@/modules/ai/schema";
 import { presentOptions } from "@/shared/lib/presentation";
 import { TopicRepository } from "@/modules/topics/repository";
@@ -23,9 +23,6 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
   const topic = await new TopicRepository().findBySlug(slug);
   if (!topic) return NextResponse.json({ error: "tema no encontrado" }, { status: 404 });
 
-  const [model] = resolveModels();
-  if (!model) return NextResponse.json({ error: "no hay modelo configurado" }, { status: 500 });
-
   const grammar = topic.materials.find((material) => material.skill === "GRAMMAR");
   const prompt = [
     `Topic: ${JSON.stringify(topic.title)} at CEFR ${topic.level}.`,
@@ -44,10 +41,9 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
     .join(" ");
 
   try {
-    const response = await runGentleShell({
+    const response = await runWithFallback({
       prompt,
       system: DRILL_SYSTEM_PROMPT,
-      model,
       timeoutMs: resolveTimeoutMs() * 2,
     });
 

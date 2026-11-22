@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/shared/db/prisma";
-import { runGentleShell } from "@/modules/ai/gentle-shell";
-import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
+import { runWithFallback } from "@/modules/ai/with-fallback";
+import { resolveTimeoutMs } from "@/modules/ai/models";
 import { TopicRepository } from "@/modules/topics/repository";
 
 /** The English prologue of one module: what the whole unit covers and why. */
@@ -19,13 +19,10 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ order
   const existing = await prisma.unitMeta.findUnique({ where: { unitOrder }, select: { prologue: true } });
   if (existing?.prologue) return NextResponse.json({ prologue: existing.prologue, saved: false }, { status: 200 });
 
-  const [model] = resolveModels();
-  if (!model) return NextResponse.json({ error: "no model configured" }, { status: 500 });
-
   const unitName = topics[0].unit ?? `Module ${unitOrder}`;
 
   try {
-    const response = await runGentleShell({
+    const response = await runWithFallback({
       prompt: [
         `Module: ${JSON.stringify(unitName)}`,
         `Submodules: ${JSON.stringify(topics.map((topic) => topic.title))}`,
@@ -33,7 +30,6 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ order
         "Second person, plain English, no bullet lists.",
       ].join("\n"),
       system: SYSTEM_PROMPT,
-      model,
       timeoutMs: resolveTimeoutMs(),
     });
 

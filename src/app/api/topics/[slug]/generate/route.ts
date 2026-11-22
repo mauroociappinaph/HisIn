@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runGentleShell } from "@/modules/ai/gentle-shell";
-import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
+import { runWithFallback } from "@/modules/ai/with-fallback";
+import { resolveTimeoutMs } from "@/modules/ai/models";
 import { getLocalUser } from "@/modules/identity/service";
 import { ClassroomRepository } from "@/modules/classroom/repository";
 import { TopicRepository } from "@/modules/topics/repository";
@@ -31,14 +31,12 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
   if (!topic) return NextResponse.json({ error: "tema no encontrado" }, { status: 404 });
 
   const wanted = topic.missing.length > 0 ? topic.missing : [...TOPIC_SKILLS];
-  const [model] = resolveModels();
-  if (!model) return NextResponse.json({ error: "no hay modelo configurado" }, { status: 500 });
 
   const user = await getLocalUser();
   const design = await new ClassroomRepository().getDesign(user.id);
 
   try {
-    const response = await runGentleShell({
+    const response = await runWithFallback({
       prompt: buildTopicPrompt({
         topic: topic.title,
         level: topic.level,
@@ -46,7 +44,6 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
         focus: `${topic.focus ?? "healthtech"} · ${design.discipline} · ${design.educationLevel}`,
       }),
       system: TOPIC_SYSTEM_PROMPT,
-      model,
       timeoutMs: resolveTimeoutMs() * 3,
     });
 
@@ -69,10 +66,9 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
       })} The previous reply drifted from the topic: ${drifted
         .map((material) => material.skill)
         .join(", ")} never mention ${JSON.stringify(topic.title)}. Every material must be about this submodule and use its own terms; the GRAMMAR slot teaches the language patterns this skill needs, never an unrelated grammar point.`;
-      const second = await runGentleShell({
+      const second = await runWithFallback({
         prompt: repair,
         system: TOPIC_SYSTEM_PROMPT,
-        model,
         timeoutMs: resolveTimeoutMs() * 3,
       });
       payload = parseTopicMaterials(second.text);
@@ -97,11 +93,10 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
         })} The previous reply taught ${JSON.stringify(markers.slice(0, 3))} in the GRAMMAR material but ${offenders
           .map((material) => material.skill)
           .join(", ")} never used it. Every material must use that structure at least three times, naturally.`;
-        const second = await runGentleShell({
+        const second = await runWithFallback({
           prompt: repair,
           system: TOPIC_SYSTEM_PROMPT,
-          model,
-          timeoutMs: resolveTimeoutMs() * 3,
+            timeoutMs: resolveTimeoutMs() * 3,
         });
         payload = parseTopicMaterials(second.text);
       }
@@ -135,10 +130,9 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
       })} The previous reply repeated existing content: ${copies
         .map((copy) => `${copy.material.skill} duplicates ${copy.hit.topicSlug}`)
         .join("; ")}. Write something genuinely new for those skills, from a different scene, angle and examples.`;
-      const second = await runGentleShell({
+      const second = await runWithFallback({
         prompt: repair,
         system: TOPIC_SYSTEM_PROMPT,
-        model,
         timeoutMs: resolveTimeoutMs() * 3,
       });
       payload = parseTopicMaterials(second.text);

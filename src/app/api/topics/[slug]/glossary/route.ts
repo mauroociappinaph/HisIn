@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/shared/db/prisma";
-import { runGentleShell } from "@/modules/ai/gentle-shell";
-import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
+import { runWithFallback } from "@/modules/ai/with-fallback";
+import { resolveTimeoutMs } from "@/modules/ai/models";
 import { TopicRepository } from "@/modules/topics/repository";
 import {
   GLOSSARY_SYSTEM_PROMPT,
@@ -29,9 +29,6 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
   const story = topic.materials.find((material) => material.skill === "STORY");
   if (!story) return NextResponse.json({ error: "el tema todavía no tiene historia" }, { status: 409 });
 
-  const [model] = resolveModels();
-  if (!model) return NextResponse.json({ error: "no hay modelo configurado" }, { status: 500 });
-
   const row = await prisma.topic.findUnique({ where: { slug }, select: { id: true } });
   if (!row) return NextResponse.json({ error: "tema no encontrado" }, { status: 404 });
 
@@ -43,10 +40,9 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
   let lastError = "";
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     try {
-      const response = await runGentleShell({
+      const response = await runWithFallback({
         prompt,
         system: GLOSSARY_SYSTEM_PROMPT,
-        model,
         timeoutMs: resolveTimeoutMs() * 2,
       });
       const glossary = parseGlossary(response.text);

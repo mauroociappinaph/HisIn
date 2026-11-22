@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/shared/db/prisma";
-import { runGentleShell } from "@/modules/ai/gentle-shell";
-import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
+import { runWithFallback } from "@/modules/ai/with-fallback";
+import { resolveTimeoutMs } from "@/modules/ai/models";
 import { TopicRepository } from "@/modules/topics/repository";
 
 /**
@@ -23,13 +23,10 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
   const row = await prisma.topic.findUnique({ where: { slug }, select: { id: true, quote: true } });
   if (row?.quote) return NextResponse.json({ quote: row.quote, saved: false }, { status: 200 });
 
-  const [model] = resolveModels();
-  if (!model) return NextResponse.json({ error: "no hay modelo configurado" }, { status: 500 });
-
   const grammar = topic.materials.find((material) => material.skill === "GRAMMAR");
 
   try {
-    const response = await runGentleShell({
+    const response = await runWithFallback({
       prompt: [
         `Module: ${JSON.stringify(topic.unit ?? "the syllabus")}`,
         `Lesson: ${JSON.stringify(topic.title)} at CEFR ${topic.level}`,
@@ -39,7 +36,6 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
         .filter(Boolean)
         .join("\n"),
       system: SYSTEM_PROMPT,
-      model,
       timeoutMs: resolveTimeoutMs(),
     });
 
