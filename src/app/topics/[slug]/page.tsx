@@ -4,6 +4,7 @@ import { LevelBadge } from "@/components/vocab-ui";
 import { TopicRepository } from "@/modules/topics/repository";
 import { SKILL_LABELS, type TopicSkill } from "@/modules/topics/schema";
 import { GenerateMaterials } from "./generate-materials";
+import { StoryReader } from "./story-reader";
 
 async function TopicBody({ slug }: { slug: string }) {
   const topic = await new TopicRepository().findBySlug(slug);
@@ -71,7 +72,11 @@ async function TopicBody({ slug }: { slug: string }) {
                 </span>
                 <span className="text-[11px] text-slate-400">{material.title}</span>
               </div>
-              <div className="whitespace-pre-wrap text-slate-800 text-sm leading-relaxed">{material.body}</div>
+              {material.skill === "STORY" ? (
+                <StoryReader title={material.title} body={material.body} />
+              ) : (
+                <div className="whitespace-pre-wrap text-slate-800 text-sm leading-relaxed">{material.body}</div>
+              )}
               {material.keyPoints.length > 0 ? (
                 <ul className="space-y-1 border-t border-slate-200 pt-3">
                   {material.keyPoints.map((point) => (
