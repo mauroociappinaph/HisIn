@@ -134,6 +134,14 @@ export class TopicRepository {
     });
   }
 
+  /** Every material, for the duplicate check before saving new content. */
+  async materialCorpus(): Promise<{ skill: string; body: string; topicSlug: string }[]> {
+    const rows = await prisma.topicMaterial.findMany({
+      select: { skill: true, body: true, topic: { select: { slug: true } } },
+    });
+    return rows.map((row) => ({ skill: row.skill, body: row.body, topicSlug: row.topic.slug }));
+  }
+
   /** Prologues of every module, keyed by unit order. */
   async unitPrologues(): Promise<Map<number, string>> {
     const rows = await prisma.unitMeta.findMany({ select: { unitOrder: true, prologue: true } });

@@ -391,6 +391,10 @@ const TOPICS: SeedTopic[] = [
   { slug: "oral-assessment-scales", title: "Oral assessment scales and official descriptors", ord: 136, code: "43.3", unit: "43 · Examiner calibration and diagnostic feedback", unitOrder: 43, level: "C1" },
   { slug: "standardisation-bias-control", title: "Standardisation, calibration and bias control", ord: 137, code: "43.4", unit: "43 · Examiner calibration and diagnostic feedback", unitOrder: 43, level: "C1" },
   { slug: "room-simulation-incidents", title: "Room simulation and incident handling", ord: 138, code: "43.5", unit: "43 · Examiner calibration and diagnostic feedback", unitOrder: 43, level: "C1" },
+  // ── Módulo 44: formación docente y análisis del lenguaje ──
+  { slug: "pedagogical-grammar-discourse-analysis", title: "Pedagogical grammar and discourse analysis", ord: 139, code: "44.1", unit: "44 · Teacher development and language analysis", unitOrder: 44, level: "C2" },
+  { slug: "advanced-phonology-suprasegmentals", title: "Advanced phonology and suprasegmental features", ord: 140, code: "44.2", unit: "44 · Teacher development and language analysis", unitOrder: 44, level: "C2" },
+  { slug: "sla-diagnosis-error-treatment", title: "Second language acquisition, diagnosis and error treatment", ord: 141, code: "44.3", unit: "44 · Teacher development and language analysis", unitOrder: 44, level: "C2" },
 ];
 
 async function main() {

@@ -8,8 +8,10 @@ import {
   objectivesFor,
   parseLesson,
   readingMinutes,
+  normalizeSpacing,
   splitIdea,
   splitParagraphs,
+  toParagraphs,
   timelineFor,
   wordCount,
 } from "./lesson";
@@ -144,4 +146,24 @@ test("splitIdea turns one long paragraph into points", () => {
 test("splitIdea caps the number of points", () => {
   const many = Array.from({ length: 12 }, (_, index) => `Sentence number ${index}.`).join(" ");
   assert.equal(splitIdea(many, 6).length, 6);
+});
+
+test("normalizeSpacing puts a space back after a full stop", () => {
+  assert.equal(
+    normalizeSpacing("The product good.Instead, say the product is good.  Two spaces."),
+    "The product good. Instead, say the product is good. Two spaces.",
+  );
+});
+
+test("toParagraphs splits a paragraph-less block into readable paragraphs", () => {
+  const body =
+    "Our MVP is stable. The pipeline is slow. Are we ready for the board? The documents are complete. The team is not satisfied. It starts now.";
+  const paragraphs = toParagraphs(body);
+  assert.equal(paragraphs.length, 2);
+  assert.equal(paragraphs[0].endsWith("board?"), true);
+});
+
+test("toParagraphs keeps the paragraphs the text already has", () => {
+  const paragraphs = toParagraphs("First paragraph here.\n\nSecond paragraph here.");
+  assert.deepEqual(paragraphs, ["First paragraph here.", "Second paragraph here."]);
 });

@@ -12,6 +12,7 @@ import {
   readingMinutes,
   splitIdea,
   timelineFor,
+  toParagraphs,
   wordCount,
 } from "@/modules/topics/lesson";
 import { GLOSS_KIND_LABELS, type GlossEntry } from "@/modules/topics/glossary";
@@ -80,23 +81,25 @@ function Step({
   children: ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-24 rounded-lg border border-slate-200 bg-white p-5 sm:p-6 space-y-5">
-      <header className="space-y-1">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
-            <span className="grid h-7 w-7 place-items-center rounded-full bg-indigo-50 text-[11px] font-bold tabular-nums text-indigo-700">
-              {number}
-            </span>
-            <span className="text-indigo-600">
+    <section id={id} className="scroll-mt-24 space-y-3">
+      {/* The title lives above the card, large: you should know what the step is
+          before you read what it says. */}
+      <header className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1 px-1">
+        <h2 className="flex items-baseline gap-3 text-slate-900">
+          <span className="text-2xl font-black leading-none tabular-nums text-indigo-600">
+            {String(number).padStart(2, "0")}
+          </span>
+          <span className="flex items-center gap-2 text-xl font-bold tracking-tight sm:text-2xl">
+            <span className="text-indigo-500">
               <StepGlyph kind={glyph} />
             </span>
             {title}
-          </h2>
-          <span className="text-[11px] uppercase tracking-widest text-slate-400">{effort}</span>
-        </div>
-        {hint ? <p className="pl-9 text-xs text-slate-500">{hint}</p> : null}
+          </span>
+        </h2>
+        <span className="text-[11px] uppercase tracking-widest text-slate-400">{effort}</span>
       </header>
-      {children}
+      {hint ? <p className="px-1 text-xs text-slate-500">{hint}</p> : null}
+      <div className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">{children}</div>
     </section>
   );
 }
@@ -596,7 +599,7 @@ async function TopicBody({ slug }: { slug: string }) {
                   max={400}
                   suffix={`${wordCount(reading.body)} words`}
                 />
-                <Prose paragraphs={reading.body.split(/\n{2,}/).map((part) => part.trim())} />
+                <Prose paragraphs={toParagraphs(reading.body)} />
                 <KeyPoints points={reading.keyPoints} />
                 {readingGlosses.length > 0 ? (
                   <div className="space-y-2 border-t border-slate-200 pt-3">
@@ -616,7 +619,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 glyph="write"
                 hint="Writing is what fixes the structure: do not skip it."
               >
-                <Prose paragraphs={writing.body.split(/\n{2,}/).map((part) => part.trim())} />
+                <Prose paragraphs={toParagraphs(writing.body)} />
                 <SizeBar
                   label="Target length"
                   value={wordCount(writing.body)}

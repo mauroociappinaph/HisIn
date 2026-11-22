@@ -10,6 +10,7 @@ import {
   tokenizeStory,
   type GlossEntry,
 } from "@/modules/topics/glossary";
+import { normalizeSpacing, toParagraphs } from "@/modules/topics/lesson";
 
 interface AnalyzedEntry {
   term: string;
@@ -40,7 +41,12 @@ const STOP_WORDS = new Set([
  */
 export function StoryReader({ title, body, glosses }: StoryReaderProps) {
   const lookup = useMemo(() => buildLookup(glosses), [glosses]);
-  const tokens = useMemo(() => tokenizeStory(body, lookup), [body, lookup]);
+  // A story stored as one block renders as a wall: it is split into paragraphs
+  // here, and each paragraph is tokenised on its own so the words stay clickable.
+  const paragraphs = useMemo(
+    () => toParagraphs(body, 4).map((paragraph) => tokenizeStory(normalizeSpacing(paragraph), lookup)),
+    [body, lookup],
+  );
   const [hovered, setHovered] = useState<GlossEntry | null>(null);
   const [hoveredRaw, setHoveredRaw] = useState<string | null>(null);
   const [saved, setSaved] = useState<string[]>([]);
@@ -151,7 +157,9 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
 
       <h3 className="font-semibold text-slate-900">{title}</h3>
 
-      <p className="text-sm leading-relaxed text-slate-800">
+      <div className="max-w-prose space-y-5">
+      {paragraphs.map((tokens, paragraphIndex) => (
+      <p key={`paragraph-${paragraphIndex}`} className="text-[15px] leading-8 text-slate-800">
         {tokens.map((token, index) => {
           if (!isWordToken(token)) return <span key={`s-${index}`}>{token.text}</span>;
 
@@ -204,6 +212,8 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
           );
         })}
       </p>
+      ))}
+      </div>
 
       <div className="min-h-[2.75rem] text-xs" aria-live="polite">
         {busy ? (

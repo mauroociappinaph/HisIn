@@ -31,6 +31,48 @@ const ENGLISH_MARKER = /\b(the|to|of|in|on|for|with|is|are|was|were|have|has|had
 /** A quote carrying Spanish letters or punctuation is the learner's language. */
 const SPANISH_MARKER = /[\u00f1\u00e1\u00e9\u00ed\u00f3\u00fa\u00bf\u00a1]/i;
 
+/**
+ * Restores the punctuation spacing the engine sometimes drops.
+ *
+ * Stored materials come back as "The product good.Instead, say..." often enough
+ * that it is worth a single pass: a missing space after a full stop is what makes
+ * a text feel unreadable even when every word is right.
+ */
+export function normalizeSpacing(text: string): string {
+  return text
+    .replace(/([.!?;:])(?=[A-Za-zÁÉÍÓÚÑáéíóúñ¿¡])/g, "$1 ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .trim();
+}
+
+/**
+ * Paragraphs to render, even when the stored text has none.
+ *
+ * 126 of 134 reading materials arrived as one single block: without this the page
+ * shows a wall, no matter how good the prose is.
+ */
+export function toParagraphs(body: string, sentencesPerParagraph = 3): string[] {
+  const normalized = normalizeSpacing(body);
+  const explicit = normalized
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph) => paragraph.length > 0);
+
+  if (explicit.length > 1) return explicit;
+
+  const sentences = normalized
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 0);
+
+  const paragraphs: string[] = [];
+  for (let index = 0; index < sentences.length; index += sentencesPerParagraph) {
+    paragraphs.push(sentences.slice(index, index + sentencesPerParagraph).join(" "));
+  }
+  return paragraphs.length > 0 ? paragraphs : [normalized];
+}
+
 export function splitParagraphs(body: string): string[] {
   return body
     .split(/\n{2,}/)

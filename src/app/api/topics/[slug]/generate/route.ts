@@ -4,6 +4,7 @@ import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
 import { getLocalUser } from "@/modules/identity/service";
 import { ClassroomRepository } from "@/modules/classroom/repository";
 import { TopicRepository } from "@/modules/topics/repository";
+import { findDuplicates } from "@/modules/topics/progression";
 import {
   TOPIC_SKILLS,
   TOPIC_SYSTEM_PROMPT,
@@ -87,6 +88,34 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ slug:
       unit: topic.unit ?? undefined,
       unitOrder: topic.unitOrder,
     });
+    // Repetition gate: a material that says what another lesson already says is
+    // not new content, it is a second copy. The reply is retried once, naming the
+    // lesson it was duplicating.
+    const corpus = await repository.materialCorpus();
+    const copies = payload.materials.flatMap((material) =>
+      findDuplicates(material, corpus.filter((entry) => entry.topicSlug !== slug), 0.55).map((hit) => ({
+        material,
+        hit,
+      })),
+    );
+    if (copies.length > 0) {
+      const repair = `${buildTopicPrompt({
+        topic: topic.title,
+        level: topic.level,
+        skills: wanted,
+        focus: `${topic.focus ?? "healthtech"} · ${design.discipline} · ${design.educationLevel}`,
+      })} The previous reply repeated existing content: ${copies
+        .map((copy) => `${copy.material.skill} duplicates ${copy.hit.topicSlug}`)
+        .join("; ")}. Write something genuinely new for those skills, from a different scene, angle and examples.`;
+      const second = await runGentleShell({
+        prompt: repair,
+        system: TOPIC_SYSTEM_PROMPT,
+        model,
+        timeoutMs: resolveTimeoutMs() * 3,
+      });
+      payload = parseTopicMaterials(second.text);
+    }
+
     const saved = await repository.saveMaterials(row.id, payload);
     const fresh = await repository.findBySlug(topic.slug);
 
