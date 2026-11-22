@@ -399,6 +399,11 @@ const TOPICS: SeedTopic[] = [
   { slug: "methodological-approaches-reflective-practice", title: "Methodological approaches and reflective practice", ord: 142, code: "44.4", unit: "44 · Teacher development and language analysis", unitOrder: 44, level: "C2" },
   { slug: "curriculum-design-program-evaluation", title: "Curriculum design and programme evaluation", ord: 143, code: "44.5", unit: "44 · Teacher development and language analysis", unitOrder: 44, level: "C2" },
   { slug: "professional-development-academic-writing", title: "Professional development and academic writing", ord: 144, code: "44.6", unit: "44 · Teacher development and language analysis", unitOrder: 44, level: "C2" },
+  // ── Módulo 45: lingüística aplicada (posgrado) ──
+  { slug: "applied-linguistics-corpus-analysis", title: "Applied linguistics, discourse and corpus analysis", ord: 145, code: "45.1", unit: "45 · Postgraduate applied linguistics", unitOrder: 45, level: "C2" },
+  { slug: "psycholinguistics-second-language-acquisition", title: "Psycholinguistics and second language acquisition", ord: 146, code: "45.2", unit: "45 · Postgraduate applied linguistics", unitOrder: 45, level: "C2" },
+  { slug: "sociolinguistics-multilingualism-identity", title: "Sociolinguistics, multilingualism and identity", ord: 147, code: "45.3", unit: "45 · Postgraduate applied linguistics", unitOrder: 45, level: "C2" },
+  { slug: "language-policy-educational-planning", title: "Educational policy and language planning", ord: 148, code: "45.4", unit: "45 · Postgraduate applied linguistics", unitOrder: 45, level: "C2" },
 ];
 
 async function main() {
