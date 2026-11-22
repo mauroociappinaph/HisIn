@@ -11,6 +11,7 @@ export interface TopicMaterialDTO {
 }
 
 export interface TopicDTO {
+  id: string;
   slug: string;
   title: string;
   order: number;
@@ -21,11 +22,14 @@ export interface TopicDTO {
   focus: string | null;
   materials: TopicMaterialDTO[];
   missing: TopicSkill[];
+  /** Opening line shown before the lesson starts. */
+  quote: string | null;
   /** Per-story glossary: translations and the multi-word units of the story. */
   glosses: GlossEntry[];
 }
 
 function toDTO(row: {
+  id: string;
   slug: string;
   title: string;
   ord: number;
@@ -34,6 +38,7 @@ function toDTO(row: {
   unitOrder: number;
   level: string;
   focus: string | null;
+  quote: string | null;
   materials: { skill: string; title: string; body: string; keyPoints: string[] }[];
   glosses: { term: string; translation: string; kind: string; note: string | null }[];
 }): TopicDTO {
@@ -42,6 +47,7 @@ function toDTO(row: {
   );
 
   return {
+    id: row.id,
     slug: row.slug,
     title: row.title,
     order: row.ord,
@@ -56,6 +62,7 @@ function toDTO(row: {
       body: material.body,
       keyPoints: material.keyPoints,
     })),
+    quote: row.quote,
     missing: TOPIC_SKILLS.filter((skill) => !materials.some((m) => m.skill === skill)),
     glosses: row.glosses.map((gloss) => ({
       term: gloss.term,
@@ -121,6 +128,15 @@ export class TopicRepository {
         unitOrder: input.unitOrder ?? 0,
       },
     });
+  }
+
+  /** Topic ids the learner already marked as done. */
+  async completions(userId: string): Promise<string[]> {
+    const rows = await prisma.topicCompletion.findMany({
+      where: { userId },
+      select: { topicId: true },
+    });
+    return rows.map((row) => row.topicId);
   }
 
   /** Stores what the engine produced; existing skills are left untouched. */

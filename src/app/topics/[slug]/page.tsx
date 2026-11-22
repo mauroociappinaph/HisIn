@@ -15,6 +15,9 @@ import {
   wordCount,
 } from "@/modules/topics/lesson";
 import { GLOSS_KIND_LABELS, type GlossEntry } from "@/modules/topics/glossary";
+import { getLocalUser } from "@/modules/identity/service";
+import { LessonDone } from "./lesson-done";
+import { AiryProse, DiagramBlock, QuoteBanner, diagramFor } from "./lesson-visuals";
 import { GenerateMaterials } from "./generate-materials";
 import { StoryReader } from "./story-reader";
 import { TopicNav } from "./topic-nav";
@@ -115,15 +118,7 @@ function KeyPoints({ points }: { points: readonly string[] }) {
 }
 
 function Prose({ paragraphs }: { paragraphs: readonly string[] }) {
-  return (
-    <div className="space-y-3">
-      {paragraphs.map((paragraph) => (
-        <p key={paragraph.slice(0, 48)} className="text-sm leading-relaxed text-slate-800">
-          {paragraph}
-        </p>
-      ))}
-    </div>
-  );
+  return <AiryProse paragraphs={paragraphs} />;
 }
 
 const SPAN_BOX: Record<string, { x: number; w: number }> = {
@@ -263,7 +258,12 @@ function MiniBar({ label, value, max, suffix }: { label: string; value: number; 
 
 async function TopicBody({ slug }: { slug: string }) {
   const repository = new TopicRepository();
-  const [topic, topics] = await Promise.all([repository.findBySlug(slug), repository.list()]);
+  const user = await getLocalUser();
+  const [topic, topics, doneIds] = await Promise.all([
+    repository.findBySlug(slug),
+    repository.list(),
+    repository.completions(user.id),
+  ]);
 
   if (!topic) {
     return (
@@ -277,6 +277,8 @@ async function TopicBody({ slug }: { slug: string }) {
   }
 
   const where = placement(topics, slug);
+  const moduleTopics = topics.filter((entry) => entry.unit === topic.unit);
+  const moduleDone = moduleTopics.filter((entry) => doneIds.includes(entry.id)).length;
   const grammar = topic.materials.find((material) => material.skill === "GRAMMAR");
   const reading = topic.materials.find((material) => material.skill === "READING");
   const writing = topic.materials.find((material) => material.skill === "WRITING");
@@ -286,6 +288,7 @@ async function TopicBody({ slug }: { slug: string }) {
   const formula = grammar ? extractFormula(grammar.body, grammar.keyPoints) : [];
   const correction = pairCorrection(lesson?.trap ?? null);
   const timeline = timelineFor(grammar?.title ?? topic.title);
+  const diagram = diagramFor(grammar?.title ?? topic.title, grammar?.body ?? "");
   const examples = (lesson?.examples ?? []).filter(
     (example) => example.trim().split(/\s+/).length >= 3 && !example.trim().endsWith("+"),
   );
@@ -358,7 +361,16 @@ async function TopicBody({ slug }: { slug: string }) {
             </span>
           ) : null}
         </div>
+        {topic.quote ? (
+          <QuoteBanner quote={topic.quote} module={where.unitName} title={topic.title} />
+        ) : null}
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">{topic.title}</h1>
+        <LessonDone
+          slug={topic.slug}
+          initialDone={doneIds.includes(topic.id)}
+          completed={moduleDone}
+          total={moduleTopics.length}
+        />
 
         {objectives.length > 0 ? (
           <div className="rounded-lg bg-white border border-slate-200 p-4 space-y-2">
@@ -435,6 +447,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 <p className="text-base leading-relaxed text-slate-900">{lesson.idea}</p>
                 <Prose paragraphs={lesson.body} />
                 {timeline ? <Timeline span={timeline.span} caption={timeline.caption} /> : null}
+                {diagram ? <DiagramBlock diagram={diagram} /> : null}
               </Step>
             ) : null}
 
@@ -525,7 +538,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 title="Leé"
                 effort={`~${readingMinutes(reading.body)} min`}
                 glyph="read"
-                hint={reading.title}
+                hint="Lectura corta del tema, en contexto real."
               >
                 <MiniBar
                   label="Largo del texto"
@@ -551,7 +564,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 title="Escribí"
                 effort="5 min"
                 glyph="write"
-                hint={writing.title}
+                hint="Producción escrita: el paso que más fija la estructura."
               >
                 <Prose paragraphs={writing.body.split(/\n{2,}/).map((part) => part.trim())} />
                 <MiniBar

@@ -4,6 +4,7 @@ import { groupByUnit, topicLabel } from "./grouping";
 import type { TopicDTO } from "./repository";
 
 const topic = (over: Partial<TopicDTO>): TopicDTO => ({
+  id: over.id ?? "id-s",
   slug: over.slug ?? "s",
   title: over.title ?? "T",
   order: over.order ?? 1,
@@ -12,6 +13,7 @@ const topic = (over: Partial<TopicDTO>): TopicDTO => ({
   unitOrder: over.unitOrder ?? 0,
   level: "A2",
   focus: null,
+  quote: null,
   materials: [],
   glosses: [],
   missing: [],
