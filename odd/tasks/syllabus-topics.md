@@ -80,3 +80,5 @@ L8 (bug): 8.4 falló por timeout del motor (75 s) en la primera pasada y entró 
 
 L9 (decisión de IA): el bloque de vocabulario es temático, no gramatical, así que va como **un módulo con siete submódulos A1** (no siete módulos de un solo tema); las listas de contenidos clave del owner se pusieron en el título de cada submódulo para que el motor las cubra en los cuatro skills.
 L10 (verificación): generación en lote de 10 submódulos → 40/40 materiales, 0 fallos, 78 s totales.
+
+L11 (bug de build): el seed declaraba `level: "A2" | "B1"` y los siete submódulos de vocabulario son A1, así que `next build` fallaba al type-checkear `scripts/`. Se cambió el tipo a `CefrLevel` y se agregó `scripts/**/*.ts` al `include` del tsconfig: un error de tipos en un script versionado ahora lo caza `pnpm tsc` antes del build.

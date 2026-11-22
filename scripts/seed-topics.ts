@@ -6,6 +6,7 @@
  * module assignment, and never duplicates or deletes a topic.
  */
 import { loadLocalEnv } from "../src/shared/lib/load-env";
+import type { CefrLevel } from "../src/shared/types";
 
 loadLocalEnv();
 
@@ -16,7 +17,7 @@ interface SeedTopic {
   code?: string;
   unit: string;
   unitOrder: number;
-  level: "A2" | "B1";
+  level: CefrLevel;
 }
 
 const FUNDAMENTOS = "1 · Fundamentos: to be, pronombres, artículos y lugar";
