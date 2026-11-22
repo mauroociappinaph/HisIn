@@ -27,3 +27,16 @@ T7. `/topics/[slug]` muestra los cuatro materiales con su etiqueta de skill, los
 
 L1 (usuario, textual): «EN EL NAVBAR NO HAY UN LUGAR PARA ENTRAR A ESTA VIEW … NO VEO LA TAB DE MI VOCABULARIO … TODO LO DEBE MANEJAR GENTLEMAN SHELL. TEMA 1 Verbo to be … (TRATA DE HACER EL GRAMMAR EL LISENNING, EL READING, ETC SIEMPRE ENFOCADO A LAS HEALTECH Y EMPRENDERURISMO, SILICON VALLEY ETC)».
 L2 (ejecución): Tema 1 generado en vivo con `gemini-3.1-flash-lite`: 4/4 materiales guardados (1039/669/557/703 caracteres), sin faltantes.
+
+## Temario cargado (owner-provided)
+
+| Tema | Título | Materiales |
+| --- | --- | --- |
+| 1 | Verbo to be (afirmativo, negativo e interrogativo) | 4/4 |
+| 2 | Pronombres personales sujeto y adjetivos posesivos | 4/4 |
+| 3 | Artículos (a, an, the) y plurales | 4/4 |
+| 4 | Demostrativos (this, that, these, those) | 4/4 |
+| 5 | There is / There are y preposiciones de lugar | 4/4 |
+
+L3 (bug): el Tema 2 falló porque el modelo devolvía el título completo (94 caracteres) en el campo `topic` y el schema lo limitaba a 80. Era un límite sobre un campo informativo, no sobre el contenido: se subió a 200 y se agregó test de regresión.
+L4 (decisión): `scripts/seed-topics.ts` (expuesto como `pnpm seed:topics`) carga el temario de forma idempotente; los materiales se generan por tema con el botón de `/topics/[slug]`.

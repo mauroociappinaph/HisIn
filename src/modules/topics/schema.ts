@@ -28,7 +28,8 @@ const materialShape = z.object({
 
 export const topicMaterialsSchema = z
   .object({
-    topic: z.string().min(3).max(80),
+    // The model echoes the topic title back; a long syllabus title is not a defect.
+    topic: z.string().min(3).max(200),
     level: z.enum(CEFR_LEVELS),
     materials: z.array(materialShape).min(1).max(4),
   })

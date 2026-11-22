@@ -64,3 +64,14 @@ test("the prompt asks only for the missing skills and anchors the domain", () =>
   assert.match(TOPIC_SYSTEM_PROMPT, /healthtech founders/);
   assert.match(TOPIC_SYSTEM_PROMPT, /Never write generic textbook examples/);
 });
+
+test("a long syllabus title echoed by the model does not reject the batch", () => {
+  const longTitle =
+    "Pronombres personales sujeto (I, you, he...) y adjetivos posesivos (my, your, his...)";
+  assert.ok(longTitle.length > 80);
+
+  const parsed = parseTopicMaterials(JSON.stringify({ ...valid, topic: longTitle }));
+
+  assert.equal(parsed.topic, longTitle);
+  assert.equal(parsed.materials.length, 2);
+});
