@@ -50,7 +50,7 @@ export interface LessonDTO {
   order: number;
 }
 
-export type VocabularyKind = "WORD" | "PHRASAL_VERB" | "PATTERN";
+export type VocabularyKind = "WORD" | "PHRASAL_VERB" | "PATTERN" | "IDIOM";
 export type VocabularySource = "SEED" | "GENERATED" | "USER";
 
 export interface VocabularyDTO {

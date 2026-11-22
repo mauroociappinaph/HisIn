@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { VocabularyDTO } from "@/shared/types";
 import { EntryForm } from "@/components/entry-form";
-import { LevelBadge, ModuleTag, SpeakButton } from "@/components/vocab-ui";
+import { KindTag, LevelBadge, ModuleTag, SpeakButton } from "@/components/vocab-ui";
 
 /** What each particle tends to mean, so the list teaches the system and not a list. */
 const PARTICLE_MEANINGS: Record<string, string> = {
@@ -23,14 +24,23 @@ const PARTICLE_MEANINGS: Record<string, string> = {
   with: "acompañar o tolerar",
 };
 
-export default function PhrasalVerbsPage() {
+const TABS = [
+  { kind: "PHRASAL_VERB", label: "Phrasal verbs" },
+  { kind: "IDIOM", label: "Expresiones" },
+] as const;
+
+function ChunksInner() {
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<(typeof TABS)[number]["kind"]>(
+    searchParams.get("tipo") === "expresiones" ? "IDIOM" : "PHRASAL_VERB",
+  );
   const [entries, setEntries] = useState<VocabularyDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [particle, setParticle] = useState<string>("all");
 
   useEffect(() => {
     let active = true;
-    fetch("/api/vocabulary?kind=PHRASAL_VERB")
+    fetch(`/api/vocabulary?kind=${tab}`)
       .then((response) => response.json())
       .then((data: VocabularyDTO[]) => {
         if (active) setEntries(Array.isArray(data) ? data : []);
@@ -44,7 +54,7 @@ export default function PhrasalVerbsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [tab]);
 
   const particles = useMemo(() => {
     const seen = new Map<string, number>();
@@ -72,13 +82,35 @@ export default function PhrasalVerbsPage() {
     <div className="space-y-6">
       <header className="rounded-3xl bg-gradient-to-br from-amber-500 to-orange-600 text-white p-5 md:p-6 shadow-lg shadow-amber-500/20">
         <span className="text-[11px] uppercase tracking-widest text-white/75">Léxico que se mueve</span>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Phrasal verbs</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Phrasal verbs y expresiones</h1>
         <p className="text-white/85 max-w-2xl text-sm mt-1">
           Agrupados por partícula, con separabilidad y registro: la partícula cambia el significado, y saber si el
           objeto va en el medio evita el error más común (<span className="font-mono">turn it off</span>, nunca{" "}
           <span className="font-mono">turn off it</span>).
         </p>
       </header>
+
+      <div className="flex flex-wrap gap-2">
+        {TABS.map((option) => (
+          <button
+            key={option.kind}
+            type="button"
+            aria-pressed={tab === option.kind}
+            onClick={() => {
+              setLoading(true);
+              setParticle("all");
+              setTab(option.kind);
+            }}
+            className={`px-3 py-1.5 rounded-sm text-xs font-semibold transition ${
+              tab === option.kind
+                ? "bg-indigo-600 text-white"
+                : "bg-white border border-slate-200 text-slate-600 hover:border-indigo-300"
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
@@ -108,7 +140,7 @@ export default function PhrasalVerbsPage() {
           ))}
         </div>
         <EntryForm
-          kinds={["PHRASAL_VERB"]}
+          kinds={tab === "IDIOM" ? ["IDIOM"] : ["PHRASAL_VERB"]}
           defaultModule="business-english"
           onCreated={(entry) => setEntries((previous) => [entry, ...previous])}
         />
@@ -144,6 +176,7 @@ export default function PhrasalVerbsPage() {
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 flex-wrap">
+                  <KindTag kind={entry.kind} />
                   <LevelBadge level={entry.level} />
                   <ModuleTag module={entry.module} />
                   {entry.separable === undefined ? null : (
@@ -185,5 +218,13 @@ export default function PhrasalVerbsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PhrasalVerbsPage() {
+  return (
+    <Suspense fallback={<div className="h-64 rounded-lg bg-white border border-slate-200 animate-pulse" />}>
+      <ChunksInner />
+    </Suspense>
   );
 }

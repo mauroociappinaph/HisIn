@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppNav } from "@/components/app-nav";
+import { QuickAdd } from "@/components/quick-add";
 import { themeScript } from "@/components/theme";
 import { getLocalUser } from "@/modules/identity/service";
 import { ProgressRepository } from "@/modules/progress/repository";
@@ -37,14 +38,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <NavData />
         </Suspense>
-        <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
+        <main className="max-w-5xl mx-auto px-4 py-8 pb-24">{children}</main>
+        <QuickAdd />
         <footer className="max-w-5xl mx-auto px-4 pb-8 pt-2 text-xs text-slate-400">
           <Link href="/studio" className="hover:text-indigo-600">
             Generar contenido
-          </Link>
-          <span className="mx-2">·</span>
-          <Link href="/settings" className="hover:text-indigo-600">
-            Ajustes
           </Link>
         </footer>
       </body>

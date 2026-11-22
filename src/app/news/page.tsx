@@ -303,7 +303,7 @@ export default function NewsPage() {
         .
       </p>
 
-      <div aria-live="polite" className="fixed bottom-6 right-6 z-20">
+      <div aria-live="polite" className="fixed bottom-24 right-6 z-20">
         {toast ? (
           <div
             key={toast.id}

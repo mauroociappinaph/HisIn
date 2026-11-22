@@ -5,6 +5,7 @@ import { getLocalUser } from "@/modules/identity/service";
 import { ProgressRepository } from "@/modules/progress/repository";
 import { goalRatio } from "@/modules/progress/service";
 import { ProgressBar } from "@/app/review/vocab/_components/ui";
+import { StudyPrefs } from "@/components/study-prefs";
 
 /**
  * Progress reads Postgres, not localStorage: the numbers survive a cleared
@@ -79,6 +80,8 @@ async function ProgressContent() {
           </Link>
         </div>
       </section>
+
+      <StudyPrefs />
     </div>
   );
 }

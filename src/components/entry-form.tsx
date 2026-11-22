@@ -22,6 +22,10 @@ interface EntryFormProps {
   kinds: VocabularyKind[];
   defaultModule?: string;
   defaultLevel?: string;
+  /** Opens straight into the form, for the floating quick-add button. */
+  defaultOpen?: boolean;
+  /** Lets the host close its own overlay when the form closes. */
+  onClose?: () => void;
   onCreated: (entry: VocabularyDTO) => void;
 }
 
@@ -48,8 +52,8 @@ const EMPTY = {
  * (particle, separability, register, pattern function) that makes a saved entry
  * reviewable rather than just stored.
  */
-export function EntryForm({ kinds, defaultModule, defaultLevel, onCreated }: EntryFormProps) {
-  const [open, setOpen] = useState(false);
+export function EntryForm({ kinds, defaultModule, defaultLevel, defaultOpen = false, onClose, onCreated }: EntryFormProps) {
+  const [open, setOpen] = useState(defaultOpen);
   const [form, setForm] = useState({
     ...EMPTY,
     kind: (kinds[0] ?? "WORD") as VocabularyKind,
@@ -99,6 +103,7 @@ export function EntryForm({ kinds, defaultModule, defaultLevel, onCreated }: Ent
       onCreated(body);
       setForm({ ...EMPTY, kind: form.kind, module: form.module, level: form.level });
       setOpen(false);
+      onClose?.();
     } catch {
       setIssues(["No pudimos guardar la entrada"]);
     } finally {
@@ -130,7 +135,15 @@ export function EntryForm({ kinds, defaultModule, defaultLevel, onCreated }: Ent
             Escribí la definición con tus palabras y una oración de tu trabajo: así la tarjeta funciona.
           </p>
         </div>
-        <button type="button" onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-600">
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            onClose?.();
+          }}
+          className="text-slate-400 hover:text-slate-600"
+          aria-label="Cerrar"
+        >
           ✕
         </button>
       </div>
@@ -161,13 +174,25 @@ export function EntryForm({ kinds, defaultModule, defaultLevel, onCreated }: Ent
       <div className="grid gap-3 md:grid-cols-2">
         <label className="space-y-1 md:col-span-2">
           <span className="text-xs font-medium text-slate-600">
-            {form.kind === "PATTERN" ? "Patrón (con slots)" : form.kind === "PHRASAL_VERB" ? "Phrasal verb" : "Palabra"}
+            {form.kind === "PATTERN"
+              ? "Patrón (con slots)"
+              : form.kind === "PHRASAL_VERB"
+                ? "Phrasal verb"
+                : form.kind === "IDIOM"
+                  ? "Expresión"
+                  : "Palabra"}
           </span>
           <input
             value={form.term}
             onChange={(event) => update("term", event.target.value)}
             placeholder={
-              form.kind === "PATTERN" ? "make + object + verb" : form.kind === "PHRASAL_VERB" ? "put off" : "runway"
+              form.kind === "PATTERN"
+                ? "make + object + verb"
+                : form.kind === "PHRASAL_VERB"
+                  ? "put off"
+                  : form.kind === "IDIOM"
+                    ? "cut corners"
+                    : "runway"
             }
             className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
           />
@@ -302,8 +327,11 @@ export function EntryForm({ kinds, defaultModule, defaultLevel, onCreated }: Ent
         </button>
         <button
           type="button"
-          onClick={() => setOpen(false)}
-          className="px-4 py-2 rounded-xl border border-slate-300 text-sm font-medium hover:border-indigo-300 transition"
+          onClick={() => {
+            setOpen(false);
+            onClose?.();
+          }}
+          className="px-4 py-2 rounded-sm border border-slate-300 text-sm font-medium hover:border-indigo-300 transition"
         >
           Cancelar
         </button>
@@ -315,5 +343,6 @@ export function EntryForm({ kinds, defaultModule, defaultLevel, onCreated }: Ent
 function label(kind: VocabularyKind): string {
   if (kind === "PHRASAL_VERB") return "phrasal verb";
   if (kind === "PATTERN") return "patrón";
+  if (kind === "IDIOM") return "expresión";
   return "palabra";
 }

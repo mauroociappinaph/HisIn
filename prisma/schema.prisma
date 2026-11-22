@@ -117,6 +117,7 @@ enum VocabularyKind {
   WORD
   PHRASAL_VERB
   PATTERN
+  IDIOM
 }
 
 enum VocabularySource {

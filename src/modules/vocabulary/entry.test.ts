@@ -41,7 +41,7 @@ test("a word with spaces is rejected as a single word", () => {
   const result = validateEntry({ ...word, term: "term sheet" });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.match(result.errors.join(" "), /single word cannot contain spaces/);
+  if (!result.ok) assert.match(result.errors.join(" "), /una palabra sola no lleva espacios/);
 });
 
 test("a phrasal verb keeps its particle", () => {
@@ -62,7 +62,7 @@ test("a phrasal verb whose last word is not a particle names that word", () => {
   const result = validateEntry({ ...phrasalVerb, term: "put sideway", example: "They put sideway the launch." });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.match(result.errors.join(" "), /"sideway" is not a particle/);
+  if (!result.ok) assert.match(result.errors.join(" "), /"sideway" no es una partícula/);
 });
 
 test("a pattern needs slots", () => {
@@ -76,7 +76,7 @@ test("an example that never uses the entry is rejected", () => {
   const result = validateEntry({ ...word, example: "Cash is running low this quarter." });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.match(result.errors.join(" "), /example must use "runway"/);
+  if (!result.ok) assert.match(result.errors.join(" "), /el ejemplo tiene que usar "runway"/);
 });
 
 test("a pattern example is not required to repeat the slots literally", () => {
@@ -89,11 +89,38 @@ test("the level must be a CEFR level", () => {
   const result = validateEntry({ ...word, level: "Z9" as never });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.match(result.errors.join(" "), /level must be one of/);
+  if (!result.ok) assert.match(result.errors.join(" "), /el nivel debe ser uno de/);
 });
 
 test("short or empty fields are rejected instead of saved", () => {
   assert.equal(validateEntry({ ...word, definition: "cash" }).ok, false);
   assert.equal(validateEntry({ ...word, term: "  " }).ok, false);
   assert.equal(validateEntry({ ...word, example: "" }).ok, false);
+});
+
+test("an idiom is accepted as a fixed multiword expression", () => {
+  const idiom: EntryDraft = {
+    term: "cut corners",
+    definition: "To do something badly to save time or money.",
+    example: "We cut corners on testing and paid for it in the audit.",
+    kind: "IDIOM",
+    level: "C1",
+    module: "business-english",
+  };
+
+  assert.equal(validateEntry(idiom).ok, true);
+  assert.equal(validateEntry({ ...idiom, term: "corners" }).ok, false);
+});
+
+test("an idiom whose example never uses it is rejected", () => {
+  const result = validateEntry({
+    term: "cut corners",
+    definition: "To do something badly to save time or money.",
+    example: "The audit was expensive and painful.",
+    kind: "IDIOM",
+    level: "C1",
+    module: "business-english",
+  });
+
+  assert.equal(result.ok, false);
 });

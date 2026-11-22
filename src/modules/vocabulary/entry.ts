@@ -1,5 +1,5 @@
 import { CEFR_LEVELS, type CefrLevel } from "@/shared/types";
-import { usesTerm } from "@/shared/lib/text";
+import { usesInflectedTerm, usesTerm } from "@/shared/lib/text";
 
 /**
  * The three shapes one entry of the vocabulary bank can take.
@@ -7,7 +7,7 @@ import { usesTerm } from "@/shared/lib/text";
  * They share one review pipeline on purpose: a phrasal verb and a sentence
  * pattern are recalled exactly like a word, only their prompts differ.
  */
-export const ENTRY_KINDS = ["WORD", "PHRASAL_VERB", "PATTERN"] as const;
+export const ENTRY_KINDS = ["WORD", "PHRASAL_VERB", "PATTERN", "IDIOM"] as const;
 export type EntryKind = (typeof ENTRY_KINDS)[number];
 
 /**
@@ -102,36 +102,42 @@ export function validateEntry(draft: EntryDraft): EntryValidation {
   const tokens = words(term);
 
   if (term.length < 2 || term.length > 40) {
-    errors.push("term must be between 2 and 40 characters");
+    errors.push("el término debe tener entre 2 y 40 caracteres");
   }
   if (draft.definition.trim().length < MIN_TEXT || draft.definition.trim().length > MAX_TEXT) {
-    errors.push(`definition must be between ${MIN_TEXT} and ${MAX_TEXT} characters`);
+    errors.push(`la definición debe tener entre ${MIN_TEXT} y ${MAX_TEXT} caracteres`);
   }
   if (draft.example.trim().length < MIN_TEXT || draft.example.trim().length > MAX_TEXT) {
-    errors.push(`example must be between ${MIN_TEXT} and ${MAX_TEXT} characters`);
+    errors.push(`el ejemplo debe tener entre ${MIN_TEXT} y ${MAX_TEXT} caracteres`);
   }
   if (!CEFR_LEVELS.includes(draft.level)) {
-    errors.push(`level must be one of ${CEFR_LEVELS.join(", ")}`);
+    errors.push(`el nivel debe ser uno de ${CEFR_LEVELS.join(", ")}`);
   }
 
   let particle: string | null = null;
 
   if (draft.kind === "WORD") {
     if (tokens.length > 1) {
-      errors.push(`a single word cannot contain spaces: "${term}"`);
+      errors.push(`una palabra sola no lleva espacios: "${term}"`);
     }
   }
 
   if (draft.kind === "PHRASAL_VERB") {
     if (tokens.length < 2) {
-      errors.push(`a phrasal verb needs a verb and a particle: "${term}"`);
+      errors.push(`un phrasal verb necesita verbo y partícula: "${term}"`);
     } else {
       const candidate = tokens[tokens.length - 1]?.toLowerCase() ?? "";
       if (!(PARTICLES as readonly string[]).includes(candidate)) {
-        errors.push(`"${tokens[tokens.length - 1]}" is not a particle`);
+        errors.push(`"${tokens[tokens.length - 1]}" no es una partícula`);
       } else {
         particle = candidate;
       }
+    }
+  }
+
+  if (draft.kind === "IDIOM") {
+    if (tokens.length < 2) {
+      errors.push(`una expresión necesita al menos dos palabras: "${term}"`);
     }
   }
 
@@ -139,7 +145,7 @@ export function validateEntry(draft: EntryDraft): EntryValidation {
     const hasSlotWord = tokens.some((token) => (SLOT_WORDS as readonly string[]).includes(token));
     if (!term.includes("+") && !hasSlotWord) {
       errors.push(
-        `a pattern needs slots, for example "make + object + verb" or "make sb do sth": "${term}"`,
+        `un patrón necesita slots, por ejemplo "make + object + verb" o "make sb do sth": "${term}"`,
       );
     }
   }
@@ -149,7 +155,13 @@ export function validateEntry(draft: EntryDraft): EntryValidation {
   // stem is matched as a prefix and its particle as a whole word.
   if (draft.kind === "WORD" && tokens.length > 0 && draft.example.trim().length > 0) {
     if (!usesTerm(draft.example, term)) {
-      errors.push(`example must use "${term}"`);
+      errors.push(`el ejemplo tiene que usar "${term}"`);
+    }
+  }
+
+  if (draft.kind === "IDIOM" && tokens.length >= 2 && draft.example.trim().length > 0) {
+    if (!usesInflectedTerm(draft.example, term)) {
+      errors.push(`el ejemplo tiene que usar "${term}"`);
     }
   }
 
@@ -158,7 +170,7 @@ export function validateEntry(draft: EntryDraft): EntryValidation {
     const particleWord = tokens[tokens.length - 1] ?? "";
     const inflected = new RegExp(`(?<![\\w-])${escapeRegExp(verbStem)}\\w*(?![\\w-])`, "i");
     if (!usesTerm(draft.example, particleWord) || !inflected.test(draft.example)) {
-      errors.push(`example must use "${term}"`);
+      errors.push(`el ejemplo tiene que usar "${term}"`);
     }
   }
 

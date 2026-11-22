@@ -40,6 +40,7 @@ export const KIND_LABELS: Record<string, string> = {
   WORD: "palabra",
   PHRASAL_VERB: "phrasal verb",
   PATTERN: "patrón",
+  IDIOM: "expresión",
 };
 
 export function KindTag({ kind }: { kind: string }) {
@@ -48,7 +49,9 @@ export function KindTag({ kind }: { kind: string }) {
       ? "bg-amber-100 text-amber-700"
       : kind === "PATTERN"
         ? "bg-sky-100 text-sky-700"
-        : "bg-slate-100 text-slate-600";
+        : kind === "IDIOM"
+          ? "bg-violet-100 text-violet-700"
+          : "bg-slate-100 text-slate-600";
   return (
     <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${tone}`}>
       {KIND_LABELS[kind] ?? kind}
