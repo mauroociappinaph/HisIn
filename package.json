@@ -14,6 +14,7 @@
     "db:reset-content": "tsx scripts/reset-content.ts && tsx prisma/seed.ts",
     "ai:generate": "tsx scripts/generate.ts",
     "audio:generate": "tsx scripts/generate-audio.ts",
+    "backup:content": "tsx scripts/backup-content.ts",
     "repair:drift": "tsx scripts/repair-drift.ts",
     "audit:topics": "tsx scripts/audit-topics.ts",
     "audit:duplicates": "tsx scripts/audit-duplicates.ts",
