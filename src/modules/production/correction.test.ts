@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   CORRECTION_SYSTEM_PROMPT,
   buildCorrectionPrompt,
+  linkableChanges,
   overallScore,
   parseCorrection,
 } from "./correction";
@@ -67,4 +68,29 @@ test("buildCorrectionPrompt carries the audience, the email and the lesson index
 
 test("the system prompt forbids rewriting for taste", () => {
   assert.match(CORRECTION_SYSTEM_PROMPT, /no rewriting for taste/i);
+});
+
+test("linkableChanges drops a lesson that does not exist", () => {
+  const changes = linkableChanges(
+    [
+      { kind: "grammar", original: "dont work", corrected: "doesn't work", why: "third person takes does", topicSlug: "invented-lesson" },
+    ],
+    ["present-simple-negative-questions"],
+  );
+  assert.equal(changes.length, 1);
+  assert.equal(changes[0].topicSlug, undefined);
+});
+
+test("linkableChanges keeps a lesson that exists", () => {
+  const changes = linkableChanges(
+    [{ kind: "grammar", original: "dont work", corrected: "doesn't work", why: "third person takes does", topicSlug: "present-simple-negative-questions" }],
+    ["present-simple-negative-questions"],
+  );
+  assert.equal(changes[0].topicSlug, "present-simple-negative-questions");
+});
+
+test("linkableChanges files the same wrong fragment once, even with two corrections", () => {
+  const first = { kind: "grammar" as const, original: "dont work", corrected: "doesn't work", why: "third person takes does" };
+  const second = { ...first, original: "Dont work", corrected: "does not integrate" };
+  assert.equal(linkableChanges([first, second], []).length, 1);
 });

@@ -7,6 +7,7 @@ import { TopicRepository } from "@/modules/topics/repository";
 import {
   CORRECTION_SYSTEM_PROMPT,
   buildCorrectionPrompt,
+  linkableChanges,
   parseCorrection,
 } from "@/modules/production/correction";
 
@@ -52,26 +53,31 @@ export async function POST(req: NextRequest) {
       });
       const correction = parseCorrection(response.text);
 
-      // Only changes that name a lesson the course actually has are linked: a
-      // dangling slug would send the learner to a 404 from their own correction.
-      const known = new Set(topics.map((topic) => topic.slug));
-      const saved = correction.changes.length;
+      // Only changes that name a lesson the course actually has are linked, and the
+      // same mistake is filed once: correcting the same email twice must not build
+      // a deck of duplicates.
+      const linkable = linkableChanges(
+        correction.changes,
+        topics.map((topic) => topic.slug),
+      );
+      const prepared = linkable.map((change) => ({
+        userId: user.id,
+        kind: change.kind,
+        original: change.original,
+        corrected: change.corrected,
+        why: change.why,
+        topicSlug: change.topicSlug ?? null,
+        source: "email",
+      }));
 
-      if (saved > 0) {
-        await prisma.mistake.createMany({
-          data: correction.changes.map((change) => ({
-            userId: user.id,
-            kind: change.kind,
-            original: change.original,
-            corrected: change.corrected,
-            why: change.why,
-            topicSlug: change.topicSlug && known.has(change.topicSlug) ? change.topicSlug : null,
-            source: "email",
-          })),
-        });
+      if (prepared.length > 0) {
+        await prisma.mistake.createMany({ data: prepared, skipDuplicates: true });
       }
 
-      return NextResponse.json({ correction, saved, model: response.model }, { status: 200 });
+      return NextResponse.json(
+        { correction: { ...correction, changes: linkable }, saved: prepared.length, model: response.model },
+        { status: 200 },
+      );
     } catch (error) {
       lastError = error instanceof Error ? error.message : String(error);
     }

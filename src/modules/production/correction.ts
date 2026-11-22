@@ -93,6 +93,35 @@ export function parseCorrection(raw: string): Correction {
   return result.data;
 }
 
+/**
+ * The changes that can be filed, with the slugs the course actually has.
+ *
+ * A correction is written by a model against a list of 149 lessons, so it can name
+ * one that does not exist; a link to a 404 from your own correction is worse than no
+ * link, and two identical changes are one card, not two.
+ */
+export function linkableChanges(
+  changes: readonly Correction["changes"][number][],
+  knownSlugs: readonly string[],
+): Correction["changes"] {
+  const known = new Set(knownSlugs);
+  const seen = new Set<string>();
+
+  return changes
+    .map((change) => ({
+      ...change,
+      ...(change.topicSlug && known.has(change.topicSlug) ? { topicSlug: change.topicSlug } : { topicSlug: undefined }),
+    }))
+    .filter((change) => {
+      // One card per wrong fragment: 'dont work' is one mistake even when three
+      // corrections are possible.
+      const key = change.original.toLowerCase().trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
 /** Average of the four criteria, one decimal, for the badge on the page. */
 export function overallScore(correction: Pick<Correction, "scores">): number {
   const values = Object.values(correction.scores);

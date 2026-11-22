@@ -30,3 +30,16 @@ E8. La corrección se reintenta una vez con su propio rechazo si no pasa la vali
 L1 (usuario): «q es corrector de email ?» → explicación → «si».
 L2 (ejecución): migración `Mistake`, `/api/production/email`, `/api/mistakes`, `/api/mistakes/[id]`, `/write`, `/review/mistakes`, entrada «Escribir» en el nav.
 L3 (verificación con un email real, 7 errores): `doctor Smith → Dr. Smith` · `I want to tell you that → I am writing to inform you that` · `dont work → does not integrate` · `Also → Furthermore` · `problems for to integrate → challenges in integrating`, cada uno enlazado a su lección. Registro: `too-informal`. Puntajes 2/3/2/2. Calificación de un error con calidad 5 movió su próximo repaso y 285 tests verdes.
+
+## Riesgo cerrado (L4-L5)
+
+Riesgo declarado: tabla nueva alimentada por texto libre del usuario, con escritura de filas desde la respuesta del modelo.
+
+| Control | Evidencia |
+| --- | --- |
+| Entrada acotada | email de 2 caracteres → `400` «write a little more»; email de 4.500 → `400` «longer than 4000 characters» |
+| Slug validado | `linkableChanges` descarta una lección inexistente y la deja en `null` (test) |
+| Sin duplicados | índice único `(userId, lower(original))`; reenviar el mismo email dos veces dejó **0 fragmentos repetidos** |
+| Un error, una tarjeta | la clave de deduplicación es el fragmento original, no el par original/corregido (test) |
+| Migración en limpio | CI corre `prisma migrate deploy` sobre Postgres vacío en cada PR |
+| Sin escritura parcial | las filas se guardan solo después de validar la corrección completa |
