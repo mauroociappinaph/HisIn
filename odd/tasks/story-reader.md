@@ -24,3 +24,10 @@ S7. La etiqueta del material se muestra una sola vez (el lector no repite el ró
 L1 (usuario, textual): «SEGUI CON (a) … (b) … y (c) el PR #1 sigue sin mergear (24 commits)» + 31 submódulos nuevos + «LAS HISTORY TENDRIAN QUE RE DIRECCIONAR ACA: /review/vocab».
 
 L2 (ejecución): PR #1 **mergeado a main** con `gh pr merge 1 --merge` (merge commit `91cd756`), y el trabajo nuevo continúa en `feat/stories-interactive`.
+
+## Temario completo (73 temas · 292 materiales · 73 historias)
+
+Los 31 submódulos nuevos (B1 y B2) entraron en 13 módulos (18–30): pasado y narración, hipótesis y pasiva, relativos y modales, phrasal verbs, tres módulos de vocabulario B1, tiempos y pasiva avanzada, condicionales y deseos, modales perfectos y causativa, relativos y estilo indirecto avanzado, gerundio/infinitivo con cambio de significado, y tres módulos de vocabulario B2.
+
+L3 (decisión): el bloque B1/B2 se agrupó por **función comunicativa**, no por lista: cada módulo mezcla la estructura con el vocabulario que la usa (p. ej. «Pasado: contraste y narración» junta los tres contrastes temporales).
+L4 (ejecución): generación de 31 submódulos en 2m46s → 124 materiales nuevos, 0 fallos.
