@@ -11,6 +11,11 @@ import {
   type GlossEntry,
 } from "@/modules/topics/glossary";
 
+interface AnalyzedEntry {
+  term: string;
+  definition?: string;
+}
+
 interface StoryReaderProps {
   title: string;
   body: string;
@@ -41,6 +46,10 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
   const [saved, setSaved] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; bad?: boolean } | null>(null);
+  // What the engine said about the word you clicked: shown in place, not in a
+  // toast that disappears before you can read it. Clicking a word you do not know
+  // must answer "what does it mean" immediately, not just file it away.
+  const [analysis, setAnalysis] = useState<{ term: string; definition: string; translation?: string } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const notify = useCallback((text: string, bad = false) => {
@@ -63,20 +72,45 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
       }
 
       setBusy(term);
+      setAnalysis(null);
+
+      // The Spanish answer is what the learner asked for, so for a word the
+      // glossary does not cover it is requested in parallel with the filing.
+      const translationRequest = entry
+        ? Promise.resolve<string | null>(null)
+        : fetch("/api/glossary/translate", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ term, context: body.slice(0, 300) }),
+          })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((payload: { translation?: string } | null) => payload?.translation ?? null)
+            .catch(() => null);
+
       try {
         const response = await fetch("/api/vocabulary/analyze", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ input: term }),
         });
-        const payload = (await response.json()) as { entry?: { term: string }; error?: string };
+        const payload = (await response.json()) as { entry?: AnalyzedEntry; error?: string };
         if (response.ok && payload.entry) {
+          const translated = entry ? entry.translation : await translationRequest;
           setSaved((previous) => [...previous, term.toLowerCase()]);
+          setAnalysis({
+            term: payload.entry.term,
+            definition: payload.entry.definition ?? "",
+            ...(translated ? { translation: translated } : {}),
+          });
           notify(`"${payload.entry.term}" guardado · entra al repaso`);
           return;
         }
         if (response.status === 409) {
+          // Already in the bank: the learner still asked what it means, so the
+          // translation is shown instead of only saying "you had it already".
+          const translated = entry ? entry.translation : await translationRequest;
           setSaved((previous) => [...previous, term.toLowerCase()]);
+          setAnalysis({ term, definition: "", ...(translated ? { translation: translated } : {}) });
           notify(`"${term}" ya estaba en tu vocabulario`);
           return;
         }
@@ -87,7 +121,7 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
         setBusy(null);
       }
     },
-    [notify, saved],
+    [body, notify, saved],
   );
 
   const hint = hovered ?? null;
@@ -174,6 +208,21 @@ export function StoryReader({ title, body, glosses }: StoryReaderProps) {
       <div className="min-h-[2.75rem] text-xs" aria-live="polite">
         {busy ? (
           <span className="text-indigo-700">Analizando “{busy}” con Gentleman Shell…</span>
+        ) : analysis ? (
+          <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <strong className="text-slate-900">{analysis.term}</strong>
+            <span className="text-slate-400">→</span>
+            <span className="text-slate-900">{analysis.translation ?? analysis.definition}</span>
+            {analysis.translation && analysis.definition ? (
+              <span className="text-slate-600">{analysis.definition}</span>
+            ) : null}
+            <span className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] uppercase tracking-wide">
+              guardada
+            </span>
+            <Link href="/review/vocab" className="text-indigo-600 underline">
+              ir al repaso
+            </Link>
+          </span>
         ) : hint ? (
           <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
             <strong className="text-slate-900">{hint.term}</strong>

@@ -33,7 +33,7 @@ test("generic material without the domain is rejected", () => {
   const generic = {
     ...valid,
     materials: [
-      { ...material("GRAMMAR"), body: "My name is Ana and my favourite colour is blue. The weather is nice today and my dog is friendly." },
+      { ...material("GRAMMAR"), body: "My name is Ana and my favourite colour is blue. The weather is nice today, my dog is friendly, and last summer we went to the beach with my cousins and ate ice cream every afternoon while the sun was shining." },
     ],
   };
 

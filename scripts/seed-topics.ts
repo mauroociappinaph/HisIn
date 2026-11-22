@@ -355,6 +355,23 @@ const TOPICS: SeedTopic[] = [
   { slug: "intercultural-communication", title: "Intercultural communication", ord: 101, code: "39.4", unit: "39 · Business English", unitOrder: 39, level: "B2" },
   // ── Módulo 40: Academic English (C1) ──
   { slug: "academic-register-objective-style", title: "Academic register and objective style", ord: 101, code: "40.1", unit: "40 · Academic English", unitOrder: 40, level: "C1" },  { slug: "cohesion-coherence-information-flow", title: "Cohesion, coherence and information flow", ord: 102, code: "40.2", unit: "40 · Academic English", unitOrder: 40, level: "C1" },  { slug: "critical-reading-source-management", title: "Critical reading, synthesis and sources", ord: 103, code: "40.3", unit: "40 · Academic English", unitOrder: 40, level: "C1" },  { slug: "introduction-and-literature-review", title: "Introduction and literature review", ord: 104, code: "40.4", unit: "40 · Academic English", unitOrder: 40, level: "C1" },  { slug: "methods-results-data-commentary", title: "Methods, results and data commentary", ord: 105, code: "40.5", unit: "40 · Academic English", unitOrder: 40, level: "C1" },  { slug: "discussion-limitations-conclusions", title: "Discussion, limitations and conclusions", ord: 106, code: "40.6", unit: "40 · Academic English", unitOrder: 40, level: "C1" },  { slug: "peer-review-and-editing", title: "Peer review and academic editing", ord: 107, code: "40.7", unit: "40 · Academic English", unitOrder: 40, level: "C1" },  { slug: "conference-talks-and-thesis-defence", title: "Conference talks and thesis defence", ord: 108, code: "40.8", unit: "40 · Academic English", unitOrder: 40, level: "C1" },
+  // ── Módulos 41-44: inglés profesional por dominio ──
+  { slug: "medical-anatomy-physiology-lexis", title: "Anatomy, physiology and clinical lexis", ord: 110, code: "41.1", unit: "41 · Medical English", unitOrder: 41, level: "B2" },
+  { slug: "clinical-interview-patient-communication", title: "The clinical interview and patient communication", ord: 111, code: "41.2", unit: "41 · Medical English", unitOrder: 41, level: "B2" },
+  { slug: "medical-documentation-pharmacology", title: "Medical documentation and pharmacology", ord: 112, code: "41.3", unit: "41 · Medical English", unitOrder: 41, level: "B2" },
+  { slug: "clinical-cases-biomedical-literature", title: "Clinical cases and biomedical literature", ord: 113, code: "41.4", unit: "41 · Medical English", unitOrder: 41, level: "B2" },
+  { slug: "legal-systems-core-terminology", title: "Legal systems and core terminology", ord: 114, code: "42.1", unit: "42 · Legal English", unitOrder: 42, level: "B2" },
+  { slug: "contract-language-standard-clauses", title: "Contract language and standard clauses", ord: 115, code: "42.2", unit: "42 · Legal English", unitOrder: 42, level: "B2" },
+  { slug: "corporate-law-ip-disputes", title: "Corporate law, intellectual property and disputes", ord: 116, code: "42.3", unit: "42 · Legal English", unitOrder: 42, level: "B2" },
+  { slug: "legal-correspondence-oral-advocacy", title: "Legal correspondence and oral advocacy", ord: 117, code: "42.4", unit: "42 · Legal English", unitOrder: 42, level: "B2" },
+  { slug: "icao-alphabet-standard-phraseology", title: "ICAO alphabet, numbers and standard phraseology", ord: 118, code: "43.1", unit: "43 · Aviation English", unitOrder: 43, level: "B2" },
+  { slug: "flight-operations-atc", title: "Flight operations and air traffic control", ord: 119, code: "43.2", unit: "43 · Aviation English", unitOrder: 43, level: "B2" },
+  { slug: "aviation-meteorology-navigation", title: "Aviation meteorology and navigation", ord: 120, code: "43.3", unit: "43 · Aviation English", unitOrder: 43, level: "B2" },
+  { slug: "aviation-emergencies-plain-english", title: "Abnormal situations, emergencies and plain English", ord: 121, code: "43.4", unit: "43 · Aviation English", unitOrder: 43, level: "B2" },
+  { slug: "architecture-infrastructure-code", title: "Architecture, infrastructure and code", ord: 122, code: "44.1", unit: "44 · Tech and software English", unitOrder: 44, level: "B2" },
+  { slug: "agile-ceremonies-team-talk", title: "Agile methods and team ceremonies", ord: 123, code: "44.2", unit: "44 · Tech and software English", unitOrder: 44, level: "B2" },
+  { slug: "technical-documentation-writing", title: "Technical documentation and written communication", ord: 124, code: "44.3", unit: "44 · Tech and software English", unitOrder: 44, level: "B2" },
+  { slug: "technical-talks-incident-response", title: "Technical talks, architecture and incident response", ord: 125, code: "44.4", unit: "44 · Tech and software English", unitOrder: 44, level: "B2" },
 ];
 
 async function main() {

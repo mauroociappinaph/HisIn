@@ -46,11 +46,12 @@ export const topicMaterialsSchema = z
       seen.add(material.skill);
       // Without a domain anchor the material is generic filler, which is the
       // exact failure the owner rejected.
-      // Domain anchor: the product world OR the workplace where it is spoken.
-      // A pronunciation drill set in a stand-up is on-domain; a text about
-      // holidays is not.
+      // Domain anchor: the professional world the learner works in, not one fixed
+      // vocabulary list. A pronunciation drill set in a stand-up is on-domain, a
+      // radio exchange about wind shear is on-domain for an aviation module, and a
+      // text about holidays is on-domain for nobody.
       const anchor =
-        /health|clinical|patient|investor|startup|founder|saas|silicon valley|product|market|compliance|runway|pitch|office|meeting|team|client|demo|interview|sprint|hospital|clinic|hire|onboarding|launch/i;
+        /health|clinical|patient|investor|startup|founder|saas|silicon valley|product|market|compliance|runway|pitch|office|meeting|team|client|demo|interview|sprint|hospital|clinic|hire|onboarding|launch|aviation|flight|aircraft|pilot|crew|atc|runway|tower|altitude|legal|law|contract|clause|court|liability|litigation|patent|trademark|jurisdiction|counsel|agreement|breach|medical|diagnosis|treatment|symptom|dose|prescription|trial|codebase|deployment|backend|frontend|database|api|server|incident|debug|repository/i;
       if (!anchor.test(material.body)) {
         ctx.addIssue({
           code: "custom",
@@ -89,6 +90,7 @@ export function buildTopicPrompt(input: {
     input.focus ? `Course focus: ${JSON.stringify(input.focus)}.` : "",
     `Produce exactly these skills: ${skills}.`,
     'Return this shape: {"topic","level","materials":[{"skill","title","body","keyPoints"}]}.',
+    "Set every material in the professional domain of the topic itself: aviation materials happen on a frequency, legal materials happen in a contract or a courtroom, software materials happen in a repository or an incident call, medical materials happen in a consultation or a ward.",
     'Each "body" is 120-400 words. GRAMMAR explains the rule, when it is used at work, and gives the Spanish-speaker error. READING is a short article or memo with the target structure. WRITING is a task with an explicit prompt and the structure to use. STORY is a 150-250 word narrative that uses the structure repeatedly in a healthtech or Silicon Valley situation, with a person, a problem and a decision.',
     "keyPoints: 2 to 6 short English takeaways the learner can apply tomorrow.",
     "Set every material's skill to exactly the requested value, in the requested order.",

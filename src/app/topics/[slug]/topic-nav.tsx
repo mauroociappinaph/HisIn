@@ -45,10 +45,35 @@ export function TopicNav({ items }: { items: TopicNavItem[] }) {
   }, [items]);
 
   return (
-    <nav
-      aria-label="En esta página"
-      className="lg:sticky lg:top-20 self-start rounded-lg bg-white border border-slate-200 p-3"
-    >
+    <>
+      {/* Mobile: a strip of chips you can thumb through. A stacked card list at
+          the top of a phone screen pushes the lesson below the fold, which is
+          exactly the "horrible" the owner saw. */}
+      <nav aria-label="En esta página" className="lg:hidden -mx-1 overflow-x-auto">
+        <ol className="flex gap-1.5 px-1">
+          {items.map((item, index) => (
+            <li key={item.id}>
+              <a
+                href={`#${item.id}`}
+                aria-current={active === item.id ? "true" : undefined}
+                className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition ${
+                  active === item.id
+                    ? "bg-indigo-600 text-white font-semibold"
+                    : "bg-white border border-slate-200 text-slate-600"
+                }`}
+              >
+                <span className="text-[10px] tabular-nums opacity-70">{index + 1}</span>
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+
+      <nav
+        aria-label="En esta página"
+        className="hidden lg:block lg:sticky lg:top-20 self-start rounded-lg bg-white border border-slate-200 p-3"
+      >
       <p className="px-2 pb-2 text-[11px] uppercase tracking-widest text-slate-500">En esta página</p>
       <ol className="space-y-0.5">
         {items.map((item, index) => {
@@ -75,6 +100,7 @@ export function TopicNav({ items }: { items: TopicNavItem[] }) {
           );
         })}
       </ol>
-    </nav>
+      </nav>
+    </>
   );
 }

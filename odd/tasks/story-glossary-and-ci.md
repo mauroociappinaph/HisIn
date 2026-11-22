@@ -27,3 +27,21 @@ S7. Textual del usuario: los 24 submódulos C1/C2 y el bloque «Business English
 
 L1 (usuario, textual): «SOLUCIONA EL RISK 5 DESPUES [captura del hover] ESTO ESTA BUENO CUANDO SE PASA EL MOUSE POR ARRIBA PERO TIENE QUE TAMBIEN APARTE DE ESO MOSTRAR LA TRADUCCION, INERPREATAR LAS FRASES VERBALES Y PATRONES … LAS HISTORY TENDRÍAN QUE RE DIRECCIONAR ACA: /review/vocab» + los 24 submódulos C1/C2 + Business English.
 L2 (ejecución): glosario generado para las 73 historias; 240 tests; build y lint verdes.
+
+## Topic UX, títulos en inglés y Academic English (L3-L6)
+
+L3 (usuario, textual): «BUSCA EN INTERNET PARA QUE LA UI E UX SEA MAS INTUITIVA Y MEJOR EN TOPIC Y ASEGURATE QUE LO QUE ESTA EN HOME Y TOPIC SE COMUNIQUE CON EL RESTO DE LA APP … LOS TITULOS DE LOS TEMS DEBEN IR EN INGLES NO ESPANOL … ACORDATE DE USAR LOS ESTILOS Y TIPOGRAFIA DE HISMIA».
+L4 (investigación): las fuentes coinciden en tres cosas para una lección larga: un índice pegajoso que marque dónde estás, la posición en la secuencia («Lección 3 de 8») y un control de Siguiente que no obligue a volver arriba. Fuentes: NN/g (in-page links, table of contents), USWDS typography, OpenLMS TOC, W3C WCAG 2.2.
+L5 (ejecución): `TopicNav` (índice pegajoso con scroll spy, arriba del contenido en mobile), breadcrumb Módulos / módulo / submódulo, «Submódulo X de Y» con barras de posición, anterior/siguiente, y accesos a repaso, gramática y módulo. Home suma anclas `#module-N` y «Entrar →». Los 109 títulos de tema y los 36 nombres de módulo pasaron a inglés, y el módulo 40 suma 8 submódulos de Academic English con sus 4 materiales y glosario.
+L6 (ejecución): el endpoint de glosario reintenta una vez con su propio rechazo: los 3 temas que quedaban sin glosario lo obtuvieron.
+
+## Lección visual y dominios profesionales (L7-L9)
+
+L7 (usuario, textual): «TOQUE PRAISE PERO NO ME LO TRADUJO APARTE FALTA LA PARTE DIDACTICA DE TODO ESTO … ESTA UI ES HORRIBLE … FALTA LA PARTE MAS DIDACTICA QUE DEBE SER MAS VISUAL USANDO GRAFICOS O LO QUE SEA MEJOR PRACTICA BUSCA EN INTER».
+L8 (investigación): regla corta → ejemplos resaltados → error con su corrección → práctica inmediata, y divulgación progresiva en mobile. Fuentes: understoodin.com tutorial, millionbooks classroom, techclass microlearning, zollang learning phases.
+L9 (ejecución):
+- Click en cualquier palabra pide traducción (`POST /api/glossary/translate`) **además** de guardarla, y la muestra en el panel con la definición; antes sólo decía "guardada".
+- La lección es de 5 pasos numerados con esfuerzo estimado: regla → práctica → lectura → escritura → historia.
+- Bloque **Línea del tiempo** (SVG) que ubica el tiempo verbal, la **fórmula** cuando el material la cita, la tabla **✗ / ✓** sólo cuando la trampa declara el contraste, y ejemplos filtrados (sin fragmentos de dos palabras, sin frases en español).
+- El índice es una tira horizontal de chips en mobile y lista pegajosa en desktop.
+- Módulos 41-44: Medical, Legal, Aviation y Tech English (16 submódulos) con su glosario; el ancla de dominio se amplió a los dominios profesionales.
