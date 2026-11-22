@@ -14,6 +14,23 @@ const GOALS = [
 const RHYTHMS = [5, 10, 20] as const;
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 
+const DISCIPLINES = [
+  { id: "negocios", label: "Negocios" },
+  { id: "salud", label: "Salud" },
+  { id: "derecho", label: "Derecho" },
+  { id: "ingenieria", label: "Ingeniería" },
+  { id: "lenguas", label: "Lenguas" },
+] as const;
+
+const EDUCATION = [
+  { id: "grado_inicial", label: "Grado inicial" },
+  { id: "grado_avanzado", label: "Grado avanzado" },
+  { id: "posgrado", label: "Posgrado" },
+  { id: "formacion_profesional", label: "Formación profesional" },
+] as const;
+
+const CLASS_MINUTES = [45, 60, 90, 120] as const;
+
 /**
  * One screen, three questions, no test.
  *
@@ -26,6 +43,12 @@ export function Onboarding({ defaultLevel }: { defaultLevel: string }) {
   const [goal, setGoal] = useState<string>("interviews");
   const [dailyGoal, setDailyGoal] = useState<number>(10);
   const [level, setLevel] = useState<string | null>(defaultLevel);
+  const [discipline, setDiscipline] = useState<string>("negocios");
+  const [educationLevel, setEducationLevel] = useState<string>("grado_inicial");
+  const [mixed, setMixed] = useState(false);
+  const [mixA, setMixA] = useState(60);
+  const [classMinutes, setClassMinutes] = useState<number>(60);
+  const [sequence, setSequence] = useState<"unica" | "semanal">("semanal");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +63,22 @@ export function Onboarding({ defaultLevel }: { defaultLevel: string }) {
       });
       if (!response.ok) {
         setError("No pudimos guardar tus preferencias. Probá de nuevo.");
+        return;
+      }
+
+      const design = await fetch("/api/class", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          discipline,
+          educationLevel: mixed ? "mixto" : educationLevel,
+          ...(mixed ? { educationMix: { grado_inicial: mixA, posgrado: 100 - mixA } } : {}),
+          minutes: classMinutes,
+          sequence,
+        }),
+      });
+      if (!design.ok) {
+        setError("Guardamos tus preferencias, pero no el contexto de clase.");
         return;
       }
       router.refresh();
@@ -135,6 +174,116 @@ export function Onboarding({ defaultLevel }: { defaultLevel: string }) {
         <p className="text-xs text-slate-500">
           Si no sabés, arrancamos en B1 y el nivel se ajusta solo según lo que respondés.
         </p>
+      </section>
+
+      <section className="rounded-lg bg-white border border-slate-200 p-5 space-y-3">
+        <h2 className="font-semibold text-slate-800">4. Tu contexto de clase</h2>
+        <p className="text-xs text-slate-500">
+          Con esto se arman los planes, las lecciones y el tamaño de cada sesión de práctica.
+        </p>
+
+        <label className="block space-y-1">
+          <span className="text-xs font-medium text-slate-600">Disciplina</span>
+          <select
+            value={discipline}
+            onChange={(event) => setDiscipline(event.target.value)}
+            className="w-full px-3 py-2 rounded-sm border border-slate-300 bg-white"
+          >
+            {DISCIPLINES.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block space-y-1">
+          <span className="text-xs font-medium text-slate-600">Nivel educativo</span>
+          <select
+            value={educationLevel}
+            onChange={(event) => setEducationLevel(event.target.value)}
+            disabled={mixed}
+            className="w-full px-3 py-2 rounded-sm border border-slate-300 bg-white disabled:opacity-50"
+          >
+            {EDUCATION.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-xs text-slate-600">
+            <input
+              type="checkbox"
+              checked={mixed}
+              onChange={(event) => setMixed(event.target.checked)}
+              className="accent-indigo-600"
+            />
+            Es un grupo mixto
+          </label>
+          {mixed ? (
+            <div className="flex items-center gap-3 text-xs text-slate-600">
+              <label className="flex items-center gap-2">
+                Grado inicial
+                <input
+                  type="number"
+                  min={10}
+                  max={90}
+                  step={10}
+                  value={mixA}
+                  onChange={(event) => setMixA(Number(event.target.value))}
+                  className="w-16 px-2 py-1 rounded-sm border border-slate-300"
+                />
+                %
+              </label>
+              <span>Posgrado {100 - mixA}%</span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="space-y-1">
+          <span className="text-xs font-medium text-slate-600">Duración de la clase</span>
+          <div className="flex flex-wrap gap-2">
+            {CLASS_MINUTES.map((minutes) => (
+              <button
+                key={minutes}
+                type="button"
+                aria-pressed={classMinutes === minutes}
+                onClick={() => setClassMinutes(minutes)}
+                className={`px-3 py-1.5 rounded-sm text-xs font-semibold transition ${
+                  classMinutes === minutes
+                    ? "bg-indigo-600 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {minutes} min
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <span className="text-xs font-medium text-slate-600">Secuencia</span>
+          <div className="flex gap-2">
+            {(["unica", "semanal"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={sequence === option}
+                onClick={() => setSequence(option)}
+                className={`px-3 py-1.5 rounded-sm text-xs font-semibold transition ${
+                  sequence === option
+                    ? "bg-indigo-600 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {option === "unica" ? "Clase única" : "Secuencia semanal"}
+              </button>
+            ))}
+          </div>
+        </div>
       </section>
 
       {error ? (

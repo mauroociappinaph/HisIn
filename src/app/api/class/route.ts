@@ -6,7 +6,15 @@ import { CLASS_MINUTES, DISCIPLINES, EDUCATION_LEVELS, SEQUENCES } from "@/modul
 
 const designSchema = z.object({
   discipline: z.enum(DISCIPLINES),
-  educationLevel: z.enum(EDUCATION_LEVELS),
+  educationLevel: z.union([z.enum(EDUCATION_LEVELS), z.literal("mixto")]),
+  educationMix: z
+    .object({
+      grado_inicial: z.number().int().min(0).max(100).optional(),
+      grado_avanzado: z.number().int().min(0).max(100).optional(),
+      posgrado: z.number().int().min(0).max(100).optional(),
+      formacion_profesional: z.number().int().min(0).max(100).optional(),
+    })
+    .optional(),
   minutes: z.union([z.literal(45), z.literal(60), z.literal(90), z.literal(120)]),
   sequence: z.enum(SEQUENCES),
 });
@@ -36,8 +44,14 @@ export async function PUT(req: NextRequest) {
 
   const user = await getLocalUser();
   const repository = new ClassroomRepository();
-  const design = await repository.saveDesign(user.id, parsed.data);
-  return NextResponse.json({ design });
+  try {
+    const design = await repository.saveDesign(user.id, parsed.data);
+    return NextResponse.json({ design });
+  } catch (error) {
+    // A mixed cohort that does not add up to 100% is a client error, not a crash.
+    const message = error instanceof Error ? error.message : "contexto de clase inválido";
+    return NextResponse.json({ error: "contexto de clase inválido", issues: [message] }, { status: 400 });
+  }
 }
 
 /** Generates and stores one session plan for the saved context. */

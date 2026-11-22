@@ -4,7 +4,10 @@ import {
   CLASS_MINUTES,
   DISCIPLINES,
   buildLessonFlow,
+  contextPromptFragment,
   describeDesign,
+  describeEducation,
+  itemsForMinutes,
   validateClassDesign,
   type ClassDesign,
 } from "./design";
@@ -105,4 +108,77 @@ test("an incomplete design is refused with the exact missing field", () => {
 
 test("the design summary is readable in one line", () => {
   assert.equal(describeDesign(base), "negocios · posgrado · 90 min · secuencia semanal");
+});
+
+const mixed: ClassDesign = {
+  discipline: "salud",
+  educationLevel: "mixto",
+  educationMix: { grado_inicial: 60, posgrado: 40 },
+  minutes: 60,
+  sequence: "semanal",
+};
+
+test("a mixed cohort validates when its composition adds up to 100%", () => {
+  const result = validateClassDesign(mixed);
+
+  assert.equal(result.ok, true);
+  assert.equal(describeEducation(mixed), "mixto (60% grado inicial / 40% posgrado)");
+  assert.match(describeDesign(mixed), /mixto \(60% grado inicial \/ 40% posgrado\)/);
+});
+
+test("a mixed cohort whose composition does not add up is refused", () => {
+  const result = validateClassDesign({ ...mixed, educationMix: { grado_inicial: 50, posgrado: 30 } });
+
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join(" "), /debe sumar 100%/);
+});
+
+test("a mixed cohort needs at least two levels", () => {
+  const result = validateClassDesign({ ...mixed, educationMix: { posgrado: 100 } });
+
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join(" "), /al menos dos niveles/);
+});
+
+test("an unknown level inside the mix is named", () => {
+  const result = validateClassDesign({
+    ...mixed,
+    educationMix: { posgrado: 60, doctorado: 40 } as never,
+  });
+
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join(" "), /doctorado/);
+});
+
+test("a composition without a mixed level is refused instead of ignored", () => {
+  const result = validateClassDesign({ ...base, educationMix: { posgrado: 100 } });
+
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join(" "), /solo aplica al nivel "mixto"/);
+});
+
+test("a session length maps to a bounded number of practice items", () => {
+  const counts = CLASS_MINUTES.map((minutes) => itemsForMinutes(minutes));
+
+  assert.deepEqual(counts, [8, 12, 18, 24]);
+  for (let index = 1; index < counts.length; index += 1) {
+    assert.ok(counts[index]! > counts[index - 1]!, "la práctica no crece con la duración");
+  }
+});
+
+test("the generation context carries discipline, level, duration and sequence", () => {
+  const fragment = contextPromptFragment(base);
+
+  assert.match(fragment, /negocios/);
+  assert.match(fragment, /posgrado/);
+  assert.match(fragment, /90 minutes/);
+  assert.match(fragment, /weekly sequence/);
+  assert.match(fragment, /not for a generic learner/);
+});
+
+test("a mixed cohort is described in the generation context too", () => {
+  const fragment = contextPromptFragment(mixed);
+
+  assert.match(fragment, /mixed cohort/);
+  assert.match(fragment, /60% grado inicial/);
 });

@@ -6,6 +6,7 @@ import { ProgressRepository } from "@/modules/progress/repository";
 import { goalRatio } from "@/modules/progress/service";
 import { ProgressBar } from "@/app/review/vocab/_components/ui";
 import { StudyPrefs } from "@/components/study-prefs";
+import { describeDesign, type ClassDesign } from "@/modules/classroom/design";
 
 /**
  * Progress reads Postgres, not localStorage: the numbers survive a cleared
@@ -21,6 +22,13 @@ async function ProgressContent() {
     prisma.vocabulary.count(),
     prisma.vocabularyStory.count(),
   ]);
+  const design: ClassDesign = {
+    discipline: profile.classDesign.discipline as ClassDesign["discipline"],
+    educationLevel: profile.classDesign.educationLevel as ClassDesign["educationLevel"],
+    educationMix: (profile.classDesign.educationMix as ClassDesign["educationMix"]) ?? undefined,
+    minutes: profile.classDesign.minutes as ClassDesign["minutes"],
+    sequence: profile.classDesign.sequence as ClassDesign["sequence"],
+  };
 
   const mature = reviews.filter((review) => review.interval >= 21).length;
   const accuracy = profile.totalItems === 0 ? 0 : Math.round((profile.totalCorrect / profile.totalItems) * 100);
@@ -33,6 +41,18 @@ async function ProgressContent() {
       </header>
 
       <section className="rounded-lg bg-white border border-slate-200 p-5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="font-semibold text-slate-800">Contexto de clase</h2>
+            <p className="text-xs text-slate-500">{describeDesign(design)}</p>
+          </div>
+          <Link
+            href="/class"
+            className="text-xs px-3 py-1.5 rounded-sm border border-slate-300 font-medium hover:border-indigo-300"
+          >
+            Cambiar contexto
+          </Link>
+        </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-slate-600">Meta de hoy</span>
           <span className="font-semibold text-slate-800">

@@ -51,6 +51,7 @@ model LearnerProfile {
   onboardedAt   DateTime?
   discipline     String   @default("negocios")
   educationLevel String   @default("grado_inicial")
+  educationMix   Json?
   classMinutes   Int      @default(60)
   sequence       String   @default("semanal")
   classPlans     ClassPlan[]

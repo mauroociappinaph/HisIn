@@ -38,3 +38,15 @@ S10. Tests: reparto exacto de minutos en las cuatro duraciones, orden de fases, 
 ## Log
 
 L1 (usuario, textual): «Aplica todo esto en la app: 1. Asignatura o materia… 2. Nivel educativo… 3. Duración de la clase… Aplicalo bien todo eso. En toda la app. Crea test para que siempre se aplique en todos lados. Crea secciones si crees que son necesario… Aparte de esto Faltan NIveles. Donde aprendo por ejemplo donde se usa present perfect? O pase tence?»
+
+## Ampliación: aplicarlo en toda la app
+
+S11. El nivel educativo admite **grupo mixto**: `educationLevel = "mixto"` con `educationMix` (dos o más niveles, suma exacta 100%). Se rechaza una mezcla incompleta, con niveles desconocidos, o declarada sin nivel mixto.
+
+S12. La **duración decide el tamaño de la práctica**: 45→8, 60→12, 90→18, 120→24 ítems por sesión (`itemsForMinutes`), usado por el desafío del entrenador.
+
+S13. El **contexto viaja al motor**: `generationRequestSchema` acepta `context` (≤400) y `/api/ai/generate` lo rellena desde el perfil con `contextPromptFragment`, así todo lo generado desde la app respeta disciplina, nivel educativo, duración y secuencia.
+
+S14. El contexto se captura en el **onboarding** (bloque 4) y se edita en `/class`; `/progress` lo muestra con link para cambiarlo, y cada lección ofrece "Diseñar la clase" con su título precargado.
+
+L2 (decisión): el caso mixto se modela como composición porcentual, no como lista, porque es lo que un docente declara y lo que permite verificar que suma 100%.

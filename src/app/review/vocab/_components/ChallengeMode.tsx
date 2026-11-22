@@ -12,13 +12,15 @@ const FEEDBACK_DELAY_MS = 950;
 interface ChallengeModeProps {
   bank: VocabularyDTO[];
   loading: boolean;
+  /** Items per round: the class duration decides how long a session is. */
+  roundSize?: number;
   score: ScoreState;
   /** XP gained and whether it was right; the tally itself belongs to the server. */
   onAnswered: (gained: number, correct: boolean) => void;
   onToast: (message: string, tone?: "success" | "info" | "warning") => void;
 }
 
-export function ChallengeMode({ bank, loading, score, onAnswered, onToast }: ChallengeModeProps) {
+export function ChallengeMode({ bank, loading, roundSize = ROUND_SIZE, score, onAnswered, onToast }: ChallengeModeProps) {
   const [roundKey, setRoundKey] = useState(0);
   const [index, setIndex] = useState(0);
   const [chosen, setChosen] = useState<string | null>(null);
@@ -27,8 +29,8 @@ export function ChallengeMode({ bank, loading, score, onAnswered, onToast }: Cha
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const questions = useMemo(
-    () => buildRound(bank, { count: ROUND_SIZE, rng: createRng(roundKey + 1) }),
-    [bank, roundKey],
+    () => buildRound(bank, { count: roundSize, rng: createRng(roundKey + 1) }),
+    [bank, roundKey, roundSize],
   );
   const question = questions[index];
 

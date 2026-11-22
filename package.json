@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/modules/vocabulary/srs.test.ts src/modules/news/feed.test.ts src/modules/news/analysis.test.ts src/modules/classroom/design.test.ts src/modules/grammar/content.test.ts src/modules/progress/service.test.ts src/shared/lib/youtube.test.ts src/shared/lib/presentation.test.ts src/modules/vocabulary/quiz.test.ts src/modules/vocabulary/entry.test.ts src/modules/vocabulary/analysis.test.ts src/modules/stories/highlight.test.ts src/modules/ai/schema.test.ts src/modules/ai/story.test.ts src/modules/ai/gentle-shell.test.ts src/modules/ai/guard.test.ts src/modules/ai/models.test.ts src/modules/ai/queue.test.ts src/modules/ai/policy.test.ts",
+    "test": "node --import tsx --test src/modules/vocabulary/srs.test.ts src/modules/news/feed.test.ts src/modules/news/analysis.test.ts src/modules/classroom/design.test.ts src/modules/grammar/content.test.ts src/modules/progress/service.test.ts src/shared/lib/youtube.test.ts src/shared/lib/presentation.test.ts src/modules/vocabulary/quiz.test.ts src/modules/vocabulary/entry.test.ts src/modules/vocabulary/analysis.test.ts src/modules/stories/highlight.test.ts src/modules/ai/schema.test.ts src/modules/ai/prompt.test.ts src/modules/ai/story.test.ts src/modules/ai/gentle-shell.test.ts src/modules/ai/guard.test.ts src/modules/ai/models.test.ts src/modules/ai/queue.test.ts src/modules/ai/policy.test.ts",
     "seed": "tsx prisma/seed.ts",
     "db:migrate": "prisma migrate deploy",
     "db:generate": "prisma generate",

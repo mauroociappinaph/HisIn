@@ -2,6 +2,14 @@ import { prisma } from "@/shared/db/prisma";
 import type { CefrLevel } from "@/shared/types";
 import { applyProgress, dayKey, type ProgressEvent, type ProgressState } from "./service";
 
+export interface ProfileClassDesign {
+  discipline: string;
+  educationLevel: string;
+  educationMix?: Record<string, number> | null;
+  minutes: number;
+  sequence: string;
+}
+
 export interface ProfileDTO {
   level: CefrLevel;
   goal: string;
@@ -13,6 +21,7 @@ export interface ProfileDTO {
   totalItems: number;
   totalCorrect: number;
   onboarded: boolean;
+  classDesign: ProfileClassDesign;
 }
 
 function toState(row: {
@@ -55,6 +64,13 @@ export class ProgressRepository {
       totalItems: row.totalItems,
       totalCorrect: row.totalCorrect,
       onboarded: row.onboardedAt !== null,
+      classDesign: {
+        discipline: row.discipline,
+        educationLevel: row.educationLevel,
+        educationMix: (row.educationMix as Record<string, number> | null) ?? null,
+        minutes: row.classMinutes,
+        sequence: row.sequence,
+      },
     };
   }
 

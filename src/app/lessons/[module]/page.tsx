@@ -144,14 +144,22 @@ export default function LessonsPage() {
                   <div className="p-4 border-t border-slate-200 space-y-3">
                     <p className="text-sm text-slate-600">{lesson.summary}</p>
                     <div className="whitespace-pre-wrap text-slate-800 text-sm leading-relaxed">{lesson.content}</div>
-                    <button
-                      type="button"
-                      onClick={() => void complete(lesson.id)}
-                      disabled={isDone}
-                      className="px-4 py-2 bg-emerald-600 text-white rounded-sm text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50"
-                    >
-                      {isDone ? "Ya la marcaste" : "Marcar como vista"}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void complete(lesson.id)}
+                        disabled={isDone}
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-sm text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50"
+                      >
+                        {isDone ? "Ya la marcaste" : "Marcar como vista"}
+                      </button>
+                      <Link
+                        href={`/class?tema=${encodeURIComponent(lesson.title)}`}
+                        className="px-4 py-2 rounded-sm border border-slate-300 text-sm font-medium hover:border-indigo-300"
+                      >
+                        Diseñar la clase
+                      </Link>
+                    </div>
                   </div>
                 ) : null}
               </article>

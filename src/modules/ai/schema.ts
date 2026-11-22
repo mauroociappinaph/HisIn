@@ -46,6 +46,8 @@ export const generationRequestSchema = z
     type: questionTypeSchema.optional(),
     count: z.number().int().min(1).max(5).default(3),
     topic: z.string().trim().min(3).max(120).optional(),
+    /** Teaching context (discipline, educational level, session length). */
+    context: z.string().trim().max(400).optional(),
   })
   .superRefine((request, ctx) => {
     if (request.kind !== "question") return;

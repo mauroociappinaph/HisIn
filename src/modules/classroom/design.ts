@@ -17,6 +17,17 @@ export const EDUCATION_LEVELS = [
 ] as const;
 export type EducationLevel = (typeof EDUCATION_LEVELS)[number];
 
+/** A real course is often mixed: "60% grado inicial, 40% posgrado". */
+export type EducationMix = Partial<Record<EducationLevel, number>>;
+export type EducationLevelOrMix = EducationLevel | "mixto";
+
+export const EDUCATION_LABELS: Record<EducationLevel, string> = {
+  grado_inicial: "grado inicial",
+  grado_avanzado: "grado avanzado",
+  posgrado: "posgrado",
+  formacion_profesional: "formación profesional",
+};
+
 export const CLASS_MINUTES = [45, 60, 90, 120] as const;
 export type ClassMinutes = (typeof CLASS_MINUTES)[number];
 
@@ -25,7 +36,9 @@ export type Sequence = (typeof SEQUENCES)[number];
 
 export interface ClassDesign {
   discipline: Discipline;
-  educationLevel: EducationLevel;
+  /** "mixto" requires `educationMix` to be a complete 100% composition. */
+  educationLevel: EducationLevelOrMix;
+  educationMix?: EducationMix;
   minutes: ClassMinutes;
   sequence: Sequence;
 }
@@ -130,8 +143,29 @@ export function validateClassDesign(input: Partial<ClassDesign>): ClassDesignVal
   if (!input.discipline || !DISCIPLINES.includes(input.discipline)) {
     errors.push(`la disciplina debe ser una de: ${DISCIPLINES.join(", ")}`);
   }
-  if (!input.educationLevel || !EDUCATION_LEVELS.includes(input.educationLevel)) {
-    errors.push(`el nivel educativo debe ser uno de: ${EDUCATION_LEVELS.join(", ")}`);
+  const level = input.educationLevel;
+  const validSingle = level && (EDUCATION_LEVELS as readonly string[]).includes(level);
+  if (!level || (!validSingle && level !== "mixto")) {
+    errors.push(`el nivel educativo debe ser uno de: ${EDUCATION_LEVELS.join(", ")} o "mixto"`);
+  }
+
+  if (level === "mixto") {
+    const mix = input.educationMix;
+    const entries = mix ? Object.entries(mix) : [];
+    if (entries.length < 2) {
+      errors.push('un nivel mixto necesita al menos dos niveles en "educationMix"');
+    } else {
+      const unknown = entries.filter(([key]) => !(EDUCATION_LEVELS as readonly string[]).includes(key));
+      if (unknown.length > 0) {
+        errors.push(`niveles desconocidos en la mezcla: ${unknown.map(([key]) => key).join(", ")}`);
+      }
+      const total = entries.reduce((sum, [, value]) => sum + (Number(value) || 0), 0);
+      if (total !== 100) {
+        errors.push(`la mezcla educativa debe sumar 100%, hoy suma ${total}%`);
+      }
+    }
+  } else if (input.educationMix && Object.keys(input.educationMix).length > 0) {
+    errors.push('la mezcla educativa solo aplica al nivel "mixto"');
   }
   if (!input.minutes || !CLASS_MINUTES.includes(input.minutes)) {
     errors.push(`la duración debe ser una de: ${CLASS_MINUTES.join(", ")} minutos`);
@@ -189,15 +223,50 @@ export function buildLessonFlow(design: ClassDesign): LessonFlow {
   };
 }
 
+/** Human label for the educational level, including the mixed composition. */
+export function describeEducation(design: ClassDesign): string {
+  if (design.educationLevel !== "mixto") return EDUCATION_LABELS[design.educationLevel];
+  const mix = design.educationMix ?? {};
+  const parts = Object.entries(mix)
+    .sort((a, b) => Number(b[1]) - Number(a[1]))
+    .map(([level, share]) => `${share}% ${EDUCATION_LABELS[level as EducationLevel]}`);
+  return `mixto (${parts.join(" / ")})`;
+}
+
 /** Short label used wherever a design is shown next to content. */
 export function describeDesign(design: ClassDesign): string {
-  const level = {
-    grado_inicial: "grado inicial",
-    grado_avanzado: "grado avanzado",
-    posgrado: "posgrado",
-    formacion_profesional: "formación profesional",
-  }[design.educationLevel];
-  return `${design.discipline} · ${level} · ${design.minutes} min · ${
+  return `${design.discipline} · ${describeEducation(design)} · ${design.minutes} min · ${
     design.sequence === "semanal" ? "secuencia semanal" : "clase única"
   }`;
+}
+
+/**
+ * How much practice fits in a session of that length.
+ *
+ * Roughly one item per five minutes, floored and capped so a 45-minute class is
+ * still a class and a 120-minute one does not become an endurance test.
+ */
+export function itemsForMinutes(minutes: ClassMinutes): number {
+  const table: Record<ClassMinutes, number> = { 45: 8, 60: 12, 90: 18, 120: 24 };
+  return table[minutes];
+}
+
+/**
+ * The context every generated item must respect.
+ *
+ * Without this the engine writes generic B1 content for a postgraduate health
+ * cohort, which is the most common way a personalised app stops being one.
+ */
+export function contextPromptFragment(design: ClassDesign): string {
+  const audience =
+    design.educationLevel === "mixto"
+      ? `a mixed cohort (${describeEducation(design)})`
+      : `${describeEducation(design)} students`;
+  return [
+    `Audience: ${design.discipline} ${audience}.`,
+    `Session length: ${design.minutes} minutes (${
+      design.sequence === "semanal" ? "part of a weekly sequence" : "a single class"
+    }); keep each item completable inside that time.`,
+    `Write for ${design.discipline} practice, not for a generic learner.`,
+  ].join(" ");
 }

@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState, useSyncExternalSto
 import { useSearchParams } from "next/navigation";
 import type { VocabularyDTO } from "@/shared/types";
 import { ChallengeMode } from "./_components/ChallengeMode";
+import { itemsForMinutes } from "@/modules/classroom/design";
 import { ExploreMode } from "./_components/ExploreMode";
 import { ReviewMode } from "./_components/ReviewMode";
 import { StoryMode } from "./_components/StoryMode";
@@ -42,6 +43,7 @@ interface ProfileDTO {
   level: string;
   itemsToday: number;
   dailyGoal: number;
+  classDesign: { minutes: 45 | 60 | 90 | 120 };
 }
 
 function TrainerInner() {
@@ -64,6 +66,8 @@ function TrainerInner() {
     streak: profile?.streak ?? 0,
     best: profile?.bestStreak ?? 0,
   };
+  // La duración de la clase decide cuánto entra en una sesión de práctica.
+  const sessionItems = profile ? itemsForMinutes(profile.classDesign.minutes) : 10;
 
   const showToast = useCallback((message: string, tone: ToastTone = "success") => {
     setToast({ id: Date.now(), message, tone });
@@ -279,6 +283,7 @@ function TrainerInner() {
         <ChallengeMode
           bank={bank}
           loading={bankLoading}
+          roundSize={sessionItems}
           score={score}
           onAnswered={(gained, correct) =>
             void record({ event: "practice", items: 1, correct: correct ? 1 : 0, xp: gained })

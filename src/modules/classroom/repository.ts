@@ -28,6 +28,7 @@ export class ClassroomRepository {
     return {
       discipline: profile.discipline as ClassDesign["discipline"],
       educationLevel: profile.educationLevel as ClassDesign["educationLevel"],
+      educationMix: (profile.educationMix as ClassDesign["educationMix"]) ?? undefined,
       minutes: profile.classMinutes as ClassDesign["minutes"],
       sequence: profile.sequence as ClassDesign["sequence"],
     };
@@ -46,6 +47,7 @@ export class ClassroomRepository {
         educationLevel: design.educationLevel,
         classMinutes: design.minutes,
         sequence: design.sequence,
+        educationMix: (design.educationMix as object | undefined) ?? undefined,
       },
       create: {
         userId,
@@ -53,6 +55,7 @@ export class ClassroomRepository {
         educationLevel: design.educationLevel,
         classMinutes: design.minutes,
         sequence: design.sequence,
+        educationMix: (design.educationMix as object | undefined) ?? undefined,
       },
     });
     return design;

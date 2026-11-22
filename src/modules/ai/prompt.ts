@@ -64,8 +64,18 @@ function lessonPrompt(request: GenerationRequest): string {
   ].join(" ");
 }
 
-/** Builds the user prompt for one generation request. */
+/**
+ * Builds the user prompt for one generation request.
+ *
+ * The teaching context travels with every kind: generated items for a
+ * postgraduate health cohort must not read like generic B1 filler.
+ */
 export function buildPrompt(request: GenerationRequest): string {
+  const base = buildBasePrompt(request);
+  return request.context ? `${base} ${request.context}` : base;
+}
+
+function buildBasePrompt(request: GenerationRequest): string {
   switch (request.kind) {
     case "vocabulary":
       return vocabularyPrompt(request);
