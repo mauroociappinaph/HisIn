@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
+/**
+ * Four destinations, one idea each: what to do now, where to learn, where to
+ * review, and how it is going. Grammar is content, not a destination, so it lives
+ * inside Estudiar with the rest of the material.
+ */
 const NAV = [
   { href: "/", label: "Hoy" },
-  { href: "/learn", label: "Aprender" },
-  { href: "/grammar", label: "Gramática" },
-  { href: "/review/vocab", label: "Repaso" },
+  { href: "/learn", label: "Estudiar" },
+  { href: "/review/vocab", label: "Repasar" },
   { href: "/progress", label: "Progreso" },
 ] as const;
 

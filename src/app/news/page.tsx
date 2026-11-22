@@ -267,7 +267,7 @@ export default function NewsPage() {
 
               {item.analysis ? (
                 <div className="mt-2 space-y-4 border-t border-slate-200 pt-4">
-                  <p className="text-sm text-slate-700">{item.analysis.summaryEs}</p>
+                  <p className="text-sm text-slate-700">{item.analysis.summary}</p>
 
                   <div className="space-y-2">
                     <h3 className="text-xs uppercase tracking-wide text-slate-500">Vocabulario</h3>

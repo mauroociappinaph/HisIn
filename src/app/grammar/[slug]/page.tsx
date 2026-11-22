@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { LevelBadge, SpeakButton } from "@/components/vocab-ui";
 import { AXIS_LABELS, GRAMMAR_TOPICS, findTopic } from "@/modules/grammar/content";
@@ -13,7 +14,7 @@ export function generateStaticParams() {
  * used, how it is built, examples in the learner's domain, the Spanish-speaker
  * error, and a way to practise it.
  */
-export default async function GrammarTopicPage({ params }: { params: Promise<{ slug: string }> }) {
+async function TopicBody({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const topic = findTopic(slug);
   if (!topic) notFound();
@@ -127,5 +128,25 @@ export default async function GrammarTopicPage({ params }: { params: Promise<{ s
         </Link>
       </div>
     </div>
+  );
+}
+
+/**
+ * `params` is URL data: awaiting it must happen inside a Suspense boundary or the
+ * navigation stops being instant (Next reports it as an "Instant" error).
+ */
+export default function GrammarTopicPage({ params }: { params: Promise<{ slug: string }> }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-3" aria-busy="true">
+          <div className="h-6 w-40 rounded-sm bg-white/60 animate-pulse" />
+          <div className="h-10 w-72 rounded-sm bg-white/60 animate-pulse" />
+          <div className="h-40 rounded-lg bg-white border border-slate-200 animate-pulse" />
+        </div>
+      }
+    >
+      <TopicBody params={params} />
+    </Suspense>
   );
 }

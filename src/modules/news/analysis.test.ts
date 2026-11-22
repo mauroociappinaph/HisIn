@@ -3,8 +3,8 @@ import { test } from "node:test";
 import { buildNewsPrompt, parseNewsAnalysis } from "./analysis";
 
 const valid = {
-  summaryEs:
-    "Los inversores recortaron el financiamiento en salud digital y las startups ajustan su runway mientras la FDA acelera aprobaciones.",
+  summary:
+    "Investors pulled back from digital health deals while startups stretch their runway and the FDA speeds up clearances.",
   level: "C1",
   vocabulary: [
     {
@@ -87,6 +87,6 @@ test("the prompt anchors the analysis to the article text and the learner", () =
 
   assert.match(prompt, /Digital health funding cools/);
   assert.match(prompt, /Fierce Healthcare/);
-  assert.match(prompt, /three? to 8 domain terms|3 to 8 domain terms/);
-  assert.match(prompt, /summaryEs/);
+  assert.match(prompt, /3 to 8 domain terms/);
+  assert.match(prompt, /summary/);
 });

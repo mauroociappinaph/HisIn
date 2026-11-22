@@ -13,6 +13,14 @@ export interface NewsDTO {
   analysis: NewsAnalysis | null;
 }
 
+/** Older rows stored the digest in Spanish; they are read as they are. */
+function normalizeAnalysis(value: unknown): NewsAnalysis | null {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+  const summary = typeof raw.summary === "string" ? raw.summary : typeof raw.summaryEs === "string" ? raw.summaryEs : "";
+  return { ...(raw as unknown as NewsAnalysis), summary };
+}
+
 export class NewsRepository {
   /** Stores the feed items that are new; re-syncing the same feed is a no-op. */
   async upsert(items: FeedItem[]): Promise<number> {
@@ -43,7 +51,7 @@ export class NewsRepository {
       excerpt: row.excerpt,
       publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
       analyzed: row.analyzedAt !== null,
-      analysis: (row.analysis as NewsAnalysis | null) ?? null,
+      analysis: normalizeAnalysis(row.analysis),
     }));
   }
 

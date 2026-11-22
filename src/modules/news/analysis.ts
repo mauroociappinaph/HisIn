@@ -10,7 +10,8 @@ import { usesInflectedTerm } from "@/shared/lib/text";
  */
 export const newsAnalysisSchema = z
   .object({
-    summaryEs: z.string().min(20).max(600),
+    /** English summary: this app teaches English, the digest is practice too. */
+    summary: z.string().min(20).max(600),
     level: z.enum(CEFR_LEVELS),
     vocabulary: z
       .array(
@@ -60,7 +61,7 @@ export type NewsAnalysis = z.infer<typeof newsAnalysisSchema>;
 export const NEWS_SYSTEM_PROMPT = [
   "You are an English teacher for Spanish-speaking healthtech founders and entrepreneurs.",
   "You read a real news article and extract what a B2-C1 learner should notice.",
-  "Write the summary in Spanish (rioplatense, neutral).",
+  "Write the summary in English, as a short digest the learner can read as practice.",
   "Write every vocabulary definition and example in English.",
   "Return ONLY a JSON object. No prose, no markdown fences, no comments.",
 ].join(" ");
@@ -71,7 +72,7 @@ export function buildNewsPrompt(article: { title: string; source: string; excerp
     `Article title: ${JSON.stringify(article.title)}`,
     `Source: ${JSON.stringify(article.source)}`,
     `Text: ${JSON.stringify(article.excerpt.slice(0, 1400))}`,
-    'Return this shape: {"summaryEs","level","vocabulary":[{"term","definition","example"}],"patterns":[{"frame","function","example","commonError"}]}.',
+    'Return this shape: {"summary","level","vocabulary":[{"term","definition","example"}],"patterns":[{"frame","function","example","commonError"}]}.',
     'level is the CEFR level of the article itself (usually B2 or C1).',
     "vocabulary: 3 to 8 domain terms the learner would not know, each with a one-sentence English definition and an example copied or adapted from the article that uses the exact term.",
     'patterns: 1 to 4 sentence structures the article uses that transfer to the learner\'s own writing. "function" must be exactly one of: "hedge", "soften", "persuade", "report", "compare". frame uses slots with +, e.g. "is expected to + verb".',

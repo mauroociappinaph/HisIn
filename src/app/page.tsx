@@ -126,6 +126,16 @@ async function HomeContent() {
           <p className="text-xs text-slate-500">estructura + función + error típico</p>
         </Link>
         <Link
+          href="/modules"
+          className="rounded-lg bg-white border border-slate-200 p-4 hover:border-indigo-300 transition"
+        >
+          <span className="text-2xl" aria-hidden="true">
+            🧭
+          </span>
+          <h3 className="font-semibold text-slate-800 mt-1">Módulos de estudio</h3>
+          <p className="text-xs text-slate-500">leer, gramática, práctica y repaso en un recorrido</p>
+        </Link>
+        <Link
           href="/grammar"
           className="rounded-lg bg-white border border-slate-200 p-4 hover:border-indigo-300 transition"
         >

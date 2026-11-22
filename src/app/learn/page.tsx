@@ -38,7 +38,7 @@ async function LearnContent() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold text-slate-900">Aprender</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Estudiar</h1>
         <p className="text-sm text-slate-600">
           Elegí por dónde entrar. Todo está disponible: los niveles ordenan, no bloquean.
         </p>
@@ -65,6 +65,13 @@ async function LearnContent() {
         >
           <h2 className="font-semibold text-slate-800">Historias</h2>
           <p className="text-xs text-slate-500">{stories} relatos con audio y traducción</p>
+        </Link>
+        <Link
+          href="/modules"
+          className="rounded-lg bg-white border border-slate-200 p-4 hover:border-indigo-300 transition"
+        >
+          <h2 className="font-semibold text-slate-800">Módulos de estudio</h2>
+          <p className="text-xs text-slate-500">recorridos de 4 pasos que entran en tu clase</p>
         </Link>
         <Link
           href="/grammar"
