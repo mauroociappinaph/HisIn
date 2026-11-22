@@ -13,6 +13,7 @@ const FUNCTION_MEANINGS: Record<string, string> = {
   persuade: "empujar una decisión (make + objeto + verbo)",
   report: "contar lo que otro dijo o hizo (is said to, was reported)",
   compare: "medir dos cosas (twice as, compared with)",
+  express: "declarar interés, necesidad o postura (be interested in, would like)",
 };
 
 

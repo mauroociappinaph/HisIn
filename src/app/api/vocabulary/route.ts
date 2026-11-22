@@ -16,7 +16,7 @@ const createEntrySchema = z.object({
   particle: z.string().max(20).optional(),
   separable: z.boolean().optional(),
   register: z.enum(["neutral", "informal", "formal"]).optional(),
-  function: z.enum(["hedge", "soften", "persuade", "report", "compare"]).optional(),
+  function: z.enum(["hedge", "soften", "persuade", "report", "compare", "express"]).optional(),
   extraExample: z.string().max(400).optional(),
   notes: z.string().max(400).optional(),
 });

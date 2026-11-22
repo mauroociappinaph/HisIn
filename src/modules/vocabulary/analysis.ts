@@ -24,7 +24,7 @@ export const entryAnalysisSchema = z.object({
   particle: z.string().max(20).nullish(),
   separable: z.boolean().nullish(),
   register: z.enum(["neutral", "informal", "formal"]).nullish(),
-  function: z.enum(["hedge", "soften", "persuade", "report", "compare"]).nullish(),
+  function: z.enum(["hedge", "soften", "persuade", "report", "compare", "express"]).nullish(),
   notes: z.string().max(400).nullish(),
 });
 
@@ -38,7 +38,7 @@ export interface EntryAnalysis {
   particle?: string;
   separable?: boolean;
   register?: "neutral" | "informal" | "formal";
-  function?: "hedge" | "soften" | "persuade" | "report" | "compare";
+  function?: "hedge" | "soften" | "persuade" | "report" | "compare" | "express";
   notes?: string;
 }
 
@@ -49,21 +49,26 @@ export const ENTRY_SYSTEM_PROMPT = [
   "Return ONLY a JSON object. No prose, no markdown fences, no comments.",
 ].join(" ");
 
-export function buildEntryPrompt(input: string): string {
+export function buildEntryPrompt(input: string, retryReason?: string): string {
   return [
     `Entry: ${JSON.stringify(input.trim())}`,
     'Return this shape: {"term","kind","definition","example","level","module","particle","separable","register","function","notes"}.',
     `kind must be exactly one of: ${ENTRY_KINDS.map((kind) => `"${kind}"`).join(", ")}.`,
     'WORD = one word. PHRASAL_VERB = verb + particle (put off, look after). IDIOM = fixed multiword expression whose meaning is not literal (cut corners, on the same page). PATTERN = sentence frame with slots (make + object + verb, is expected to + verb).',
-    "term: the entry as the learner would write it, lowercase unless it is a proper noun or an acronym.",
+    'term: the entry as it should be learned, lowercase unless it is a proper noun or an acronym. The term is yours to write: if the learner typed a fragment, return the complete entry — "interested in" comes back as "be interested in + noun/gerund", never as a bare fragment.',
     "definition: one or two English sentences a professional would accept, not a dictionary copy.",
     "example: one English sentence that USES the term (inflection is fine: 'pulled back' documents 'pull back'), set in healthtech, investors, contracts or product work.",
     `level: exactly one of ${CEFR_LEVELS.join(", ")}.`,
     `module: exactly one of ${CONTENT_MODULES.join(", ")} — the section it belongs to.`,
     'For PHRASAL_VERB: always send "particle" (the last word), "separable" (true/false) and "register" ("neutral" | "informal" | "formal").',
-    'For PATTERN: always send "function", exactly one of "hedge", "soften", "persuade", "report", "compare".',
+    'For PATTERN: the term MUST be the full frame with slots separated by +, for example "be interested in + noun/gerund", "make + object + verb", "is expected to + verb". A two-word fragment is not a PATTERN. Always send "function", exactly one of "hedge" (no comprometerse), "soften" (suavizar), "persuade" (empujar una decisión), "report" (atribuir lo que otro dijo), "compare" (medir dos cosas), "express" (declarar interés, necesidad o postura, como "be interested in").',
     'notes: in Spanish, the mistake a Spanish speaker makes with this entry.',
-  ].join(" ");
+    retryReason
+      ? `Your previous answer was rejected: ${retryReason}. Rewrite the entry so it passes every rule, especially the term shape for its kind.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export type EntryAnalysisResult =

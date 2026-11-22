@@ -14,7 +14,7 @@ const MODULES = [
   { slug: "grammar", label: "Gramática" },
 ] as const;
 
-const FUNCTIONS = ["hedge", "soften", "persuade", "report", "compare"] as const;
+const FUNCTIONS = ["hedge", "soften", "persuade", "report", "compare", "express"] as const;
 const REGISTERS = ["neutral", "informal", "formal"] as const;
 
 interface EntryFormProps {

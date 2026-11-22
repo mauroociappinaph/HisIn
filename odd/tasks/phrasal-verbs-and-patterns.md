@@ -81,3 +81,9 @@ Comparado contra Duolingo, Anki, Quizlet, Clozemaster, LingQ, British Council Le
 **Decisiones de diseño adoptadas** (ver S11–S16): separabilidad y registro en cada phrasal verb, agrupación por partícula, función en cada patrón, cloze sobre la oración propia, cola única mezclada, formulario que fuerza paráfrasis y oración personal, y anti-bloat.
 
 L3 (extensión pendiente, T6): el motor todavía no genera `PHRASAL_VERB` ni `PATTERN`; hoy esas dos secciones se llenan con entradas del aprendiz. La unidad siguiente es un `category` opcional en `kind: "vocabulary"` (WORD | PHRASAL_VERB | PATTERN) que valide cada salida con `validateEntry` — derivando `particle` del término y exigiendo separabilidad y registro — y persista con el `kind` correcto. Es un cambio al contrato compartido del motor (lo consumen el CLI, `/api/ai/generate` y `/studio`), así que necesita test diferencial además de los unitarios.
+
+L4 (bug reportado, textual): «ESTO DEBERIA ANALIZARLO Y NO LO HACE» con la captura de `Interested in` rechazado por «un patrón necesita slots».
+
+L5 (causa y arreglo): el motor devolvía el fragmento tal como lo escribió el aprendiz (`interested in`) con `kind: PATTERN`; `validateEntry` lo rechazaba y **no había segundo intento**, así que la entrada se perdía. Se agregó `analyzeEntry` (S17): un reintento acotado que reenvía el prompt con el motivo exacto del rechazo, y el prompt ahora exige que el `term` de un PATTERN sea el frame completo con slots. Verificado: `in charge of` → `be in charge of + noun/gerund` guardado en Patrones.
+S17. Toda entrada analizada tiene como máximo **un reintento de reparación**, con el motivo del rechazo en el prompt; nunca un bucle. Si los dos intentos fallan, se devuelve la razón del último y la UI ofrece el formulario manual.
+S18. La taxonomía de funciones de un patrón incluye `express` (declarar interés, necesidad o postura, como *be interested in*), porque `persuade` etiquetaba mal esos frames.

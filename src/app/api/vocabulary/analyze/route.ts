@@ -4,7 +4,8 @@ import { prisma } from "@/shared/db/prisma";
 import { runGentleShell } from "@/modules/ai/gentle-shell";
 import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
 import { getLocalUser } from "@/modules/identity/service";
-import { buildEntryPrompt, ENTRY_SYSTEM_PROMPT, parseEntryAnalysis, sectionFor } from "@/modules/vocabulary/analysis";
+import { analyzeEntry } from "@/modules/vocabulary/analyze";
+import { ENTRY_SYSTEM_PROMPT, sectionFor } from "@/modules/vocabulary/analysis";
 import { VocabularyRepository } from "@/modules/vocabulary/repository";
 
 const inputSchema = z.object({ input: z.string().trim().min(2).max(120) });
@@ -27,26 +28,26 @@ export async function POST(req: NextRequest) {
   const [model] = resolveModels();
   if (!model) return NextResponse.json({ error: "no hay modelo configurado" }, { status: 500 });
 
-  let raw: string;
-  try {
+  // One repair attempt: a structurally fine reply that mislabels the term is
+  // fixed with its own rejection reason instead of being thrown back at the user.
+  const outcome = await analyzeEntry(parsed.data.input, async (prompt) => {
     const response = await runGentleShell({
-      prompt: buildEntryPrompt(parsed.data.input),
+      prompt,
       system: ENTRY_SYSTEM_PROMPT,
       model,
       timeoutMs: resolveTimeoutMs() * 2,
     });
-    raw = response.text;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: `el motor no respondió: ${message}` }, { status: 502 });
+    return response.text;
+  });
+
+  if (!outcome.ok || !outcome.analysis) {
+    return NextResponse.json(
+      { error: outcome.error ?? "no pudimos analizar la entrada", attempts: outcome.attempts },
+      { status: 422 },
+    );
   }
 
-  const result = parseEntryAnalysis(raw);
-  if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 422 });
-  }
-
-  const { analysis } = result;
+  const { analysis } = outcome;
 
   const moduleRow = await prisma.module.findUnique({ where: { slug: analysis.module } });
   if (!moduleRow) {
