@@ -234,7 +234,16 @@ function ClassInner() {
         <section className="space-y-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-xl font-bold text-slate-900">{plan.topic}</h2>
-            <span className="text-xs text-slate-500">{describeDesign(plan.design)}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-500">{describeDesign(plan.design)}</span>
+              <button
+                type="button"
+                onClick={() => setPlan(null)}
+                className="text-xs font-medium text-slate-500 hover:text-indigo-600"
+              >
+                Cerrar plan
+              </button>
+            </div>
           </div>
 
           {plan.flow.prework ? (
@@ -270,12 +279,34 @@ function ClassInner() {
         <section className="space-y-2">
           <h2 className="text-xs uppercase tracking-widest text-slate-500">Clases guardadas</h2>
           <ul className="space-y-2">
-            {plans.slice(0, 6).map((saved) => (
-              <li key={saved.id} className="flex flex-wrap items-center justify-between gap-2 text-sm bg-white border border-slate-200 rounded-sm px-4 py-2">
-                <span className="text-slate-800">{saved.topic}</span>
-                <span className="text-xs text-slate-500">{describeDesign(saved.design)}</span>
-              </li>
-            ))}
+            {plans.slice(0, 6).map((saved) => {
+              const open = plan?.id === saved.id;
+              return (
+                <li key={saved.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlan(saved);
+                      setTopic(saved.topic);
+                    }}
+                    aria-pressed={open}
+                    className={`w-full flex flex-wrap items-center justify-between gap-2 text-sm border rounded-sm px-4 py-2 text-left transition ${
+                      open
+                        ? "bg-indigo-50 border-indigo-300"
+                        : "bg-white border-slate-200 hover:border-indigo-300"
+                    }`}
+                  >
+                    <span className="text-slate-800">{saved.topic}</span>
+                    <span className="flex items-center gap-2 text-xs text-slate-500">
+                      {describeDesign(saved.design)}
+                      <span aria-hidden="true" className="text-indigo-600 font-semibold">
+                        {open ? "abierta" : "abrir →"}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}

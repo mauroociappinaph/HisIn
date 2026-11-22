@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppNav } from "@/components/app-nav";
@@ -19,9 +20,12 @@ export const metadata = {
 
 /** Streak and XP live in Postgres; this boundary keeps the shell prerenderable. */
 async function NavData() {
+  // The shell is per-request state: declare it so no static route tries to
+  // prerender a value that changes between renders.
+  await connection();
   const user = await getLocalUser();
-  const profile = await new ProgressRepository().getProfile(user.id);
-  return <AppNav streak={profile.streak} xp={profile.xp} />;
+  const counters = await new ProgressRepository().getShellCounters(user.id);
+  return <AppNav streak={counters.streak} xp={counters.xp} />;
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

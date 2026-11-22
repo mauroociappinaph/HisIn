@@ -45,6 +45,21 @@ function toState(row: {
 }
 
 export class ProgressRepository {
+  /**
+   * Just the two numbers the shell prints.
+   *
+   * The full profile computes "items today" with `new Date()`, which is unstable
+   * at prerender time and broke the build of static routes. The header does not
+   * need that value, so it does not ask for it.
+   */
+  async getShellCounters(userId: string): Promise<{ streak: number; xp: number }> {
+    const row = await prisma.learnerProfile.findUnique({
+      where: { userId },
+      select: { streak: true, xp: true },
+    });
+    return { streak: row?.streak ?? 0, xp: row?.xp ?? 0 };
+  }
+
   /** One profile per learner, created on first read so onboarding never 500s. */
   async getProfile(userId: string): Promise<ProfileDTO> {
     const row = await prisma.learnerProfile.upsert({
