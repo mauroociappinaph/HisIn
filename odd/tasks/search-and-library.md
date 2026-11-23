@@ -31,3 +31,22 @@ L1 (usuario): «si. y tambien agrega esya nueva palabra donde creas mekor: Blund
 L2 (ejecución): `src/modules/search/search.ts`, `GET /api/search?q=`, sección cruzada en `/library`.
 L3 (blunder): agregada por el pipeline de alta (`/api/vocabulary/analyze`), que la clasifica como WORD B2, le escribe definición y ejemplo en contexto healthtech («a costly blunder by launching the clinical dashboard without validating its patient-safety alerts»), una nota sobre el matiz frente a *error* y la manda al repaso espaciado. Verificada en el buscador.
 L4 (defecto encontrado): `news/analyze`, `glossary/translate` y `vocabulary/analyze` seguían tomando `const [model] = resolveModels()` — el primer modelo y nada más. Las tres pasaron a `runWithFallback`.
+
+## Medición y corrección del ranking (L5-L6)
+
+Se midió el buscador con siete consultas reales contra el índice completo (más de 500 documentos). Dos defectos serios:
+
+1. **Inundación por sinónimos**: los sinónimos entraban como términos sueltos, así que «plata» se satisfacía con «runway» y «kubernetes» traía resultados basura.
+2. **El boost de título multiplicaba el documento entero** (`score *= 3.2`) en vez del término, premiando documentos con cualquier coincidencia en el título.
+
+Correcciones: puntaje por **grupo de token** (cada palabra con sus sinónimos), multiplicador de **cobertura al cuadrado** (responder una de tres palabras no es responder), **penalización 0,55** a las coincidencias por sinónimo, **corte relativo 0,30** contra el mejor resultado, boost de título aplicado al término, sinónimos ampliados a ~35 grupos y plurales españoles en «-es» (`formales → formal`).
+
+| Consulta | Antes | Después |
+| --- | --- | --- |
+| negociacion de clausulas | «give and take» | **Contract language and standard clauses** |
+| kubernetes helm chart | 2 resultados basura | **0** |
+| used to vs would | 30 resultados | **1**: Used to vs. would |
+| que es un blunder | 1 | 1: blunder |
+| plata para el runway | «Shopping money stores» | **runway** |
+
+Techo conocido: el buscador es **léxico**, no semántico. «como pido disculpas formales» sigue devolviendo «Inversion in formal conditionals» antes que la lección de escritura corporativa, porque la palabra que falta no está en ningún documento y los sinónimos a mano no la cubren. La solución es híbrida: si la cobertura es baja, pedirle al motor 5 palabras clave en inglés y 2 lecciones candidatas, y volver a buscar. Tests: 15.

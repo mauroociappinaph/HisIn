@@ -97,3 +97,75 @@ test("groupHits keeps the reading order and drops empty groups", () => {
   const groups = groupHits(searchDocuments("blunder", pairs));
   assert.deepEqual(groups.map((group) => group.kind), ["topic", "word"]);
 });
+
+test("a document that answers both words of a question beats one that answers only one", () => {
+  const docs: SearchDocument[] = [
+    {
+      id: "both",
+      kind: "topic",
+      title: "Contract language and standard clauses",
+      body: "How to negotiate a clause, an indemnity and a warranty in a commercial agreement.",
+      href: "/topics/contract",
+    },
+    {
+      id: "one",
+      kind: "topic",
+      title: "Small talk at work",
+      body: "give and take in a negotiation is normal, the rest is small talk",
+      href: "/topics/small-talk",
+    },
+  ];
+  const hits = searchDocuments("negociacion de clausulas", docs);
+  assert.equal(hits[0].document.id, "both");
+});
+
+test("a synonym alone does not outrank a document that answers the query", () => {
+  const docs: SearchDocument[] = [
+    { id: "noise", kind: "topic", title: "Shopping money stores", body: "money money money", href: "/x" },
+    {
+      id: "answer",
+      kind: "topic",
+      title: "Investment and funding",
+      body: "Runway, capital and platform money: how much funding a healthtech startup needs.",
+      href: "/y",
+    },
+  ];
+  const hits = searchDocuments("plata para el runway", docs);
+  assert.equal(hits[0].document.id, "answer");
+});
+
+test("results far below the best one are dropped instead of padding the list", () => {
+  const docs: SearchDocument[] = [
+    { id: "top", kind: "topic", title: "Apology letters", body: "apology apology apology letter", href: "/a" },
+    { id: "weak", kind: "topic", title: "Field notes", body: "apology mentioned once among a hundred other notes and details", href: "/b" },
+  ];
+  const hits = searchDocuments("apology", docs);
+  assert.equal(hits[0].document.id, "top");
+  assert.equal(hits.some((hit) => hit.document.id === "weak"), false);
+});
+
+test("expand reduces a Spanish plural that drops 'es'", () => {
+  assert.ok(expand(["formales"]).includes("formal"));
+  assert.ok(expand(["clausulas"]).includes("clausula"));
+});
+
+test("a synonym match is worth less than the literal word", () => {
+  const docs: SearchDocument[] = [
+    {
+      id: "literal",
+      kind: "topic",
+      title: "Funding and runway",
+      body: "How long the runway lasts and what funding buys you before the next raise.",
+      href: "/a",
+    },
+    {
+      id: "synonym",
+      kind: "topic",
+      title: "Retail stores",
+      body: "Shopping money stores and how much money a store keeps on the shelf.",
+      href: "/b",
+    },
+  ];
+  const hits = searchDocuments("plata para el runway", docs);
+  assert.equal(hits[0].document.id, "literal");
+});
