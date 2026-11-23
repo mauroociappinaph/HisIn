@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EntryForm } from "@/components/entry-form";
@@ -86,35 +87,15 @@ export function QuickAdd() {
         <span aria-hidden="true">＋</span>
       </button>
 
-      {open ? (
-        <div
-          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm overflow-y-auto"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Agregar palabra o frase"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) close();
-          }}
-        >
-          <div className="max-w-xl mx-auto my-10 px-4">
-            <div className="rounded-lg bg-white border border-slate-200 shadow-lg p-5 space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="font-bold text-slate-800">¿Qué encontraste?</h2>
-                  <p className="text-xs text-slate-500">
-                    Palabra, phrasal verb, expresión o patrón. El motor lo clasifica, escribe la definición y el
-                    ejemplo, y lo guarda en la sección que corresponde.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={close}
-                  aria-label="Cerrar"
-                  className="text-slate-400 hover:text-slate-600"
-                >
-                  ✕
-                </button>
-              </div>
+      <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
+        <DialogContent aria-label="Agregar palabra o frase" className="space-y-4">
+          <div className="space-y-1 pr-8">
+            <DialogTitle>¿Qué encontraste?</DialogTitle>
+            <DialogDescription>
+              Palabra, phrasal verb, expresión o patrón. El motor lo clasifica, escribe la definición y el ejemplo,
+              y lo guarda en la sección que corresponde.
+            </DialogDescription>
+          </div>
 
               <div className="flex gap-2">
                 <input
@@ -219,10 +200,8 @@ export function QuickAdd() {
                   />
                 </div>
               ) : null}
-            </div>
-          </div>
-        </div>
-      ) : null}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

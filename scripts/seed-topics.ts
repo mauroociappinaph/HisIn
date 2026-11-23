@@ -418,6 +418,13 @@ const TOPICS: SeedTopic[] = [
   { slug: "flipped-efl-blended-models", title: "Flipped EFL and blended models", ord: 158, code: "47.4", unit: "47 · Applied ELT: online course architecture", unitOrder: 47, level: "C2" },
   { slug: "moodle-canvas-language-configuration", title: "Moodle and Canvas configuration for language courses", ord: 159, code: "47.5", unit: "47 · Applied ELT: online course architecture", unitOrder: 47, level: "C2" },
   { slug: "language-progress-tracking-retention", title: "Tracking language progress and retention", ord: 160, code: "47.6", unit: "47 · Applied ELT: online course architecture", unitOrder: 47, level: "C2" },
+  // ── Módulo 48: IA aplicada a la enseñanza de idiomas ──
+  { slug: "pedagogical-prompt-architecture-cefr", title: "Pedagogical prompt architecture and CEFR calibration", ord: 161, code: "48.1", unit: "48 · AI for language teaching: prompts, tutors and validation", unitOrder: 48, level: "C2" },
+  { slug: "generated-materials-and-exercise-banks", title: "Generating materials and exercise banks", ord: 162, code: "48.2", unit: "48 · AI for language teaching: prompts, tutors and validation", unitOrder: 48, level: "C2" },
+  { slug: "conversational-tutors-role-play-design", title: "Conversational tutors and role-play design", ord: 163, code: "48.3", unit: "48 · AI for language teaching: prompts, tutors and validation", unitOrder: 48, level: "C2" },
+  { slug: "pronunciation-analysis-speech-feedback", title: "Pronunciation analysis and spoken feedback", ord: 164, code: "48.4", unit: "48 · AI for language teaching: prompts, tutors and validation", unitOrder: 48, level: "C2" },
+  { slug: "automated-writing-feedback-rubrics", title: "Automated writing feedback with rubrics", ord: 165, code: "48.5", unit: "48 · AI for language teaching: prompts, tutors and validation", unitOrder: 48, level: "C2" },
+  { slug: "pedagogical-validation-bias-ethics", title: "Pedagogical validation, bias detection and ethics", ord: 166, code: "48.6", unit: "48 · AI for language teaching: prompts, tutors and validation", unitOrder: 48, level: "C2" },
 ];
 
 async function main() {

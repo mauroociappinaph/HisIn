@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { VocabularyDTO } from "@/shared/types";
 import { KIND_LABELS, KindTag, LevelBadge, ModuleTag, SpeakButton } from "@/components/vocab-ui";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface SearchHit {
   id: string;
@@ -141,24 +142,23 @@ export default function LibraryPage() {
       </header>
 
       <div className="flex flex-wrap gap-2">
-        {KINDS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={kind === option}
-            onClick={() => {
-              setKind(option);
-              setShown(20);
-            }}
-            className={`px-3 py-1.5 rounded-sm text-xs font-semibold transition ${
-              kind === option
-                ? "bg-indigo-600 text-white"
-                : "bg-white border border-slate-200 text-slate-600 hover:border-indigo-300"
-            }`}
-          >
-            {option === "all" ? `Todo (${entries.length})` : `${KIND_LABELS[option]} (${counts.get(option) ?? 0})`}
-          </button>
-        ))}
+        {/* shadcn Tabs: arrow keys move between filters and the active one is announced
+            as selected, which the button row could not do. */}
+        <Tabs
+          value={kind}
+          onValueChange={(value) => {
+            setKind(value as (typeof KINDS)[number]);
+            setShown(20);
+          }}
+        >
+          <TabsList>
+            {KINDS.map((option) => (
+              <TabsTrigger key={option} value={option}>
+                {option === "all" ? `Todo (${entries.length})` : `${KIND_LABELS[option]} (${counts.get(option) ?? 0})`}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
 
       <input
