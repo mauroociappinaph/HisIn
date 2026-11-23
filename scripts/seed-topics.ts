@@ -404,6 +404,13 @@ const TOPICS: SeedTopic[] = [
   { slug: "psycholinguistics-second-language-acquisition", title: "Psycholinguistics and second language acquisition", ord: 146, code: "45.2", unit: "45 · Postgraduate applied linguistics", unitOrder: 45, level: "C2" },
   { slug: "sociolinguistics-multilingualism-identity", title: "Sociolinguistics, multilingualism and identity", ord: 147, code: "45.3", unit: "45 · Postgraduate applied linguistics", unitOrder: 45, level: "C2" },
   { slug: "language-policy-educational-planning", title: "Educational policy and language planning", ord: 148, code: "45.4", unit: "45 · Postgraduate applied linguistics", unitOrder: 45, level: "C2" },
+  // ── Módulo 46: diseño curricular y producción de materiales ──
+  { slug: "needs-analysis-syllabus-design", title: "Needs analysis and syllabus design", ord: 149, code: "46.1", unit: "46 · Curriculum design and materials production", unitOrder: 46, level: "C2" },
+  { slug: "materials-design-and-adaptation", title: "Principles of materials design and adaptation", ord: 150, code: "46.2", unit: "46 · Curriculum design and materials production", unitOrder: 46, level: "C2" },
+  { slug: "textbook-writing-unit-design", title: "Textbook writing and unit design", ord: 151, code: "46.3", unit: "46 · Curriculum design and materials production", unitOrder: 46, level: "C2" },
+  { slug: "multimodal-digital-accessibility", title: "Multimodal, digital design and accessibility", ord: 152, code: "46.4", unit: "46 · Curriculum design and materials production", unitOrder: 46, level: "C2" },
+  { slug: "language-testing-assessment-foundations", title: "Foundations of language testing and assessment", ord: 153, code: "46.5", unit: "46 · Curriculum design and materials production", unitOrder: 46, level: "C2" },
+  { slug: "performance-assessment-piloting-calibration", title: "Performance assessment, piloting and item calibration", ord: 154, code: "46.6", unit: "46 · Curriculum design and materials production", unitOrder: 46, level: "C2" },
 ];
 
 async function main() {

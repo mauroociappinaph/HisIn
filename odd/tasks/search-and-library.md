@@ -50,3 +50,11 @@ Correcciones: puntaje por **grupo de token** (cada palabra con sus sinónimos), 
 | plata para el runway | «Shopping money stores» | **runway** |
 
 Techo conocido: el buscador es **léxico**, no semántico. «como pido disculpas formales» sigue devolviendo «Inversion in formal conditionals» antes que la lección de escritura corporativa, porque la palabra que falta no está en ningún documento y los sinónimos a mano no la cubren. La solución es híbrida: si la cobertura es baja, pedirle al motor 5 palabras clave en inglés y 2 lecciones candidatas, y volver a buscar. Tests: 15.
+
+## Capa híbrida (L7) y módulo 46 (L8)
+
+L5 (capa híbrida): cuando la primera pasada es fina o superficial —menos de 3 resultados, o ningún documento que cubra la consulta completa— el motor propone 3-6 palabras clave en inglés y hasta 3 lecciones candidatas. Las palabras se buscan **solas** (sumarlas a la consulta original diluye la cobertura y devuelve vacío), los resultados se **fusionan** con los léxicos en vez de reemplazarlos, y las lecciones nombradas suben 1,8×. La expansión se cachea por pregunta normalizada en `SearchExpansion`: una consulta popular cuesta una llamada, no una por tecla. Si la expansión falla, la búsqueda no falla.
+
+Medición: «como negocio un precio mejor» 0 → **Business negotiation** primero; «used to vs would» → *Used to vs. would*.
+
+L6 (módulo 46): **46 · Curriculum design and materials production**, seis submódulos C2 — análisis de necesidades y diseño de sílabos, principios y adaptación de materiales, redacción de libros de texto y unidades, diseño multimodal y accesibilidad, fundamentos de Language Testing & Assessment, y evaluación de desempeño, pilotaje y calibración de ítems.
