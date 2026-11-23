@@ -40,7 +40,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      {/* Browsers extensions inject attributes on <body> (ColorZilla adds
+          cz-shortcut-listen) before React hydrates, which React reports as a mismatch
+          it will not patch. Suppressing it here silences that one class of noise
+          without hiding a mismatch inside the tree. */}
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
+      >
         <Suspense
           fallback={
             <div className="h-[57px] border-b border-slate-200 bg-white/80" aria-hidden="true" />
