@@ -251,22 +251,22 @@ export function timelineFor(title: string): { span: TimelineSpan; caption: strin
   const isPerfect = /perfect|conditional|wish|reported|inversion|passive|modal/.test(text);
 
   if (/present perfect continuous|present perfect/.test(text)) {
-    return { span: "past-to-now", caption: "Empezó antes y sigue teniendo efecto ahora" };
+    return { span: "past-to-now", caption: "It started before and still has an effect now" };
   }
   if (/past perfect|past perfect continuous/.test(text)) {
-    return { span: "past-point", caption: "Terminó antes de otro pasado" };
+    return { span: "past-point", caption: "It finished before another past moment" };
   }
   if (/past simple|past continuous|past of to be|used to|narration|narrativ/.test(text)) {
-    return { span: "past-point", caption: "Punto cerrado en el pasado" };
+    return { span: "past-point", caption: "A closed point in the past" };
   }
   if (/future|will|going to/.test(text)) {
-    return { span: "now-forward", caption: "De ahora hacia adelante" };
+    return { span: "now-forward", caption: "From now onwards" };
   }
   if (/conditional|wish|if only|hypothetical/.test(text)) {
-    return { span: "hypothetical", caption: "Un presente o pasado que no es el real" };
+    return { span: "hypothetical", caption: "A present or a past that is not the real one" };
   }
   if (isPerfect) {
-    return { span: "past-to-now", caption: "Un pasado que todavía se mira desde el presente" };
+    return { span: "past-to-now", caption: "A past seen from the present" };
   }
   return null;
 }

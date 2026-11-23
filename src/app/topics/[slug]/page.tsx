@@ -158,46 +158,54 @@ function KeyPoints({ points }: { points: readonly string[] }) {
   );
 }
 
-const SPAN_BOX: Record<string, { x: number; w: number }> = {
-  "past-point": { x: 44, w: 22 },
-  "past-to-now": { x: 44, w: 176 },
-  "now-forward": { x: 196, w: 120 },
-  hypothetical: { x: 196, w: 120 },
+/** Where each tense sits on the line: the span the rule talks about. */
+const TIMELINE_SPAN: Record<string, { start: number; width: number; dashed?: boolean }> = {
+  "past-point": { start: 8, width: 16 },
+  "past-to-now": { start: 8, width: 42 },
+  "now-forward": { start: 50, width: 40 },
+  hypothetical: { start: 50, width: 40, dashed: true },
 };
 
+/**
+ * Time, drawn with the page's own colours.
+ *
+ * The first version was an SVG with hardcoded fills: in dark mode a white block
+ * landed on a dark card and the picture read as a rendering bug. This one is CSS over
+ * theme tokens, so it adapts to both themes by construction, and the labels sit in
+ * their own row instead of colliding with the bar.
+ */
 function Timeline({ span, caption }: { span: string; caption: string }) {
-  const box = SPAN_BOX[span] ?? SPAN_BOX["past-to-now"];
-  const dashed = span === "hypothetical";
+  const box = TIMELINE_SPAN[span] ?? TIMELINE_SPAN["past-to-now"];
+
   return (
-    <figure className="space-y-1 rounded-sm bg-slate-50 p-3">
+    <figure className="space-y-3 rounded-sm border border-slate-200 bg-slate-50 p-4">
       <figcaption className="text-[11px] uppercase tracking-widest text-slate-500">On the timeline</figcaption>
-      <svg viewBox="0 0 340 64" className="w-full max-w-md" role="img" aria-label={`Timeline: ${caption}`}>
-        <rect x="32" y="10" width="152" height="40" rx="6" className="fill-slate-100" />
-        <rect x="184" y="10" width="124" height="40" rx="6" className="fill-white" />
-        <line x1="12" y1="36" x2="328" y2="36" stroke="currentColor" className="text-slate-300" strokeWidth="2" />
-        <line x1="184" y1="12" x2="184" y2="60" stroke="currentColor" className="text-slate-300" strokeWidth="1" strokeDasharray="3 3" />
-        <circle cx="188" cy="36" r="5" className="fill-indigo-600" />
-        <rect
-          x={box.x}
-          y="24"
-          width={box.w}
-          height="12"
-          rx="6"
-          className="fill-indigo-100 stroke-indigo-500"
-          strokeWidth="1.5"
-          strokeDasharray={dashed ? "4 3" : undefined}
+
+      <div className="relative h-16">
+        {/* Labels row */}
+        <div className="absolute inset-x-0 top-0 flex justify-between text-[11px] font-medium text-slate-500">
+          <span>past</span>
+          <span className="text-slate-400">now</span>
+          <span>after</span>
+        </div>
+
+        {/* The axis */}
+        <div className="absolute inset-x-0 top-9 h-0.5 rounded-full bg-slate-300" />
+
+        {/* The present: the only fixed reference. The label is in the row above, so
+            the mark is just a tick, not a second "now". */}
+        <div className="absolute left-1/2 top-7 h-5 w-px -translate-x-1/2 bg-slate-400" />
+
+        {/* The span the rule talks about */}
+        <div
+          className={`absolute top-6 h-6 rounded-full border-2 ${
+            box.dashed ? "border-dashed border-indigo-500 bg-indigo-500/10" : "border-indigo-500 bg-indigo-500/20"
+          }`}
+          style={{ left: `${box.start}%`, width: `${box.width}%` }}
         />
-        <text x="40" y="24" className="fill-slate-500 text-[10px]">
-          past
-        </text>
-        <text x="192" y="24" className="fill-slate-500 text-[10px]">
-          now / after
-        </text>
-        <text x="188" y="58" textAnchor="middle" className="fill-indigo-700 text-[10px] font-semibold">
-          now
-        </text>
-      </svg>
-      <p className="text-xs text-slate-600">{caption}</p>
+      </div>
+
+      <p className="text-sm leading-6 text-slate-700">{caption}</p>
     </figure>
   );
 }
@@ -486,7 +494,7 @@ async function TopicBody({ slug }: { slug: string }) {
           <p className="text-sm text-slate-600">No material for this lesson yet.</p>
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
           <div className="order-2 min-w-0 space-y-4 lg:order-1">
             <p className="text-xs text-slate-500">
               {steps.length} steps · idea, structure, trap, phrases, practice, reading, writing, role-play and story
@@ -692,7 +700,7 @@ async function TopicBody({ slug }: { slug: string }) {
           </div>
 
           {anchors.length > 0 ? (
-            <div className="order-1 lg:order-2">
+            <div className="order-1 min-w-0 lg:order-2">
               <TopicNav items={anchors} />
             </div>
           ) : null}
