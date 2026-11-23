@@ -71,5 +71,13 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # The content gates are part of delivery, not a thing someone remembers to run:
+      # a lesson that repeats another one fails the build.
+      - name: Content audit (no repeated material)
+        run: pnpm audit:duplicates --strict
+
+      - name: Content audit (topic drift report)
+        run: pnpm audit:topics
+
       - name: Build
         run: pnpm build

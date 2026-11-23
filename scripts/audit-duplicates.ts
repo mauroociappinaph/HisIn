@@ -43,6 +43,15 @@ async function main() {
   for (const entry of repeated.slice(0, 15)) {
     console.log(`  ${entry.skill} · ${entry.slug} · "${entry.sentences[0].slice(0, 70)}…"`);
   }
+
+  // --strict turns the audit into a gate: any near-duplicate fails the run, which is
+  // what CI uses, so repetition cannot come back silently.
+  if (process.argv.includes("--strict") && pairs.length > 0) {
+    console.log(`::error::${pairs.length} near-duplicate material pairs found`);
+    await prisma.$disconnect();
+    process.exit(1);
+  }
+
   await prisma.$disconnect();
 }
 

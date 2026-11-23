@@ -411,6 +411,13 @@ const TOPICS: SeedTopic[] = [
   { slug: "multimodal-digital-accessibility", title: "Multimodal, digital design and accessibility", ord: 152, code: "46.4", unit: "46 · Curriculum design and materials production", unitOrder: 46, level: "C2" },
   { slug: "language-testing-assessment-foundations", title: "Foundations of language testing and assessment", ord: 153, code: "46.5", unit: "46 · Curriculum design and materials production", unitOrder: 46, level: "C2" },
   { slug: "performance-assessment-piloting-calibration", title: "Performance assessment, piloting and item calibration", ord: 154, code: "46.6", unit: "46 · Curriculum design and materials production", unitOrder: 46, level: "C2" },
+  // ── Módulo 47: arquitectura aplicada de cursos de inglés online ──
+  { slug: "efl-course-architecture-cefr", title: "English course architecture: CEFR and the communicative approach", ord: 155, code: "47.1", unit: "47 · Applied ELT: online course architecture", unitOrder: 47, level: "C2" },
+  { slug: "asynchronous-comprehension-activities", title: "Asynchronous comprehension and language activities", ord: 156, code: "47.2", unit: "47 · Applied ELT: online course architecture", unitOrder: 47, level: "C2" },
+  { slug: "asynchronous-speaking-writing-solutions", title: "Speaking and writing in an asynchronous course", ord: 157, code: "47.3", unit: "47 · Applied ELT: online course architecture", unitOrder: 47, level: "C2" },
+  { slug: "flipped-efl-blended-models", title: "Flipped EFL and blended models", ord: 158, code: "47.4", unit: "47 · Applied ELT: online course architecture", unitOrder: 47, level: "C2" },
+  { slug: "moodle-canvas-language-configuration", title: "Moodle and Canvas configuration for language courses", ord: 159, code: "47.5", unit: "47 · Applied ELT: online course architecture", unitOrder: 47, level: "C2" },
+  { slug: "language-progress-tracking-retention", title: "Tracking language progress and retention", ord: 160, code: "47.6", unit: "47 · Applied ELT: online course architecture", unitOrder: 47, level: "C2" },
 ];
 
 async function main() {

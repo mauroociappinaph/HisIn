@@ -40,6 +40,11 @@ async function main() {
   console.log(`grammar drifted from its own topic: ${drifted.length}`);
   for (const entry of drifted) console.log(`  ${entry.slug} · ${entry.title} · ${entry.skills.join(",")}`);
   console.log(`soft signal - no title word in 3+ skills: ${soft.length}`);
+  if (process.argv.includes("--strict") && drifted.length > 0) {
+    console.log(`::error::${drifted.length} domain lessons teach a grammar point from another topic`);
+    await prisma.$disconnect();
+    process.exit(1);
+  }
   for (const entry of soft) console.log(`  ${entry.slug} · ${entry.skills.join(",")}`);
   await prisma.$disconnect();
 }

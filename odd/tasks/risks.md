@@ -74,3 +74,25 @@ migraciones sobre Postgres real, `prisma generate`, `tsc`, `lint`, tests y `buil
 
 **Evidencia**: run `45074266573` en el PR #2 — **Install ✓ · Apply migrations ✓ ·
 Generate client ✓ · Type check ✓ · Lint ✓ · Test ✓ · Build ✓**.
+
+---
+
+## Cierre continuo, no documental
+
+Los cinco riesgos no se cierran con una nota: tres de ellos ahora **fallan el build** si vuelven.
+
+| Riesgo | Control permanente | Dónde |
+| --- | --- | --- |
+| R1 datos destructivos | snapshot completo (temas, materiales, glosas, citas, prólogos, módulos, **errores del alumno** y **expansiones cacheadas**) + `--restore` idempotente | `pnpm backup:content` |
+| R2 repetición de contenido | auditoría **estricta** en CI: cualquier par de materiales casi duplicados hace fallar el job | `pnpm audit:duplicates --strict` |
+| R2 deriva temática | auditoría en CI como reporte (los temas de vocabulario dan falsos positivos por diseño) | `pnpm audit:topics` |
+| R3 contrato del motor | **test guardián**: ninguna ruta puede tomar `const [model] = resolveModels()` ni llamar al motor sin la cadena | `src/modules/ai/fallback-guard.test.ts` |
+| R4 volumen de revisión | guía de revisión en el PR #2, actualizada con cada grupo nuevo | GitHub |
+| R5 entrega | CI corre migraciones, tipos, lint, tests, auditorías y build en cada PR y en main | `.github/workflows/ci.yml` |
+
+### Evidencia de la última verificación
+
+- Snapshot/restore: **161 temas · 624 materiales · 2.615 glosas · 46 módulos · 14 errores · 5 expansiones**, idénticos antes y después.
+- Repetición: **0 pares** casi duplicados en 624 materiales, **0** oraciones repetidas.
+- Guardián del motor: 3 tests, 0 rutas infractoras.
+- Tests totales: **313**.

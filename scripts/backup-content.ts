@@ -15,6 +15,8 @@ import { prisma } from "@/shared/db/prisma";
  */
 interface Snapshot {
   takenAt: string;
+  mistakes?: { kind: string; original: string; corrected: string; why: string; topicSlug: string | null; source: string }[];
+  expansions?: { queryKey: string; keywords: string[]; topics: string[] }[];
   topics: {
     slug: string;
     title: string;
@@ -39,8 +41,15 @@ async function snapshot(): Promise<Snapshot> {
   });
   const units = await prisma.unitMeta.findMany({ orderBy: { unitOrder: "asc" } });
 
+  const [mistakes, expansions] = await Promise.all([
+    prisma.mistake.findMany({ select: { kind: true, original: true, corrected: true, why: true, topicSlug: true, source: true } }),
+    prisma.searchExpansion.findMany({ select: { queryKey: true, keywords: true, topics: true } }),
+  ]);
+
   return {
     takenAt: new Date().toISOString(),
+    mistakes,
+    expansions,
     topics: topics.map((topic) => ({
       slug: topic.slug,
       title: topic.title,
@@ -127,6 +136,45 @@ async function restore(file: string) {
       });
       glosses += 1;
     }
+  }
+
+  // The learner's mistakes and the cached expansions live in the same database, so
+  // they are part of the snapshot: a restore that forgets them loses real work.
+  const owner = await prisma.user.findFirst({ select: { id: true } });
+  for (const mistake of data.mistakes ?? []) {
+    if (!owner) break;
+    // The unique key is an expression index (lower(original)), which Prisma cannot
+    // address as a compound key, so the lookup is explicit.
+    const existing = await prisma.mistake.findFirst({
+      where: { userId: owner.id, original: { equals: mistake.original, mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (existing) {
+      await prisma.mistake.update({
+        where: { id: existing.id },
+        data: { corrected: mistake.corrected, why: mistake.why, topicSlug: mistake.topicSlug },
+      });
+      continue;
+    }
+    await prisma.mistake.create({
+      data: {
+        userId: owner.id,
+        kind: mistake.kind,
+        original: mistake.original,
+        corrected: mistake.corrected,
+        why: mistake.why,
+        topicSlug: mistake.topicSlug,
+        source: mistake.source,
+      },
+    });
+  }
+
+  for (const expansion of data.expansions ?? []) {
+    await prisma.searchExpansion.upsert({
+      where: { queryKey: expansion.queryKey },
+      update: { keywords: expansion.keywords, topics: expansion.topics },
+      create: { queryKey: expansion.queryKey, keywords: expansion.keywords, topics: expansion.topics },
+    });
   }
 
   for (const unit of data.units) {
