@@ -152,6 +152,24 @@ model Mistake {
   @@index([userId, nextReview])
 }
 
+/// One word or phrase explained once, for every lesson.
+///
+/// A learner hovers the same unknown term in five different texts; asking the engine
+/// five times is waste and asking never is the bug the owner reported. This table is
+/// the dictionary the course builds as it is read.
+model TermGloss {
+  id          String   @id @default(cuid())
+  /// Normalised term: the cache key, so "Data migration" and "data migration" meet.
+  key         String   @unique
+  term        String
+  translation String
+  kind        String
+  note        String?
+  createdAt   DateTime @default(now())
+
+  @@index([kind])
+}
+
 /// A cached engine expansion for a thin search query: the same question asked twice
 /// costs one model call, not one per keystroke.
 model SearchExpansion {

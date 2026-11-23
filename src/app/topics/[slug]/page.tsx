@@ -25,6 +25,7 @@ import { LessonDone } from "./lesson-done";
 import { RolePlay } from "./role-play";
 import { TrendChart } from "./charts";
 import { ConditionalFlow, DoSupportGrid, QuoteBanner } from "./lesson-visuals";
+import { GlossText } from "./gloss-text";
 
 /** Where this submodule sits in its module, and which ones come next. */
 function placement(topics: TopicDTO[], slug: string) {
@@ -115,13 +116,22 @@ function Step({
 }
 
 /** Paragraphs with room to breathe: the text was called cramped, and it was. */
-function Prose({ paragraphs }: { paragraphs: readonly string[] }) {
+function Prose({
+  paragraphs,
+  glosses = [],
+}: {
+  paragraphs: readonly string[];
+  glosses?: readonly GlossEntry[];
+}) {
   return (
-    <div className="max-w-prose space-y-5">
+    <div className="space-y-5">
       {paragraphs.map((paragraph) => (
-        <p key={paragraph.slice(0, 48)} className="text-[15px] leading-8 text-slate-800">
-          {paragraph}
-        </p>
+        <GlossText
+          key={paragraph.slice(0, 48)}
+          text={paragraph}
+          glosses={glosses as GlossEntry[]}
+          context={paragraph}
+        />
       ))}
     </div>
   );
@@ -427,14 +437,14 @@ async function TopicBody({ slug }: { slug: string }) {
         {modulePrologue ? (
           <div className="max-w-prose space-y-1 border-l-2 border-slate-200 pl-4">
             <p className="text-[11px] uppercase tracking-widest text-slate-400">The module</p>
-            <p className="text-sm leading-7 text-slate-600">{modulePrologue}</p>
+            <GlossText text={modulePrologue} className="text-sm leading-7 text-slate-600" />
           </div>
         ) : null}
 
         {topic.prologue ? (
           <div className="max-w-prose space-y-1">
             <p className="text-[11px] uppercase tracking-widest text-slate-400">This lesson</p>
-            <p className="text-[15px] leading-8 text-slate-800">{topic.prologue}</p>
+            <GlossText text={topic.prologue} glosses={topic.glosses} />
           </div>
         ) : null}
 
@@ -521,7 +531,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 hint="One point per line, so nothing hides inside a paragraph."
               >
                 <IdeaPoints points={ideaPoints} />
-                <Prose paragraphs={lesson.body} />
+                <Prose paragraphs={lesson.body} glosses={topic.glosses} />
                 {timeline ? <Timeline span={timeline.span} caption={timeline.caption} /> : null}
                 {showsDoSupport ? <DoSupportGrid /> : null}
                 {conditional ? <ConditionalFlow kind={conditional.variant} /> : null}
@@ -627,7 +637,7 @@ async function TopicBody({ slug }: { slug: string }) {
                   max={400}
                   suffix={`${wordCount(reading.body)} words`}
                 />
-                <Prose paragraphs={toParagraphs(reading.body)} />
+                <Prose paragraphs={toParagraphs(reading.body)} glosses={topic.glosses} />
                 <KeyPoints points={reading.keyPoints} />
                 {readingGlosses.length > 0 ? (
                   <div className="space-y-2 border-t border-slate-200 pt-3">
@@ -648,7 +658,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 glyph="write"
                 hint="Writing is what fixes the structure: do not skip it."
               >
-                <Prose paragraphs={toParagraphs(writing.body)} />
+                <Prose paragraphs={toParagraphs(writing.body)} glosses={topic.glosses} />
                 <SizeBar
                   label="Target length"
                   value={wordCount(writing.body)}

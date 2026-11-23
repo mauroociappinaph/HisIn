@@ -425,6 +425,13 @@ const TOPICS: SeedTopic[] = [
   { slug: "pronunciation-analysis-speech-feedback", title: "Pronunciation analysis and spoken feedback", ord: 164, code: "48.4", unit: "48 · AI for language teaching: prompts, tutors and validation", unitOrder: 48, level: "C2" },
   { slug: "automated-writing-feedback-rubrics", title: "Automated writing feedback with rubrics", ord: 165, code: "48.5", unit: "48 · AI for language teaching: prompts, tutors and validation", unitOrder: 48, level: "C2" },
   { slug: "pedagogical-validation-bias-ethics", title: "Pedagogical validation, bias detection and ethics", ord: 166, code: "48.6", unit: "48 · AI for language teaching: prompts, tutors and validation", unitOrder: 48, level: "C2" },
+  // ── Módulo 49: lingüística de corpus ──
+  { slug: "corpus-fundamentals-query-tools", title: "Corpus fundamentals and query tools", ord: 167, code: "49.1", unit: "49 · Corpus linguistics for teaching and learning", unitOrder: 49, level: "C2" },
+  { slug: "concordances-kwic-context", title: "Concordances (KWIC) and immediate context", ord: 168, code: "49.2", unit: "49 · Corpus linguistics for teaching and learning", unitOrder: 49, level: "C2" },
+  { slug: "collocations-ngrams-semantic-prosody", title: "Collocations, n-grams and semantic prosody", ord: 169, code: "49.3", unit: "49 · Corpus linguistics for teaching and learning", unitOrder: 49, level: "C2" },
+  { slug: "register-genre-dialect-variation", title: "Register, genre and dialect variation", ord: 170, code: "49.4", unit: "49 · Corpus linguistics for teaching and learning", unitOrder: 49, level: "C2" },
+  { slug: "learner-corpora-error-diagnosis", title: "Learner corpora and error diagnosis", ord: 171, code: "49.5", unit: "49 · Corpus linguistics for teaching and learning", unitOrder: 49, level: "C2" },
+  { slug: "data-driven-learning-materials", title: "Data-driven learning and corpus materials", ord: 172, code: "49.6", unit: "49 · Corpus linguistics for teaching and learning", unitOrder: 49, level: "C2" },
 ];
 
 async function main() {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 /**
  * The checkbox that makes a lesson count.
@@ -54,26 +55,10 @@ export function LessonDone({
 
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white border border-slate-200 px-4 py-3">
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={done}
-        onClick={() => void toggle()}
-        disabled={busy}
-        className={`flex items-center gap-2 rounded-sm px-3 py-1.5 text-xs font-semibold transition active:scale-95 ${
-          done ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-        }`}
-      >
-        <span
-          aria-hidden="true"
-          className={`grid h-4 w-4 place-items-center rounded-[3px] border text-[10px] ${
-            done ? "border-white/60 bg-white/20" : "border-slate-400"
-          }`}
-        >
-          {done ? "✓" : ""}
-        </span>
+      <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-800">
+        <Checkbox checked={done} disabled={busy} onCheckedChange={() => void toggle()} aria-label="Lesson done" />
         {done ? "Lesson done" : "Mark as done"}
-      </button>
+      </label>
       <span className="text-[11px] text-slate-500">
         {counts.completed} of {counts.total} in this module done
       </span>

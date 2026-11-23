@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import type { Correction } from "@/modules/production/correction";
 import { MISTAKE_KIND_LABELS, overallScore } from "@/modules/production/correction";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const AUDIENCES = [
   "an investor",
@@ -75,18 +76,18 @@ export function EmailWorkshop() {
           <label htmlFor="audience" className="text-slate-500">
             For
           </label>
-          <select
-            id="audience"
-            value={audience}
-            onChange={(event) => setAudience(event.target.value)}
-            className="rounded-sm border border-slate-300 bg-white px-2 py-1 text-slate-800"
-          >
-            {AUDIENCES.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          <Select value={audience} onValueChange={setAudience}>
+            <SelectTrigger aria-label="Audience">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {AUDIENCES.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <button
             type="button"
             onClick={() => void submit()}
