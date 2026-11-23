@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import { buildLookup, isWordToken, tokenizeStory, GLOSS_KIND_LABELS, type GlossEntry } from "@/modules/topics/glossary";
+import { buildLookup, isWordToken, tokenizeStory, type GlossEntry } from "@/modules/topics/glossary";
+import { setActiveGloss } from "./gloss-store";
 
 interface GlossTextProps {
   text: string;
@@ -32,8 +33,6 @@ export function GlossText({ text, glosses = [], context, className }: GlossTextP
   const tokens = useMemo(() => tokenizeStory(text, lookup), [text, lookup]);
 
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
-  const [hover, setHover] = useState<{ term: string; local?: GlossEntry } | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const asked = useRef<Set<string>>(new Set());
 
   const ask = useCallback(
@@ -43,7 +42,7 @@ export function GlossText({ text, glosses = [], context, className }: GlossTextP
       const key = term.toLowerCase();
       if (answers[key] || asked.current.has(key)) return;
       asked.current.add(key);
-      setBusy(key);
+      setActiveGloss({ term, translation: null, kind: null, busy: true });
 
       try {
         const response = await fetch("/api/glossary/lookup", {
@@ -54,21 +53,34 @@ export function GlossText({ text, glosses = [], context, className }: GlossTextP
         const payload = (await response.json()) as Answer & { error?: string };
         if (response.ok && payload.translation) {
           setAnswers((previous) => ({ ...previous, [key]: payload }));
+          setActiveGloss({
+            term: payload.term ?? term,
+            translation: payload.translation,
+            kind: payload.kind ?? null,
+            note: payload.note ?? null,
+            busy: false,
+          });
         }
       } catch {
         // A failed lookup leaves the word unglossed; hovering again retries.
         asked.current.delete(key);
-      } finally {
-        setBusy(null);
       }
     },
     [answers, context, text],
   );
 
-  const panel = hover?.local ?? (hover ? answers[hover.term.toLowerCase()] : undefined);
+  const showGloss = (bare: string, local?: GlossEntry) => {
+    const known = local ?? answers[bare.toLowerCase()];
+    if (known) {
+      setActiveGloss({ term: known.term, translation: known.translation, kind: known.kind, note: known.note, busy: false });
+      return;
+    }
+    setActiveGloss({ term: bare, translation: null, kind: null, busy: true });
+    void ask(bare);
+  };
 
   return (
-    <div className="space-y-2">
+    <div>
       <p className={className ?? "text-[15px] leading-8 text-slate-800"}>
         {tokens.map((token, index) => {
           if (!isWordToken(token)) return <span key={`s-${index}`}>{token.text}</span>;
@@ -82,14 +94,8 @@ export function GlossText({ text, glosses = [], context, className }: GlossTextP
             <button
               key={`w-${index}`}
               type="button"
-              onMouseEnter={() => {
-                setHover({ term: bare, local: token.entry });
-                if (!token.entry) void ask(bare);
-              }}
-              onFocus={() => {
-                setHover({ term: bare, local: token.entry });
-                if (!token.entry) void ask(bare);
-              }}
+              onMouseEnter={() => showGloss(bare, token.entry)}
+              onFocus={() => showGloss(bare, token.entry)}
               title={known ? `${known.term} · ${known.translation}` : `Ver qué significa "${bare}"`}
               className={`rounded px-0.5 transition ${
                 isPhrase
@@ -105,30 +111,6 @@ export function GlossText({ text, glosses = [], context, className }: GlossTextP
         })}
       </p>
 
-      <div className="min-h-[1.5rem] text-xs" aria-live="polite">
-        {busy ? (
-          <span className="text-slate-500">Buscando “{busy}”…</span>
-        ) : panel ? (
-          <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <strong className="text-slate-900">{panel.term}</strong>
-            <span className="text-slate-400">→</span>
-            <span className="text-slate-900">{panel.translation}</span>
-            <span className="rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
-              {GLOSS_KIND_LABELS[panel.kind]}
-            </span>
-            {panel.note ? <span className="text-slate-500">{panel.note}</span> : null}
-          </span>
-        ) : hover ? (
-          <span className="text-slate-500">
-            <strong className="text-slate-700">{hover.term}</strong> · buscando el significado…
-          </span>
-        ) : (
-          <span className="text-slate-400">
-            Pasá el mouse por cualquier palabra: si no está en el glosario, el significado se busca una sola vez y
-            queda guardado para todas las lecciones.
-          </span>
-        )}
-      </div>
     </div>
   );
 }

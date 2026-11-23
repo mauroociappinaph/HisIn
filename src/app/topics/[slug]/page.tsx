@@ -20,6 +20,7 @@ import { getLocalUser } from "@/modules/identity/service";
 import { GenerateMaterials } from "./generate-materials";
 import { StoryReader } from "./story-reader";
 import { TopicNav } from "./topic-nav";
+import { GlossBar } from "./gloss-bar";
 import { Drill } from "./drill";
 import { LessonDone } from "./lesson-done";
 import { RolePlay } from "./role-play";
@@ -230,24 +231,84 @@ function Timeline({ span, caption }: { span: string; caption: string }) {
   );
 }
 
-function Formula({ segments }: { segments: string[] }) {
+/**
+ * The structure, whole.
+ *
+ * Pills alone show the pieces but not how they behave in a sentence. This block shows
+ * the pieces with the role each one plays, then the same structure highlighted inside
+ * the real sentences the material gives, so the learner sees the frame and the frame in
+ * use on the same screen.
+ */
+function Formula({ segments, examples }: { segments: string[]; examples: readonly string[] }) {
+  const role = (index: number) => {
+    if (segments.length === 2) return index === 0 ? "auxiliary" : "verb form";
+    if (index === 0) return "first block";
+    if (index === segments.length - 1) return "last block";
+    return "middle block";
+  };
+
   return (
-    <div className="space-y-2">
-      <p className="text-[11px] uppercase tracking-widest text-slate-500">The structure</p>
-      <div className="flex flex-wrap items-center gap-2 rounded-sm bg-slate-50 p-3">
-        {segments.map((segment, index) => (
-          <span key={`${segment}-${index}`} className="flex items-center gap-2">
-            {index > 0 ? (
-              <span aria-hidden="true" className="font-mono text-slate-400">
-                +
-              </span>
-            ) : null}
-            <span className="rounded-sm bg-indigo-600 px-2.5 py-1 font-mono text-sm text-white">{segment}</span>
-          </span>
-        ))}
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <p className="text-[11px] uppercase tracking-widest text-slate-500">The structure</p>
+        <div className="flex flex-wrap items-start gap-2">
+          {segments.map((segment, index) => (
+            <div key={`${segment}-${index}`} className="flex items-start gap-2">
+              {index > 0 ? (
+                <span aria-hidden="true" className="pt-2 font-mono text-lg text-slate-400">
+                  +
+                </span>
+              ) : null}
+              <div className="rounded-sm border border-indigo-200 bg-indigo-50/70 px-3 py-2">
+                <p className="font-mono text-sm font-semibold text-indigo-900">{segment}</p>
+                <p className="mt-0.5 text-[10px] uppercase tracking-widest text-indigo-500">{role(index)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-slate-500">
+          The blocks always come in this order: change the order and the meaning changes.
+        </p>
       </div>
-      <p className="text-xs text-slate-500">The blocks always come in this order: change the order and the meaning changes.</p>
+
+      {examples.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-[11px] uppercase tracking-widest text-slate-500">The structure in real sentences</p>
+          <ul className="space-y-1.5">
+            {examples.map((example) => (
+              <li
+                key={example}
+                className="rounded-sm border-l-2 border-emerald-400 bg-slate-50 px-3 py-2 text-sm leading-7 text-slate-800"
+              >
+                {markSegments(example, segments)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+/** Wraps every occurrence of a structure block inside a sentence. */
+function markSegments(sentence: string, segments: readonly string[]): ReactNode[] {
+  const pattern = segments
+    .flatMap((segment) => segment.split(/\s*\/\s*|\s+/))
+    .filter((word) => word.length > 1)
+    .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+
+  if (pattern.length === 0) return [sentence];
+
+  const parts = sentence.split(new RegExp(`(${pattern})`, "gi"));
+  return parts.map((part, index) =>
+    segments.some((segment) => segment.toLowerCase().includes(part.toLowerCase())) && part.trim().length > 0 ? (
+      <strong key={`${part}-${index}`} className="rounded-sm bg-indigo-100 px-1 font-semibold text-indigo-900">
+        {part}
+      </strong>
+    ) : (
+      <span key={`${part}-${index}`}>{part}</span>
+    ),
   );
 }
 
@@ -514,11 +575,10 @@ async function TopicBody({ slug }: { slug: string }) {
           <p className="text-sm text-slate-600">No material for this lesson yet.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
-          <div className="order-2 min-w-0 space-y-4 lg:order-1">
-            <p className="text-xs text-slate-500">
-              {steps.length} steps · idea, structure, trap, phrases, practice, reading, writing, role-play and story
-            </p>
+        <div className="space-y-4 min-w-0">
+          <div className="space-y-4 min-w-0">
+            {anchors.length > 0 ? <TopicNav items={anchors} /> : null}
+            <GlossBar />
 
             {grammar && lesson ? (
               <Step
@@ -552,13 +612,13 @@ async function TopicBody({ slug }: { slug: string }) {
                 hint="How it is built, and how it sounds in a real sentence."
               >
                 {formula.length > 1 ? (
-                  <Formula segments={formula} />
+                  <Formula segments={formula} examples={examples} />
                 ) : (
                   <p className="text-sm text-slate-600">
                     This lesson has no fixed blocks: you recognise it by context. The examples below are the pattern.
                   </p>
                 )}
-                {examples.length > 0 ? (
+                {formula.length <= 1 && examples.length > 0 ? (
                   <div className="space-y-1">
                     <p className="text-[11px] uppercase tracking-widest text-slate-500">In context</p>
                     {examples.map((example) => (
@@ -728,11 +788,6 @@ async function TopicBody({ slug }: { slug: string }) {
             </nav>
           </div>
 
-          {anchors.length > 0 ? (
-            <div className="order-1 min-w-0 lg:order-2">
-              <TopicNav items={anchors} />
-            </div>
-          ) : null}
         </div>
       )}
     </div>
