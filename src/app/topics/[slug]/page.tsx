@@ -70,6 +70,7 @@ function Step({
   effort,
   glyph,
   hint,
+  source,
   children,
 }: {
   id: string;
@@ -78,6 +79,8 @@ function Step({
   effort: string;
   glyph: StepGlyph;
   hint?: string;
+  /** Which of the four materials this step comes from, shown as a chip. */
+  source?: string;
   children: ReactNode;
 }) {
   return (
@@ -96,7 +99,14 @@ function Step({
             {title}
           </span>
         </h2>
-        <span className="text-[11px] uppercase tracking-widest text-slate-400">{effort}</span>
+        <span className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-slate-400">
+          {source ? (
+            <span className="rounded-full bg-indigo-50 px-2 py-0.5 font-semibold tracking-wide text-indigo-700">
+              {source}
+            </span>
+          ) : null}
+          {effort}
+        </span>
       </header>
       {hint ? <p className="px-1 text-xs text-slate-500">{hint}</p> : null}
       <div className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">{children}</div>
@@ -505,6 +515,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 id="paso-idea"
                 number={stepOf("idea")}
                 title="The idea"
+                source="grammar"
                 effort="1 min"
                 glyph="idea"
                 hint="One point per line, so nothing hides inside a paragraph."
@@ -525,6 +536,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 id="paso-estructura"
                 number={stepOf("structure")}
                 title="The structure"
+                source="grammar"
                 effort="1 min"
                 glyph="structure"
                 hint="How it is built, and how it sounds in a real sentence."
@@ -561,6 +573,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 id="paso-trampa"
                 number={stepOf("trap")}
                 title="The trap"
+                source="grammar"
                 effort="1 min"
                 glyph="trap"
                 hint="What Spanish speakers do, and what to say instead."
@@ -575,6 +588,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 id="paso-frases"
                 number={stepOf("phrases")}
                 title="Set phrases"
+                source="vocabulary"
                 effort={`${multiWord.length} terms`}
                 glyph="verbs"
                 hint="What does not translate word by word: it goes in one piece."
@@ -588,6 +602,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 id="paso-practica"
                 number={stepOf("practice")}
                 title="Practice"
+                source="practice"
                 effort="2 min"
                 glyph="practice"
                 hint="Four items: when you miss one, the explanation says why."
@@ -601,6 +616,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 id="paso-reading"
                 number={stepOf("reading")}
                 title="Read"
+                source="reading"
                 effort={`~${readingMinutes(reading.body)} min`}
                 glyph="read"
                 hint="Short read on the same structure, in a real work scene."
@@ -627,6 +643,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 id="paso-writing"
                 number={stepOf("writing")}
                 title="Write"
+                source="writing"
                 effort="5 min"
                 glyph="write"
                 hint="Writing is what fixes the structure: do not skip it."
@@ -655,6 +672,7 @@ async function TopicBody({ slug }: { slug: string }) {
               id="paso-roleplay"
               number={stepOf("roleplay")}
               title="Role-play"
+                source="speaking"
               effort="4 min"
               glyph="speak"
               hint="Say it out loud after writing it: the room is where it counts."
@@ -667,6 +685,7 @@ async function TopicBody({ slug }: { slug: string }) {
                 id="paso-story"
                 number={stepOf("story")}
                 title="The story"
+                source="story"
                 effort="3 min"
                 glyph="story"
                 hint="Read, listen, and tap the words you do not know."
