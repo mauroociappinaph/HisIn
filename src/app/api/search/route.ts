@@ -2,7 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/shared/db/prisma";
 import { getLocalUser } from "@/modules/identity/service";
 import { TopicRepository } from "@/modules/topics/repository";
-import { groupHits, searchDocuments, type SearchDocument } from "@/modules/search/search";
+import { groupHits, searchDocuments, type SearchDocument, type SearchHit } from "@/modules/search/search";
+import {
+  EXPANSION_SYSTEM_PROMPT,
+  buildExpansionPrompt,
+  expansionKey,
+  knownTopics,
+  needsExpansion,
+  parseExpansion,
+  type Expansion,
+} from "@/modules/search/hybrid";
+import { runWithFallback } from "@/modules/ai/with-fallback";
+import { resolveTimeoutMs } from "@/modules/ai/models";
 
 /**
  * Everything the course knows, searched at once.
@@ -93,7 +104,19 @@ export async function GET(req: NextRequest) {
     ),
   ];
 
-  const hits = searchDocuments(query, documents, 30);
+  let hits = searchDocuments(query, documents, 30);
+  let used: Expansion | null = null;
+
+  // Second chance: when the lexical pass is thin, ask the engine what to look for,
+  // then search again with its words. The expansion is cached per question.
+  if (needsExpansion(hits)) {
+    used = await expand(query, topics);
+    if (used) {
+      const boosted = await searchWithExpansion(query, used, documents, hits);
+      if (boosted.length > 0) hits = boosted;
+    }
+  }
+
   const groups = groupHits(hits).map((group) => ({
     kind: group.kind,
     label: group.label,
@@ -108,5 +131,62 @@ export async function GET(req: NextRequest) {
     })),
   }));
 
-  return NextResponse.json({ query, total: hits.length, groups });
+  return NextResponse.json({
+    query,
+    total: hits.length,
+    expanded: used ? { keywords: used.keywords, topics: used.topics } : null,
+    groups,
+  });
+}
+
+/** Reads the cached expansion, or asks the engine once and stores it. */
+async function expand(query: string, topics: { slug: string; title: string }[]): Promise<Expansion | null> {
+  const queryKey = expansionKey(query);
+  const cached = await prisma.searchExpansion.findUnique({ where: { queryKey } });
+  if (cached) return { keywords: cached.keywords, topics: cached.topics };
+
+  try {
+    const response = await runWithFallback({
+      prompt: buildExpansionPrompt({ query, topics }).slice(0, 6000),
+      system: EXPANSION_SYSTEM_PROMPT,
+      timeoutMs: resolveTimeoutMs() * 2,
+    });
+    const parsed = parseExpansion(response.text);
+    const expansion: Expansion = { keywords: parsed.keywords, topics: knownTopics(parsed, topics.map((topic) => topic.slug)) };
+
+    await prisma.searchExpansion.create({
+      data: { queryKey, keywords: expansion.keywords, topics: expansion.topics },
+    });
+    return expansion;
+  } catch {
+    // A failed expansion must not fail the search: the lexical pass already ran.
+    return null;
+  }
+}
+
+/** Second pass with the engine's words, and the lessons it named pushed up. */
+async function searchWithExpansion(
+  query: string,
+  expansion: Expansion,
+  documents: SearchDocument[],
+  lexical: SearchHit[],
+): Promise<SearchHit[]> {
+  // The engine's words are searched on their own: piling them onto the original
+  // question dilutes the coverage and returns nothing.
+  const widened = searchDocuments(expansion.keywords.join(" "), documents, 30, { minCoverage: 0.34 });
+
+  // Union, not replacement: the lexical hits that were already good stay.
+  const merged = new Map<string, SearchHit>();
+  for (const hit of [...lexical, ...widened]) {
+    const previous = merged.get(hit.document.id);
+    if (!previous || hit.score > previous.score) merged.set(hit.document.id, hit);
+  }
+
+  return [...merged.values()]
+    .map((hit) =>
+      expansion.topics.some((slug) => hit.document.href === `/topics/${slug}`)
+        ? { ...hit, score: hit.score * 1.8 }
+        : hit,
+    )
+    .sort((first, second) => second.score - first.score);
 }

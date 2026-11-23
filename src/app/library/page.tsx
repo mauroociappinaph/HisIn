@@ -37,6 +37,7 @@ export default function LibraryPage() {
   // The same box searches the whole course, not only the saved words: lessons,
   // story terms, mistakes and news come back ranked next to your own entries.
   const [results, setResults] = useState<SearchGroup[] | null>(null);
+  const [expanded, setExpanded] = useState<string[] | null>(null);
   const [searching, setSearching] = useState(false);
 
   useEffect(() => {
@@ -86,8 +87,11 @@ export default function LibraryPage() {
       setSearching(true);
       fetch(`/api/search?q=${encodeURIComponent(term)}`)
         .then((response) => response.json())
-        .then((data: { groups?: SearchGroup[] }) => {
-          if (active) setResults(data.groups ?? []);
+        .then((data: { groups?: SearchGroup[]; expanded?: { keywords: string[] } | null }) => {
+          if (active) {
+            setResults(data.groups ?? []);
+            setExpanded(data.expanded?.keywords ?? null);
+          }
         })
         .catch(() => {
           if (active) setResults([]);
@@ -174,6 +178,11 @@ export default function LibraryPage() {
       {results && results.length > 0 ? (
         <section className="space-y-3 rounded-lg border border-indigo-200 bg-indigo-50/60 p-4">
           <p className="text-[11px] uppercase tracking-widest text-indigo-700">En todo el curso</p>
+          {expanded && expanded.length > 0 ? (
+            <p className="text-[11px] text-slate-500">
+              Buscamos también: {expanded.join(" · ")}
+            </p>
+          ) : null}
           {results.map((group) => (
             <div key={group.kind} className="space-y-1">
               <p className="text-[11px] font-semibold text-slate-600">{group.label}</p>

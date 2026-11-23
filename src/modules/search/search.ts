@@ -144,6 +144,8 @@ export interface SearchDocument {
 export interface SearchHit {
   document: SearchDocument;
   score: number;
+  /** How much of the query this document answers, 0 to 1. */
+  coverage: number;
 }
 
 /** A match in the title is worth this much more than a match in the body. */
@@ -164,6 +166,7 @@ export function searchDocuments(
   query: string,
   documents: readonly SearchDocument[],
   limit = 20,
+  options: { minCoverage?: number } = {},
 ): SearchHit[] {
   const tokens = tokenize(query);
   if (tokens.length === 0) return [];
@@ -230,10 +233,11 @@ export function searchDocuments(
     // Coverage is a multiplier, not a bonus: a document that answers only one word
     // of a three-word question is not a good answer, however often it says it.
     const coverage = matchedGroups / groups.length;
-    if (groups.length > 1 && coverage < 0.5) continue;
+    const floor = options.minCoverage ?? 0.5;
+    if (groups.length > 1 && coverage < floor) continue;
     score *= coverage * coverage;
 
-    if (score > 0) hits.push({ document: entry.document, score });
+    if (score > 0) hits.push({ document: entry.document, score, coverage });
   }
 
   hits.sort((first, second) => second.score - first.score);
