@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { CEFR_LEVELS } from "@/modules/ai/schema";
 import { CONTENT_MODULES } from "@/modules/ai/schema";
-import { ENTRY_KINDS, validateEntry, type EntryKind } from "./entry";
+import { ENTRY_KINDS, FUNCTION_VALUES, REGISTER_VALUES, validateEntry, type EntryFunction, type EntryKind, type EntryRegister } from "./entry";
 
 /**
  * One line in, a complete study entry out.
@@ -17,14 +17,15 @@ export const entryAnalysisSchema = z.object({
   kind: z.enum(ENTRY_KINDS),
   definition: z.string().min(10).max(400),
   example: z.string().min(10).max(400),
+  extraExample: z.string().min(10).max(400).nullish(),
   level: z.enum(CEFR_LEVELS),
   module: z.enum(CONTENT_MODULES),
   // Models return null for the fields that do not apply to the type; null and
   // absence mean the same thing here, so both are accepted and normalised away.
   particle: z.string().max(20).nullish(),
   separable: z.boolean().nullish(),
-  register: z.enum(["neutral", "informal", "formal"]).nullish(),
-  function: z.enum(["hedge", "soften", "persuade", "report", "compare", "express"]).nullish(),
+  register: z.enum(REGISTER_VALUES).nullish(),
+  function: z.enum(FUNCTION_VALUES).nullish(),
   notes: z.string().max(400).nullish(),
 });
 
@@ -33,12 +34,13 @@ export interface EntryAnalysis {
   kind: EntryKind;
   definition: string;
   example: string;
+  extraExample?: string;
   level: (typeof CEFR_LEVELS)[number];
   module: (typeof CONTENT_MODULES)[number];
   particle?: string;
   separable?: boolean;
-  register?: "neutral" | "informal" | "formal";
-  function?: "hedge" | "soften" | "persuade" | "report" | "compare" | "express";
+  register?: EntryRegister;
+  function?: EntryFunction;
   notes?: string;
 }
 
@@ -52,12 +54,13 @@ export const ENTRY_SYSTEM_PROMPT = [
 export function buildEntryPrompt(input: string, retryReason?: string, context?: string): string {
   return [
     `Entry: ${JSON.stringify(input.trim())}`,
-    'Return this shape: {"term","kind","definition","example","level","module","particle","separable","register","function","notes"}.',
+    'Return this shape: {"term","kind","definition","example","extraExample","level","module","particle","separable","register","function","notes"}.',
     `kind must be exactly one of: ${ENTRY_KINDS.map((kind) => `"${kind}"`).join(", ")}.`,
     'WORD = one word. PHRASAL_VERB = verb + particle (put off, look after). IDIOM = fixed multiword expression whose meaning is not literal (cut corners, on the same page). PATTERN = sentence frame with slots (make + object + verb, is expected to + verb).',
     'term: the entry as it should be learned, lowercase unless it is a proper noun or an acronym. The term is yours to write: if the learner typed a fragment, return the complete entry — "interested in" comes back as "be interested in + noun/gerund", never as a bare fragment.',
     "definition: one or two English sentences a professional would accept, not a dictionary copy.",
     "example: one English sentence that USES the term (inflection is fine: 'pulled back' documents 'pull back'), set in healthtech, investors, contracts or product work.",
+    "extraExample: a second English sentence that shows the same entry in another sense or setting, or null when one example already carries the whole idea. Never repeat the first example with a different subject.",
     `level: exactly one of ${CEFR_LEVELS.join(", ")}.`,
     `module: exactly one of ${CONTENT_MODULES.join(", ")} — the section it belongs to.`,
     'For PHRASAL_VERB: always send "particle" (the last word), "separable" (true/false) and "register" ("neutral" | "informal" | "formal").',
@@ -108,6 +111,7 @@ export function parseEntryAnalysis(raw: string): EntryAnalysisResult {
     kind: data.kind,
     definition: data.definition,
     example: data.example,
+    extraExample: data.extraExample ?? undefined,
     level: data.level,
     module: data.module,
     particle: data.particle ?? undefined,

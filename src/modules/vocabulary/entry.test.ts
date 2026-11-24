@@ -30,6 +30,24 @@ const pattern: EntryDraft = {
   module: "grammar",
 };
 
+test("a second example is accepted and stays optional", () => {
+  const withExtra = validateEntry({
+    ...pattern,
+    extraExample: "We handle projects end to end, from discovery to launch.",
+  });
+  const withoutExtra = validateEntry(pattern);
+
+  assert.equal(withExtra.ok, true);
+  assert.equal(withoutExtra.ok, true);
+});
+
+test("a second example that is too short is rejected", () => {
+  const result = validateEntry({ ...word, extraExample: "too short" });
+
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.ok(result.errors.some((error) => error.includes("segundo ejemplo")));
+});
+
 test("a word enters as WORD with no particle", () => {
   const result = validateEntry(word);
 

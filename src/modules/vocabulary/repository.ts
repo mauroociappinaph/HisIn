@@ -139,6 +139,7 @@ export class VocabularyRepository {
         ...(update.separable !== undefined ? { separable: update.separable } : {}),
         ...(update.register !== undefined ? { register: update.register } : {}),
         ...(update.function !== undefined ? { function: update.function } : {}),
+        ...(update.extraExample !== undefined ? { extraExample: update.extraExample } : {}),
       },
     });
     return toDTO(row);
