@@ -1,4 +1,5 @@
 import { CONTENT_MODULES, type GenerationRequest } from "./schema";
+import { LESSON_SECTIONS } from "@/modules/lessons/structure";
 
 const DOMAIN =
   "HisIn is an English-learning app for entrepreneurs and healthtech founders. Learners are Spanish speakers at CEFR B1 or above, working on healthtech, business, finance and contract English.";
@@ -54,13 +55,16 @@ function storyPrompt(request: GenerationRequest): string {
 }
 
 function lessonPrompt(request: GenerationRequest): string {
+  const shape = LESSON_SECTIONS.map((section) => `${section.marker}: <${section.purpose}>`).join(" / ");
+
   return [
     `Generate ${request.count} short English lessons.`,
     `CEFR level: ${request.level}.${topicRule(request)}`,
     'Return this shape: {"lessons":[{"module","level","title","summary","content","order"}]}.',
     `Every lesson must use level "${request.level}" and set "order" to 1.`,
     `The module must be one of: ${CONTENT_MODULES.join(", ")}.`,
-    "Content is 4 to 8 short lines of practical English with examples, separated by newlines.",
+    `content must declare exactly these sections, in this order and separated by a blank line: ${shape}.`,
+    "A lesson missing any section is rejected, and so is a section left as a bare label.",
   ].join(" ");
 }
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { usesTerm } from "@/shared/lib/text";
+import { LESSON_SECTIONS, isCompleteLessonContent } from "@/modules/lessons/structure";
 
 export const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 export const SKILLS = [
@@ -117,14 +118,26 @@ export const generatedVocabularySchema = z.object({
   level: cefrLevelSchema,
 });
 
-export const generatedLessonSchema = z.object({
-  module: contentModuleSchema,
-  level: cefrLevelSchema,
-  title: z.string().min(5).max(120),
-  summary: z.string().min(10).max(300),
-  content: z.string().min(50).max(6000),
-  order: z.number().int().min(0).max(99).default(0),
-});
+export const generatedLessonSchema = z
+  .object({
+    module: contentModuleSchema,
+    level: cefrLevelSchema,
+    title: z.string().min(5).max(120),
+    summary: z.string().min(10).max(300),
+    content: z.string().min(50).max(6000),
+    order: z.number().int().min(0).max(99).default(0),
+  })
+  .superRefine((lesson, ctx) => {
+    // A lesson the renderer cannot split is a wall of text, so the structure is
+    // enforced at the boundary instead of repaired afterwards.
+    if (!isCompleteLessonContent(lesson.content)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["content"],
+        message: `content must declare every lesson section: ${LESSON_SECTIONS.map((section) => `${section.marker}:`).join(", ")}`,
+      });
+    }
+  });
 
 const generatedStoryShape = z.object({
   module: contentModuleSchema,
