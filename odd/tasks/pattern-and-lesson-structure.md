@@ -71,8 +71,11 @@ entries keep working through form, API and analyze exactly as before S2.
   restoring the fresh snapshot into the same database changed no id and no body.
 - Commits on `feat/stories-interactive`: `ecfd7f6` (patterns), `75b6b1b` (lessons + content), `0633c97`
   (evidence doc), plus the risk-1 commit (seed adoption, gated normalize, backup coverage).
-- Delivery shape: the branch already carries 34 commits and ~58k authored lines since `main`, far past one
-  reviewable slice, so publishing needs chained PRs; these two commits are one reviewable slice each.
+- Delivery shape: the branch already carries 37 commits and ~59k authored lines since `main`, far past one
+  reviewable slice, so publishing needs chained PRs; these commits are one reviewable slice each.
+- Declared boundary (named by verification): a lesson generated into the database by the studio or the AI
+  pipeline (`src/modules/ai/repository.ts`) exists nowhere else until the next `pnpm backup:content`. The
+  seed owns the 28 lessons the app ships; generated rows are owned by the backup, never by the seed.
 
 ## Log
 
