@@ -32,10 +32,7 @@ export async function GET(req: NextRequest) {
 
   if (kind) {
     if (!(ENTRY_KINDS as readonly string[]).includes(kind)) {
-      return NextResponse.json(
-        { error: `kind must be one of ${ENTRY_KINDS.join(", ")}` },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "kind must be WORD, PHRASAL_VERB or PATTERN" }, { status: 400 });
     }
     const entries = moduleSlug
       ? (await repository.findByModule(moduleSlug, level ?? undefined)).filter((entry) => entry.kind === kind)
@@ -69,10 +66,9 @@ export async function POST(req: NextRequest) {
 
   const draft = {
     ...parsed.data,
-    // The optional sections are trimmed here, once, so a value that only differs
-    // by whitespace cannot slip past the length rules downstream.
+    // Trimmed here, once, because the optional second example is new and a value
+    // that only differs by whitespace must not slip past its length rules.
     extraExample: parsed.data.extraExample?.trim() || undefined,
-    notes: parsed.data.notes?.trim() || undefined,
   };
   const validation = validateEntry(draft);
   if (!validation.ok) {

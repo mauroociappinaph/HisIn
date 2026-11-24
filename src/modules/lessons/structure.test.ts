@@ -67,10 +67,10 @@ test("canonicalizing puts shuffled sections back in order", () => {
   assert.ok(normalized.indexOf("Practice:") < normalized.indexOf("Common mistake:"));
 });
 
-test("canonicalizing never deletes content it cannot understand", () => {
+test("canonicalizing never touches content it cannot understand", () => {
   const raw = "  FHIR = a data standard.\nHIPAA = a privacy law.  ";
 
-  assert.equal(canonicalizeLessonContent(raw), "FHIR = a data standard.\nHIPAA = a privacy law.");
+  assert.equal(canonicalizeLessonContent(raw), raw);
 });
 
 test("completeness needs every section", () => {

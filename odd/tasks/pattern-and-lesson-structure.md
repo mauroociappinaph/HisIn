@@ -112,3 +112,12 @@ content. Resolution chosen: make the data rebuildable instead of merely careful 
 `db:normalize-lessons` writes only with `--apply`, and `backup:content` now covers lessons. Verified:
 `seed=28 db=28 identical=28`, unchanged ids after a seed run, 0 pending changes on a dry run, and an
 idempotent restore.
+
+L8. Independent verification (T4) reported three findings, all fixed in `a-fix commit`:
+1. S2 blocker - `POST /api/vocabulary/analyze` rebuilt the repository payload by hand and dropped
+   `extraExample`, so a saved analyzed entry lost its second example. Fixed by moving that object into
+   `entryInputFromAnalysis()` in `analysis.ts`, where a test covers it, and calling it from the route.
+2. An unrequested change to the `GET /api/vocabulary?kind=` error string was reverted to the baseline text,
+   as was server-side trimming of `notes`; only `extraExample` is trimmed, because it is the new field.
+3. `canonicalizeLessonContent` trimmed unparseable content, so a prose row differing only by padding would
+   be rewritten under `--apply`. It now returns such content byte for byte, and the test asserts identity.

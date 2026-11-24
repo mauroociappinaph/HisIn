@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildEntryPrompt, parseEntryAnalysis, sectionFor } from "./analysis";
+import { buildEntryPrompt, entryInputFromAnalysis, parseEntryAnalysis, sectionFor } from "./analysis";
 
 const phrased = {
   term: "put up with",
@@ -91,4 +91,28 @@ test("the prompt closes the taxonomy and asks for the metadata each type needs",
   assert.match(prompt, /"IDIOM"/);
   assert.match(prompt, /particle/);
   assert.match(prompt, /"function"/);
+});
+
+test("an analyzed entry forwards every field, second example included", () => {
+  const reply = JSON.stringify({
+    term: "runway",
+    kind: "WORD",
+    definition: "The time a company can keep operating before cash runs out.",
+    example: "We have eleven months of runway left.",
+    extraExample: "We handle projects end to end, from discovery to launch.",
+    level: "B2",
+    module: "business-english",
+  });
+
+  const parsed = parseEntryAnalysis(reply);
+
+  assert.equal(parsed.ok, true);
+  if (!parsed.ok) return;
+
+  const input = entryInputFromAnalysis(parsed.analysis);
+
+  assert.equal(input.extraExample, "We handle projects end to end, from discovery to launch.");
+  assert.equal(input.notes, null);
+  assert.equal(input.particle, null);
+  assert.equal(input.kind, "WORD");
 });

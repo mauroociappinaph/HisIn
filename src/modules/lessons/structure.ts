@@ -139,12 +139,12 @@ export function parseLessonContent(content: string): LessonSection[] {
  *
  * Idempotent by construction: canonical input parses back into the same bodies,
  * so running it twice changes nothing. Content with no recognisable section is
- * returned trimmed but untouched - a normalizer must never delete a lesson it
- * could not understand.
+ * returned byte for byte - a normalizer must never rewrite a lesson it could not
+ * understand, not even to trim its padding.
  */
 export function canonicalizeLessonContent(content: string): string {
   const sections = parseLessonContent(content);
-  if (sections.length === 0) return content.trim();
+  if (sections.length === 0) return content;
   return sections.map((section) => `${section.marker}: ${section.body}`).join("\n\n");
 }
 

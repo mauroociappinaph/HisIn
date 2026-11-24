@@ -79,6 +79,31 @@ export type EntryAnalysisResult =
   | { ok: true; analysis: EntryAnalysis; kind: EntryKind }
   | { ok: false; error: string };
 
+/**
+ * The repository payload for an analyzed entry.
+ *
+ * It lives next to the analysis shape because a field that exists in the
+ * analysis but is not forwarded here is silently lost, and the route that used
+ * to build this object by hand was not covered by a test: `extraExample` was
+ * produced, validated and then dropped on save.
+ */
+export function entryInputFromAnalysis(analysis: EntryAnalysis) {
+  return {
+    term: analysis.term,
+    definition: analysis.definition,
+    example: analysis.example,
+    extraExample: analysis.extraExample ?? null,
+    module: analysis.module,
+    level: analysis.level,
+    kind: analysis.kind,
+    particle: analysis.particle ?? null,
+    separable: analysis.separable ?? null,
+    register: analysis.register ?? null,
+    function: analysis.function ?? null,
+    notes: analysis.notes ?? null,
+  };
+}
+
 /** Validates the model reply against the schema and the bank's own rules. */
 export function parseEntryAnalysis(raw: string): EntryAnalysisResult {
   const cleaned = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
