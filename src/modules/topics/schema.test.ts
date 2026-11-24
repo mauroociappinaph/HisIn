@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { TOPIC_SKILLS, TOPIC_SYSTEM_PROMPT, buildTopicPrompt, parseTopicMaterials } from "./schema";
+import {
+  TOPIC_SKILLS,
+  TOPIC_SYSTEM_PROMPT,
+  buildTopicPrompt,
+  parseTopicMaterials,
+  mentionsTopic,
+  structureMarkers,
+  topicKeywords,
+  usesStructure,
+} from "./schema";
 
 const material = (skill: string) => ({
   skill,
@@ -33,7 +42,7 @@ test("generic material without the domain is rejected", () => {
   const generic = {
     ...valid,
     materials: [
-      { ...material("GRAMMAR"), body: "My name is Ana and my favourite colour is blue. The weather is nice today and my dog is friendly." },
+      { ...material("GRAMMAR"), body: "My name is Ana and my favourite colour is blue. The weather is nice today, my dog is friendly, and last summer we went to the beach with my cousins and ate ice cream every afternoon while the sun was shining." },
     ],
   };
 
@@ -74,4 +83,39 @@ test("a long syllabus title echoed by the model does not reject the batch", () =
 
   assert.equal(parsed.topic, longTitle);
   assert.equal(parsed.materials.length, 2);
+});
+
+test("structureMarkers keeps the quoted structures of a grammar material", () => {
+  const markers = structureMarkers({
+    body: "Use 'would have + past participle' and 'if we had implemented circuit breakers' in a post-mortem.",
+    keyPoints: ["Say 'we should have deployed earlier'."],
+  });
+  assert.ok(markers.includes("would have + past participle"));
+  assert.ok(markers.includes("if we had implemented circuit breakers"));
+  assert.equal(markers.some((marker) => marker === "we should have deployed earlier"), true);
+});
+
+test("usesStructure detects a material that never uses what the grammar taught", () => {
+  const markers = ["would have + past participle", "if we had implemented circuit breakers"];
+  assert.equal(usesStructure("The outage started at 14:02 and the team paged the on-call engineer.", markers), false);
+  assert.equal(usesStructure("We would have + past participle avoided it if we had implemented circuit breakers.", markers), true);
+});
+
+test("topicKeywords drops the words that do not identify a topic", () => {
+  assert.deepEqual(topicKeywords("Curriculum design and programme evaluation"), [
+    "curriculum",
+    "design",
+    "programme",
+    "evaluation",
+  ]);
+});
+
+test("mentionsTopic catches a material written for another lesson", () => {
+  const drifted =
+    "The structure 'should have + past participle' expresses regret about a past action in a healthtech startup.";
+  assert.equal(mentionsTopic(drifted, "Curriculum design and programme evaluation"), false);
+  assert.equal(
+    mentionsTopic("A needs analysis decides what the curriculum must cover before you write a syllabus.", "Curriculum design and programme evaluation"),
+    true,
+  );
 });

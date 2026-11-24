@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import type { VocabularyDTO } from "@/shared/types";
 import { ChallengeMode } from "./_components/ChallengeMode";
 import { itemsForMinutes } from "@/modules/classroom/design";
@@ -11,8 +12,6 @@ import { StoryMode } from "./_components/StoryMode";
 import { ProgressBar, Stat } from "./_components/ui";
 import { getTrainerServerSnapshot, getTrainerSnapshot, subscribeTrainer, toggleKnown } from "./_components/store";
 import type { ReviewStats, TrainerMode, VocabReviewItem } from "./_components/types";
-
-const TOAST_MS = 2200;
 
 const MODES: { id: TrainerMode; label: string; icon: string }[] = [
   { id: "review", label: "Repaso SRS", icon: "🧠" },
@@ -57,7 +56,6 @@ function TrainerInner() {
   const [due, setDue] = useState<VocabReviewItem[]>([]);
   const [stats, setStats] = useState<ReviewStats>(EMPTY_STATS);
   const [reviewLoading, setReviewLoading] = useState(true);
-  const [toast, setToast] = useState<{ id: number; message: string; tone: ToastTone } | null>(null);
 
   const local = useSyncExternalStore(subscribeTrainer, getTrainerSnapshot, getTrainerServerSnapshot);
   const known = useMemo(() => new Set(local.known), [local.known]);
@@ -70,14 +68,10 @@ function TrainerInner() {
   const sessionItems = profile ? itemsForMinutes(profile.classDesign.minutes) : 10;
 
   const showToast = useCallback((message: string, tone: ToastTone = "success") => {
-    setToast({ id: Date.now(), message, tone });
+    if (tone === "warning") toast.warning(message);
+    else if (tone === "info") toast(message);
+    else toast.success(message);
   }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), TOAST_MS);
-    return () => clearTimeout(timer);
-  }, [toast]);
 
   useEffect(() => {
     let active = true;
@@ -293,22 +287,6 @@ function TrainerInner() {
       ) : null}
 
 
-      <div aria-live="polite" className="fixed bottom-24 right-6 z-20">
-        {toast ? (
-          <div
-            key={toast.id}
-            className={`px-4 py-3 rounded-xl text-white text-sm font-medium shadow-lg ${
-              toast.tone === "warning"
-                ? "bg-amber-600"
-                : toast.tone === "info"
-                  ? "bg-indigo-600"
-                  : "bg-emerald-600"
-            }`}
-          >
-            {toast.message}
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 }

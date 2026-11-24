@@ -1,0 +1,418 @@
+import type { CefrLevel } from "@/shared/types";
+
+/**
+ * The lessons that ship with the app.
+ *
+ * They live here, not inside `prisma/seed.ts`, so the seed can import them and a
+ * test can read them: a lesson that drifts out of the canonical structure is
+ * caught before it reaches the database.
+ *
+ * All 28 lessons the app ships are listed, including the ones that were first
+ * generated as prose: the seed adopts a lesson by its natural key instead of
+ * creating a second row, so `pnpm seed` rebuilds the whole set and no stored
+ * lesson exists only in the database. Summaries, levels and titles are the ones
+ * already in production; the bodies are written into the five sections.
+ */
+export interface LessonSeed {
+  module: string;
+  level: CefrLevel;
+  title: string;
+  summary: string;
+  content: string;
+  order: number;
+}
+
+export const LESSON_SEEDS: readonly LessonSeed[] = [
+  {
+    module: "vocabulary",
+    level: "A1",
+    title: "Vocabulario básico de salud",
+    summary: "Palabras esenciales para hablar de salud.",
+    order: 1,
+    content: [
+      "Goal: Describe a patient and a clinic visit with eight everyday words.",
+      "Learn: patient, doctor, hospital, medicine, health, sick, well.",
+      'Examples: "The patient is sick." / "The doctor works in a hospital."',
+      "Practice: Write three sentences about your own week using sick, well and medicine.",
+      'Common mistake: "El paciente está mal" is not "the patient is bad". Use "sick" or "unwell", and keep "bad" for quality.',
+    ].join("\n\n"),
+  },
+  {
+    module: "vocabulary",
+    level: "B1",
+    title: "Vocabulario healtech intermedio",
+    summary: "Términos técnicos del sector salud-digital.",
+    order: 1,
+    content: [
+      "Goal: Explain how your product handles patient data without switching to Spanish.",
+      "Learn: telemedicine, EHR, HIPAA, interoperability, patient data, compliance.",
+      'Examples: "Our EHR sends patient data to the lab." / "HIPAA compliance is a blocker for the pilot."',
+      "Practice: Explain your product to a doctor in three sentences using telemedicine, EHR and compliance.",
+      'Common mistake: HIPAA is a US law, not a certificate. Say "HIPAA compliant", never "HIPAA certified".',
+    ].join("\n\n"),
+  },
+  {
+    module: "vocabulary",
+    level: "C1",
+    title: "Vocabulario avanzado healtech",
+    summary: "Términos regulatorios y de datos.",
+    order: 1,
+    content: [
+      "Goal: Read a regulatory brief and say what evidence it demands.",
+      "Learn: FHIR, pharmacovigilance, real-world evidence, clinical trial, FDA approval, CE mark.",
+      'Examples: "FHIR is the data standard the payer asked for." / "Real-world evidence is cheaper to produce than a new trial."',
+      "Practice: Summarise one regulatory paragraph in three sentences, one term per sentence.",
+      'Common mistake: a drug needs "FDA approval" in the US and a "CE mark" in the EU; neither is a "certificate".',
+    ].join("\n\n"),
+  },
+  {
+    module: "business-english",
+    level: "B1",
+    title: "Emails profesionales",
+    summary: "Estructura de emails de negocio.",
+    order: 1,
+    content: [
+      "Goal: Write a short email that gets a reply.",
+      "Learn: subject line, greeting, body, call to action, sign-off.",
+      'Examples: "Hi team, please find attached the Q3 report." / "Could you confirm by Friday? Best, Mauro."',
+      "Practice: Rewrite your last email so the ask is one sentence inside the first two lines.",
+      'Common mistake: "I write you to ask" is not English. Use "I am writing to ask", or drop it and start with the ask.',
+    ].join("\n\n"),
+  },
+  {
+    module: "business-english",
+    level: "B2",
+    title: "Reuniones y pitches",
+    summary: "Vocabulario para reuniones y presentaciones.",
+    order: 1,
+    content: [
+      "Goal: Give a 30-second update with one number per sentence.",
+      "Learn: agenda, milestone, runway, burn rate, traction, KPI, pivot.",
+      'Examples: "We have twelve months of runway at the current burn rate." / "Traction is the only KPI investors read twice."',
+      "Practice: Record your pitch and cut every sentence that has no number or no decision in it.",
+      'Common mistake: "pivot" is not "pivotar" as in pivoting a page. It means changing product direction after learning something.',
+    ].join("\n\n"),
+  },
+  {
+    module: "contracts",
+    level: "B1",
+    title: "Contratos básicos",
+    summary: "Vocabulario legal esencial.",
+    order: 1,
+    content: [
+      "Goal: Read the first page of a contract and say what you are signing.",
+      "Learn: NDA, liability, term, clause.",
+      'Examples: "Sign the NDA before we open the data room." / "The term is two years, renewable."',
+      "Practice: Take one clause you signed this year and explain it in one sentence.",
+      'Common mistake: "term" in a contract is its duration, not vocabulary. "Liability" is legal responsibility, not a bill you owe today.',
+    ].join("\n\n"),
+  },
+  {
+    module: "contracts",
+    level: "C1",
+    title: "Cláusulas avanzadas",
+    summary: "Indemnification, IP, exclusivity.",
+    order: 1,
+    content: [
+      "Goal: Spot the three clauses that change who carries the risk in a deal.",
+      "Learn: indemnification, IP assignment, exclusivity.",
+      'Examples: "Indemnification covers third-party claims." / "IP assignment happens at signature, not at payment."',
+      "Practice: Tell a founder why exclusivity is not the same as a lock-in, in two sentences.",
+      'Common mistake: "indemnification" is not insurance. It is the contractual promise to compensate the other side.',
+    ].join("\n\n"),
+  },
+  {
+    module: "reading",
+    level: "B1",
+    title: "Leer documentación técnica",
+    summary: "Estrategias de lectura.",
+    order: 1,
+    content: [
+      "Goal: Get the three facts you need out of a technical page in five minutes.",
+      "Learn: skim for the main idea, scan for details, note unknown terms.",
+      'Examples: "Skim the README first." / "Then scan for the endpoint you need."',
+      "Practice: Open one API page and write its three key facts without translating them.",
+      "Common mistake: reading line by line in English from the first paragraph. Read the headings, then the details.",
+    ].join("\n\n"),
+  },
+  {
+    module: "listening",
+    level: "B1",
+    title: "Escuchar reuniones",
+    summary: "Tips para listening en reuniones.",
+    order: 1,
+    content: [
+      "Goal: Follow a call and leave with the actions and the numbers.",
+      "Learn: key verbs, numbers, note-taking.",
+      'Examples: "Let\'s circle back on pricing." / "The action item is on me."',
+      "Practice: Listen to five minutes of a recorded call and write every number you hear.",
+      'Common mistake: "circle back" does not mean going around in a circle. It means talking again later.',
+    ].join("\n\n"),
+  },
+  {
+    module: "grammar",
+    level: "B1",
+    title: "Tiempos verbales profesionales",
+    summary: "Present perfect, passive voice.",
+    order: 1,
+    content: [
+      "Goal: Report status without saying when it happened, because the result is what matters.",
+      "Learn: present perfect, passive voice.",
+      'Examples: "We have launched the app." / "The report was approved on Friday."',
+      "Practice: Turn three updates from your week into present perfect sentences.",
+      'Common mistake: "We have launched it yesterday" mixes two times. Present perfect never takes a finished past moment; use the past simple.',
+    ].join("\n\n"),
+  },
+  {
+    module: "business-english",
+    level: "B2",
+    title: "Reported Speech in Team Meetings",
+    summary: "Conveying colleague feedback and management directives accurately during briefings.",
+    order: 1,
+    content: [
+      "Goal: Report what the CTO or a client said without changing their meaning.",
+      "Learn: backshift the tense (present becomes past), said that / reported that, and adjusted time references.",
+      'Examples: "The CTO said they needed faster API responses." / "She stated she would finish by Friday."',
+      "Practice: Take one line from your last meeting notes and report it two ways: said that, reported that.",
+      'Common mistake: Reporting "We need it today" as "They said they need it today" keeps the present and loses the shift. Backshift first, then check whether the fact is still current.',
+    ].join("\n\n"),
+  },
+  {
+    module: "business-english",
+    level: "C1",
+    title: "Mastering Regulatory Submissions",
+    summary: "Learn precise language for FDA/EMA healthtech compliance.",
+    order: 1,
+    content: [
+      "Goal: Write a submission sentence a reviewer reads as evidence, not as an opinion.",
+      "Learn: proactive, aligns with, the evidence substantiates, clinical endpoints.",
+      'Examples: "The preliminary data substantiates the device\'s efficacy across all cohorts." / "Our monitoring protocol is proactive rather than reactive."',
+      'Practice: Replace every "we think" in one paragraph of your submission with what the data shows.',
+      'Common mistake: "We think our device is safe" reads as opinion and weakens the file. State what the evidence substantiates, and keep the terminology of the target regulatory body.',
+    ].join("\n\n"),
+  },
+  {
+    module: "business-english",
+    level: "C1",
+    title: "Writing High-Impact Board Papers",
+    summary: "Executive-level communication for strategic decision making.",
+    order: 1,
+    content: [
+      "Goal: Give a board the decision, the reason and the downside on one page.",
+      "Learn: strategic imperative, fiscal prudence, mitigate downside risk, and the propose / rationale / expected outcomes structure.",
+      'Examples: "We propose this acquisition to solidify market share and mitigate long-term downside risk." / "Fiscal prudence means we fund the pilot from existing runway."',
+      "Practice: Rewrite your last recommendation as three sentences: proposal, rationale, expected outcome.",
+      "Common mistake: A paper that lists activity instead of a decision. Lead with the strategic imperative, not with the project history.",
+    ].join("\n\n"),
+  },
+  {
+    module: "business-english",
+    level: "C2",
+    title: "Mastering Strategic Hedging in Negotiations",
+    summary: "Techniques for maintaining professional distance and preserving leverage during high-stakes healthtech deal-making.",
+    order: 1,
+    content: [
+      "Goal: Hold your position without conceding, while leaving room to move.",
+      "Learn: tentative framing (we are currently inclined to), modals (may, could, would) and conditions (provided the indemnity clauses remain aligned).",
+      'Examples: "It is our initial assessment that your proposal may necessitate further alignment with our compliance benchmarks." / "One could envisage a recalibration of the valuation, assuming the clinical data yields the projected efficacy."',
+      'Practice: Rewrite your last hard "no" as a condition that keeps the deal alive.',
+      "Common mistake: Hedging every sentence until nothing is claimed. One hedge per point is leverage; five make the position unreadable.",
+    ].join("\n\n"),
+  },
+  {
+    module: "contracts",
+    level: "C1",
+    title: "Conditionals in Legal Drafting",
+    summary: "Understanding the logic of 'provided that' and 'should' in contracts.",
+    order: 1,
+    content: [
+      "Goal: Read and write conditions that survive a dispute.",
+      "Learn: formal inversion with should (\"Should the party fail to comply\"), provided that as a condition precedent, and precision instead of a casual if.",
+      'Examples: "Should the party fail to comply, the licence terminates." / "Fees shall be paid, provided that the service is delivered."',
+      'Practice: Find one "if" in a contract you signed and rewrite it with "should" or "provided that".',
+      'Common mistake: "provided that" introduces a condition, not a reassurance; and a bare "if" in a binding instrument reads as drafting done in a hurry.',
+    ].join("\n\n"),
+  },
+  {
+    module: "contracts",
+    level: "C1",
+    title: "Effective Due Diligence Memos",
+    summary: "Convey risk and potential clearly to investors.",
+    order: 1,
+    content: [
+      "Goal: Tell an investor what a finding materially impacts and what it is contingent on.",
+      "Learn: materially impacts, contingent on, mitigation strategies, duly registered and under prosecution.",
+      'Examples: "The patent viability is contingent on the completion of the longitudinal study." / "A missing ISO audit materially impacts the closing timeline."',
+      "Practice: Take one open finding in your data room and write its impact, its dependency and one mitigation.",
+      'Common mistake: Reporting a risk with no dependency and no mitigation. A memo that says "IP unclear" is rewritten by the investor as "IP worthless".',
+    ].join("\n\n"),
+  },
+  {
+    module: "contracts",
+    level: "C2",
+    title: "Regulatory Argumentation for Healthtech Compliance",
+    summary: "Drafting and articulating arguments to satisfy regulatory bodies while protecting intellectual property.",
+    order: 1,
+    content: [
+      "Goal: Argue a regulatory position a reviewer can verify.",
+      "Learn: framing compliance as quality assurance, technical qualifiers, and linking specifications to healthcare mandates.",
+      'Examples: "The proposed integration protocols proactively mitigate systemic risk rather than merely fulfilling statutory reporting." / "Given the inherent latency in the diagnostic algorithm, the current safety threshold is statistically robust."',
+      "Practice: Take one claim in your file and attach the specification and the mandate it satisfies.",
+      'Common mistake: Arguing effort instead of evidence ("we did a lot of testing"). Name the protocol, the threshold and the mandate.',
+    ].join("\n\n"),
+  },
+  {
+    module: "grammar",
+    level: "A2",
+    title: "Past Simple: Regular Verbs",
+    summary: "Master talking about your past business accomplishments.",
+    order: 1,
+    content: [
+      "Goal: Talk about finished work with -ed verbs and did.",
+      "Learn: regular past forms (finished, helped, called), and questions and negatives with did and didn't.",
+      'Examples: "I finished the contract yesterday." / "The team helped with the presentation."',
+      "Practice: Write three sentences about last week with finished, helped and called.",
+      'Common mistake: "I didn\'t finished" - after didn\'t the verb stays in the base form: "I didn\'t finish".',
+    ].join("\n\n"),
+  },
+  {
+    module: "grammar",
+    level: "A2",
+    title: "Present Simple vs. Continuous",
+    summary: "Learn how to describe daily routines and current actions.",
+    order: 1,
+    content: [
+      "Goal: Separate routines from what is happening right now.",
+      "Learn: present simple for habits and facts, present continuous (am/is/are + -ing) for actions in progress.",
+      'Examples: "He works in healthtech." / "He is working on a new project."',
+      "Practice: Describe your morning routine in present simple, then say what you are doing at this moment.",
+      'Common mistake: Dropping the auxiliary: "He working on it" is not English. The continuous needs am, is or are.',
+    ].join("\n\n"),
+  },
+  {
+    module: "grammar",
+    level: "A2",
+    title: "Using Much and Many",
+    summary: "Understand how to quantify items in a business context.",
+    order: 1,
+    content: [
+      "Goal: Ask and answer quantity questions correctly in a business context.",
+      "Learn: many with countable nouns (meetings, clients, entrepreneurs), much with uncountable nouns (time, money, paperwork).",
+      'Examples: "How many meetings do we have?" / "How much time do we have?"',
+      "Practice: Write four questions about your week, two with many and two with much.",
+      'Common mistake: "How much meetings" and "too many paperwork". Count the noun first, then choose the word.',
+    ].join("\n\n"),
+  },
+  {
+    module: "grammar",
+    level: "B2",
+    title: "Effective Status Reporting Patterns",
+    summary: "Combining grammar structures to deliver clear professional status updates.",
+    order: 1,
+    content: [
+      "Goal: Deliver a status update that reads as progress, context and next step.",
+      "Learn: present perfect for overall progress, past simple for the dated detail, and reported speech for stakeholder input.",
+      'Examples: "I have reviewed the draft; the client said they preferred a different timeline." / "The team reported that they hit their targets."',
+      "Practice: Write your weekly update in three sentences, using each of those structures once.",
+      'Common mistake: Mixing both tenses about one event ("I have reviewed it last night"). Progress goes in present perfect, the dated detail in past simple.',
+    ].join("\n\n"),
+  },
+  {
+    module: "grammar",
+    level: "B2",
+    title: "Present Perfect vs. Past Simple in Status Updates",
+    summary: "Mastering temporal markers to communicate progress versus completed milestones.",
+    order: 1,
+    content: [
+      "Goal: Say whether a result is relevant now or whether the action is closed.",
+      "Learn: present perfect (have + participle) for current relevance, past simple for a finished and dated action, and the markers that decide it.",
+      'Examples: "I have completed the audit - the results are ready." / "I completed the audit at 5 PM."',
+      'Practice: Rewrite five lines from your last update, choosing the tense by asking whether the date matters.',
+      'Common mistake: "We have updated the system this week" is fine while the week is open; "we have launched the pilot yesterday" is not, because yesterday is closed.',
+    ].join("\n\n"),
+  },
+  {
+    module: "grammar",
+    level: "C1",
+    title: "Advanced Participle Clauses",
+    summary: "Condensing complex sentences for clarity and professional precision.",
+    order: 1,
+    content: [
+      "Goal: Compress two ideas into one precise sentence.",
+      "Learn: present participles for simultaneous action or reason, past participles for passive description, and subject agreement between clause and main clause.",
+      'Examples: "Seeking new funding, the founders presented their roadmap." / "Built on proprietary AI, the platform ensures privacy."',
+      "Practice: Merge two sentences from your last email into one participle clause, then check the subject.",
+      'Common mistake: A dangling participle: "Built on proprietary AI, we ensure privacy" says the team was built on AI. The clause subject must be the main clause subject.',
+    ].join("\n\n"),
+  },
+  {
+    module: "grammar",
+    level: "C1",
+    title: "Passive Reporting Verbs in Business",
+    summary: "Mastering objective professional communication using passive reporting structures.",
+    order: 1,
+    content: [
+      "Goal: Report consensus or a legal viewpoint without naming who believes it.",
+      "Learn: it is + passive verb + that; subject + passive verb + to infinitive.",
+      'Examples: "It is widely considered that the merger will optimize logistics." / "The startup is believed to have disrupted the telehealth sector."',
+      "Practice: Rewrite two opinions from a report in passive reporting form.",
+      "Common mistake: Using passive reporting to hide a responsibility you hold. It fits market consensus and legal viewpoints, not your own promises.",
+    ].join("\n\n"),
+  },
+  {
+    module: "grammar",
+    level: "C2",
+    title: "Emphasis and Focus: Cleft Sentences and Inversion",
+    summary: "Utilize advanced syntax to highlight specific information and improve the rhetorical flow of your writing.",
+    order: 1,
+    content: [
+      "Goal: Put the important element where the reader cannot miss it.",
+      "Learn: cleft sentences (what we require is), it is ... that, and negative-adverb inversion (never have we, rarely does a contract).",
+      'Examples: "What we require is a robust compliance framework." / "Rarely does a contract offer such favourable exit clauses."',
+      "Practice: Take one recommendation and rewrite it with a cleft and with inversion, then keep the stronger version.",
+      'Common mistake: Inversion without the auxiliary: "Never we encountered such complexity". The auxiliary goes before the subject.',
+    ].join("\n\n"),
+  },
+  {
+    module: "grammar",
+    level: "C2",
+    title: "Mastering Hedging in Professional Correspondence",
+    summary: "Learn to soften your claims to maintain a professional, academic tone in high-stakes business environments.",
+    order: 1,
+    content: [
+      "Goal: Qualify a claim so it stays defensible without sounding unsure.",
+      "Learn: modals (may, might, could), verbs of appearance (seems, suggests) and adverbs (arguably, tentatively).",
+      'Examples: "This strategy might face challenges." / "It is suggested that the current market shift may necessitate a pivot."',
+      "Practice: Rewrite three assertions from a report so each states its confidence honestly.",
+      'Common mistake: Stacking hedges ("it might possibly perhaps") cancels the claim. One qualifier per proposition.',
+    ].join("\n\n"),
+  },
+  {
+    module: "grammar",
+    level: "C2",
+    title: "Nominalisation for Conciseness in Business",
+    summary: "Transform verbs into nouns to create a more formal, objective, and dense professional style.",
+    order: 1,
+    content: [
+      "Goal: Write dense executive prose without losing the agent.",
+      "Learn: turning verbs into nouns (decide to decision, implement to implementation), and when that helps or hides responsibility.",
+      'Examples: "The decision to invest was finalized." / "The identification of systemic risks is our priority."',
+      "Practice: Nominalise two sentences from your last summary, then check that nobody's responsibility disappeared.",
+      'Common mistake: Nominalising to avoid saying who does what. "The identification of risks is a priority" means nothing until you name who identifies them.',
+    ].join("\n\n"),
+  },
+  {
+    module: "vocabulary",
+    level: "C2",
+    title: "High-Register Lexicon for Healthtech Negotiations",
+    summary: "Advanced vocabulary to influence stakeholders and navigate complex contractual disagreements.",
+    order: 1,
+    content: [
+      "Goal: Replace vague verbs with precise ones when the stakes are contractual.",
+      "Learn: remediate and rectify, preclude, leverage, mitigate.",
+      'Examples: "We seek to rectify the data silos to ensure interoperability." / "The prevailing regulatory environment precludes a decentralized approach to patient data."',
+      "Practice: Replace five common verbs in one of your documents with the precise alternative.",
+      'Common mistake: High register for its own sake: you do not remediate a coffee machine. If the plain verb is accurate, keep the plain verb.',
+    ].join("\n\n"),
+  },
+];

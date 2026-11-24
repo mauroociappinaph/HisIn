@@ -11,6 +11,19 @@ export const ENTRY_KINDS = ["WORD", "PHRASAL_VERB", "PATTERN", "IDIOM"] as const
 export type EntryKind = (typeof ENTRY_KINDS)[number];
 
 /**
+ * The closed sets a pattern or a phrasal verb is filed under.
+ *
+ * They live here, next to the entry rules, because the analyzer, the API and the
+ * pattern card all read the same lists; a second copy is how the card and the
+ * bank end up disagreeing.
+ */
+export const FUNCTION_VALUES = ["hedge", "soften", "persuade", "report", "compare", "express"] as const;
+export type EntryFunction = (typeof FUNCTION_VALUES)[number];
+
+export const REGISTER_VALUES = ["neutral", "informal", "formal"] as const;
+export type EntryRegister = (typeof REGISTER_VALUES)[number];
+
+/**
  * Words that can close a phrasal verb. Prepositional verbs ("look after") are
  * part of the family for a Spanish-speaking learner, so they are accepted too.
  */
@@ -109,6 +122,12 @@ export function validateEntry(draft: EntryDraft): EntryValidation {
   }
   if (draft.example.trim().length < MIN_TEXT || draft.example.trim().length > MAX_TEXT) {
     errors.push(`el ejemplo debe tener entre ${MIN_TEXT} y ${MAX_TEXT} caracteres`);
+  }
+  // The second example is optional for every kind, but when present it is a
+  // sentence the learner will read again, so it obeys the same bounds.
+  const extraExample = draft.extraExample?.trim() ?? "";
+  if (extraExample.length > 0 && (extraExample.length < MIN_TEXT || extraExample.length > MAX_TEXT)) {
+    errors.push(`el segundo ejemplo debe tener entre ${MIN_TEXT} y ${MAX_TEXT} caracteres`);
   }
   if (!CEFR_LEVELS.includes(draft.level)) {
     errors.push(`el nivel debe ser uno de ${CEFR_LEVELS.join(", ")}`);

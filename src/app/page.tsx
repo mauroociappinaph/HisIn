@@ -4,6 +4,7 @@ import { prisma } from "@/shared/db/prisma";
 import { TopicRepository } from "@/modules/topics/repository";
 import { SKILL_LABELS } from "@/modules/topics/schema";
 import { groupByUnit, topicLabel } from "@/modules/topics/grouping";
+import { difficultyScore, nextLesson as nextSyllabusLesson } from "@/modules/topics/progression";
 import { getLocalUser } from "@/modules/identity/service";
 import { ProgressRepository } from "@/modules/progress/repository";
 import { goalRatio, nextAction } from "@/modules/progress/service";
@@ -22,7 +23,36 @@ async function HomeContent() {
     return <Onboarding defaultLevel={profile.level} />;
   }
 
-  const syllabus = groupByUnit(await new TopicRepository().list());
+  const topicRepository = new TopicRepository();
+  const [allTopics, doneIds] = await Promise.all([
+    topicRepository.list(),
+    topicRepository.completions(user.id),
+  ]);
+  const syllabus = groupByUnit(allTopics);
+  const doneSet = new Set(doneIds);
+  const doneSlugs = allTopics.filter((topic) => doneSet.has(topic.id)).map((topic) => topic.slug);
+
+  // The recommendation climbs: it opens the easiest lesson still undone, never a
+  // C2 lesson while an A2 one is waiting.
+  const recommended = nextSyllabusLesson(
+    allTopics.map((topic) => ({
+      slug: topic.slug,
+      level: topic.level,
+      unitOrder: topic.unitOrder,
+      order: topic.order,
+      title: topic.title,
+    })),
+    doneSlugs,
+  );
+  const difficultyOf = (topic: (typeof allTopics)[number]) => {
+    const siblings = allTopics.filter((entry) => entry.unitOrder === topic.unitOrder).sort((a, b) => a.order - b.order);
+    return difficultyScore({
+      level: topic.level,
+      unitOrder: topic.unitOrder,
+      positionInModule: siblings.findIndex((entry) => entry.slug === topic.slug) + 1,
+      moduleSize: siblings.length,
+    });
+  };
 
   const [due, stories, completed, lessons, moduleRows] = await Promise.all([
     getDueReviews(user.id, 50),
@@ -129,14 +159,39 @@ async function HomeContent() {
       </Link>
 
       <section className="space-y-4">
+        {recommended ? (
+          <Link
+            href={`/topics/${recommended.slug}`}
+            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-indigo-200 bg-indigo-50/70 p-4 transition hover:border-indigo-300"
+          >
+            <div>
+              <p className="text-[11px] uppercase tracking-widest text-indigo-700">Next lesson · easiest undone</p>
+              <p className="text-base font-semibold text-slate-900">{recommended.title}</p>
+            </div>
+            <span className="text-xs font-semibold text-indigo-700">Open →</span>
+          </Link>
+        ) : null}
+
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="font-semibold text-slate-800">Temario por módulos</h2>
           <span className="text-[11px] text-slate-500">cada submódulo trae gramática, reading, writing e historia</span>
         </div>
 
         {syllabus.map((unit) => (
-          <div key={unit.unit} className="space-y-2">
-            <h3 className="text-xs uppercase tracking-widest text-slate-500">{unit.unit}</h3>
+          <div key={unit.unit} id={`module-${unit.order}`} className="space-y-2 scroll-mt-24">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="text-xs uppercase tracking-widest text-slate-500">{unit.unit}</h3>
+              <span className="flex items-center gap-2 text-[11px] text-slate-500">
+                {unit.topics.filter((entry) => doneSet.has(entry.id)).length}/{unit.topics.length}{" "}
+                {unit.topics.length === 1 ? "submódulo" : "submódulos"}
+                <Link
+                  href={`/topics/${unit.topics[0]?.slug ?? ""}`}
+                  className="font-semibold text-indigo-600 hover:underline"
+                >
+                  Entrar →
+                </Link>
+              </span>
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {unit.topics.map((topic) => (
                 <Link
@@ -145,8 +200,15 @@ async function HomeContent() {
                   className="rounded-lg bg-white border border-slate-200 p-4 space-y-2 hover:border-indigo-300 transition"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
-                      Submódulo {topicLabel(topic)}
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+                        Submódulo {topicLabel(topic)}
+                      </span>
+                      {doneSet.has(topic.id) ? (
+                        <span className="text-[11px] font-semibold text-emerald-700" title="Lección hecha">
+                          ✓
+                        </span>
+                      ) : null}
                     </span>
                     <span className="text-[11px] text-slate-500">{topic.level}</span>
                   </div>
@@ -156,6 +218,15 @@ async function HomeContent() {
                       ? "Sin material todavía: se genera con el motor"
                       : topic.materials.map((material) => SKILL_LABELS[material.skill]).join(" · ")}
                   </p>
+                  <div className="flex items-center gap-2" aria-label={`Dificultad ${difficultyOf(topic)} de 100`}>
+                    <span className="h-1 w-full max-w-[8rem] rounded-full bg-slate-100">
+                      <span
+                        className="block h-1 rounded-full bg-indigo-500"
+                        style={{ width: `${difficultyOf(topic)}%` }}
+                      />
+                    </span>
+                    <span className="text-[10px] tabular-nums text-slate-400">{difficultyOf(topic)}</span>
+                  </div>
                 </Link>
               ))}
             </div>

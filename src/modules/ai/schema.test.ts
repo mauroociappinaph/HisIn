@@ -151,7 +151,13 @@ test("a valid lesson batch is accepted", () => {
           level: "B2",
           title: "Writing an investor update",
           summary: "Short, honest updates that keep investors aligned.",
-          content: "Lead with the headline.\nAdd metrics.\nName the risks.\nAsk for one thing.",
+          content: [
+            "Goal: Write an investor update an investor reads to the end.",
+            "Learn: headline first, metrics, risks, one clear ask.",
+            'Examples: "Revenue grew 18% month over month." / "The ask is a 20-minute call."',
+            "Practice: Rewrite your last update so the ask is in the first paragraph.",
+            'Common mistake: "We are growing a lot" is not a metric. Lead with the number.',
+          ].join("\n\n"),
           order: 1,
         },
       ],
@@ -174,4 +180,40 @@ test("a lesson without content is rejected", () => {
       ),
     /failed validation/,
   );
+});
+
+const canonicalLessonContent = [
+  "Goal: Report status without saying when it happened.",
+  "Learn: present perfect, passive voice.",
+  'Examples: "We have launched the app." / "The report was approved."',
+  "Practice: Turn three updates from your week into present perfect sentences.",
+  'Common mistake: "We have launched it yesterday" mixes two times.',
+].join("\n\n");
+
+function lessonWith(content: string) {
+  return JSON.stringify({
+    lessons: [
+      {
+        module: "grammar",
+        level: "B1",
+        title: "Status updates at work",
+        summary: "Present perfect for weekly updates.",
+        content,
+        order: 1,
+      },
+    ],
+  });
+}
+
+test("a generated lesson that skips a lesson section is rejected", () => {
+  const partial = "Goal: Report status without saying when it happened.\n\nLearn: present perfect.";
+
+  assert.throws(() => parseGeneratedLessons(lessonWith(partial)), /content/);
+});
+
+test("a generated lesson with every section is accepted", () => {
+  const lessons = parseGeneratedLessons(lessonWith(canonicalLessonContent));
+
+  assert.equal(lessons.length, 1);
+  assert.equal(lessons[0]?.content, canonicalLessonContent);
 });

@@ -13,6 +13,7 @@ const NAV = [
   { href: "/", label: "Módulos" },
   { href: "/library", label: "Mi vocabulario" },
   { href: "/grammar", label: "Gramática" },
+  { href: "/write", label: "Escribir" },
   { href: "/review/vocab", label: "Repasar" },
   { href: "/progress", label: "Progreso" },
 ] as const;

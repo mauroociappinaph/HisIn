@@ -36,10 +36,12 @@ English practice for entrepreneurs and healthtech founders. Learners take a CEFR
 | `pnpm build` / `pnpm start` | Production build and serve |
 | `pnpm lint` | ESLint |
 | `pnpm test` | Unit tests (SM-2 scheduling, generation schema, event parser, endpoint guard) |
-| `pnpm seed` | Recreate modules, question bank, lessons and vocabulary |
+| `pnpm seed` | Recreate modules, question bank, lessons and vocabulary (lessons are adopted by natural key, so re-running never duplicates one) |
 | `pnpm db:migrate` | Apply pending migrations |
 | `pnpm db:generate` | Regenerate the Prisma client |
 | `pnpm db:reset-content` | Clear seedable content and reseed (reviews cascade with vocabulary) |
+| `pnpm db:normalize-lessons` | Dry run: which stored lessons are not in the canonical section structure. Add `--apply` to rewrite them (idempotent, never deletes) |
+| `pnpm backup:content` | Snapshot topics, materials, glosses, lessons, units, mistakes to `odd/backups/`; `--restore <file>` puts it back |
 | `pnpm ai:generate` | Generate content headlessly: `--kind --level --skill --type --count --topic` |
 | `pnpm audio:generate` | Synthesize the listening clips into `public/audio` (macOS `say` + `ffmpeg`) |
 

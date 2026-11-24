@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { LessonDTO } from "@/shared/types";
 import { LevelBadge } from "@/components/vocab-ui";
 import { describeDesign, type ClassDesign } from "@/modules/classroom/design";
+import { parseLessonContent } from "@/modules/lessons/structure";
 import { resolveLevel } from "@/shared/lib/presentation";
 
 export default function LessonsPage() {
@@ -126,6 +127,7 @@ export default function LessonsPage() {
         <div className="space-y-3">
           {lessons.map((lesson) => {
             const isDone = completed.includes(lesson.id);
+            const sections = parseLessonContent(lesson.content);
             return (
               <article key={lesson.id} className="bg-white rounded-lg border border-slate-200">
                 <button
@@ -143,7 +145,22 @@ export default function LessonsPage() {
                 {open === lesson.id ? (
                   <div className="p-4 border-t border-slate-200 space-y-3">
                     <p className="text-sm text-slate-600">{lesson.summary}</p>
-                    <div className="whitespace-pre-wrap text-slate-800 text-sm leading-relaxed">{lesson.content}</div>
+                    {sections.length > 0 ? (
+                      <div className="space-y-3">
+                        {sections.map((section) => (
+                          <section key={section.key} className="space-y-1">
+                            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                              {section.label}
+                            </h3>
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
+                              {section.body}
+                            </p>
+                          </section>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-wrap text-slate-800 text-sm leading-relaxed">{lesson.content}</div>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"

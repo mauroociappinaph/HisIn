@@ -64,7 +64,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const draft = parsed.data;
+  const draft = {
+    ...parsed.data,
+    // Trimmed here, once, because the optional second example is new and a value
+    // that only differs by whitespace must not slip past its length rules.
+    extraExample: parsed.data.extraExample?.trim() || undefined,
+  };
   const validation = validateEntry(draft);
   if (!validation.ok) {
     return NextResponse.json({ error: "invalid entry", issues: validation.errors }, { status: 400 });

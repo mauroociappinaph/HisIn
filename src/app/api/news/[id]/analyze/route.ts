@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runGentleShell } from "@/modules/ai/gentle-shell";
-import { resolveModels, resolveTimeoutMs } from "@/modules/ai/models";
+import { runWithFallback } from "@/modules/ai/with-fallback";
+import { resolveTimeoutMs } from "@/modules/ai/models";
 import { buildNewsPrompt, NEWS_SYSTEM_PROMPT, parseNewsAnalysis } from "@/modules/news/analysis";
 import { NewsRepository } from "@/modules/news/repository";
 import { getLocalUser } from "@/modules/identity/service";
@@ -22,11 +22,8 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ id: s
   const user = await getLocalUser();
   const design = await new ClassroomRepository().getDesign(user.id);
 
-  const [model] = resolveModels();
-  if (!model) return NextResponse.json({ error: "no model configured" }, { status: 500 });
-
   try {
-    const response = await runGentleShell({
+    const response = await runWithFallback({
       prompt: buildNewsPrompt({
         title: article.title,
         source: article.source,
@@ -34,7 +31,6 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ id: s
         context: contextPromptFragment(design),
       }),
       system: NEWS_SYSTEM_PROMPT,
-      model,
       timeoutMs: resolveTimeoutMs() * 2,
     });
 

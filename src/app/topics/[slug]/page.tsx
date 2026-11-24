@@ -1,91 +1,868 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import type { ReactNode } from "react";
 import { LevelBadge } from "@/components/vocab-ui";
-import { TopicRepository } from "@/modules/topics/repository";
-import { SKILL_LABELS, type TopicSkill } from "@/modules/topics/schema";
+import { TopicRepository, type TopicDTO } from "@/modules/topics/repository";
+import { groupByUnit } from "@/modules/topics/grouping";
+import {
+  extractFormula,
+  objectivesFor,
+  pairCorrection,
+  parseLesson,
+  readingMinutes,
+  splitIdea,
+  timelineFor,
+  toParagraphs,
+  wordCount,
+} from "@/modules/topics/lesson";
+import { GLOSS_KIND_LABELS, type GlossEntry } from "@/modules/topics/glossary";
+import { getLocalUser } from "@/modules/identity/service";
 import { GenerateMaterials } from "./generate-materials";
+import { StoryReader } from "./story-reader";
+import { TopicNav } from "./topic-nav";
+import { GlossBar } from "./gloss-bar";
+import { Drill } from "./drill";
+import { LessonDone } from "./lesson-done";
+import { RolePlay } from "./role-play";
+import { TrendChart } from "./charts";
+import { ConditionalFlow, DoSupportGrid, QuoteBanner } from "./lesson-visuals";
+import { GlossText } from "./gloss-text";
+
+/** Where this submodule sits in its module, and which ones come next. */
+function placement(topics: TopicDTO[], slug: string) {
+  const index = topics.findIndex((topic) => topic.slug === slug);
+  const unit = groupByUnit(topics).find((group) => group.topics.some((topic) => topic.slug === slug));
+  const position = unit ? unit.topics.findIndex((topic) => topic.slug === slug) + 1 : 0;
+  return {
+    unitName: unit?.unit ?? "Other modules",
+    unitOrder: unit?.order ?? 0,
+    position,
+    total: unit?.topics.length ?? 1,
+    previous: index > 0 ? topics[index - 1] : undefined,
+    next: index >= 0 && index < topics.length - 1 ? topics[index + 1] : undefined,
+  };
+}
+
+type StepGlyph = "idea" | "structure" | "trap" | "verbs" | "practice" | "read" | "write" | "speak" | "story";
+
+/** One glyph per step, drawn inline: an icon says what a card does faster than a dot. */
+function StepGlyph({ kind }: { kind: StepGlyph }) {
+  const paths: Record<StepGlyph, ReactNode> = {
+    idea: <path d="M9 15a4 4 0 1 1 6 0v2h-6v-2Zm1 4h4m-3 2h2" />,
+    structure: <path d="M8 6H6v12h2m8-12h2v12h-2M11 9v6m2-6v6" />,
+    trap: <path d="M12 4l8 14H4L12 4Zm0 4v5m0 2v1" />,
+    verbs: <path d="M4 12h10m0 0-3-3m3 3-3 3m7-8v10" />,
+    practice: <path d="M12 3a9 9 0 1 0 9 9h-9V3Z" />,
+    read: <path d="M5 5h6a3 3 0 0 1 3 3v11a2 2 0 0 0-2-2H5V5Zm14 0h-4a3 3 0 0 0-2 1v13a2 2 0 0 1 2-2h4V5Z" />,
+    write: <path d="M4 20h4l10-10a2 2 0 0 0-3-3L5 17v3Zm11-13 2 2" />,
+    speak: <path d="M4 10v4h3l4 3V7L7 10H4Zm11-2a5 5 0 0 1 0 8m2-10a8 8 0 0 1 0 12" />,
+    story: <path d="M4 6h9a3 3 0 0 1 3 3v11a2 2 0 0 0-2-2H4V6Zm16 0h-3v14a2 2 0 0 1 2-2h1V6Z" />,
+  };
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      {paths[kind]}
+    </svg>
+  );
+}
+
+function Step({
+  id,
+  number,
+  title,
+  effort,
+  glyph,
+  hint,
+  source,
+  children,
+}: {
+  id: string;
+  number: number;
+  title: string;
+  effort: string;
+  glyph: StepGlyph;
+  hint?: string;
+  /** Which of the four materials this step comes from, shown as a chip. */
+  source?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section id={id} className="scroll-mt-24 space-y-3">
+      {/* The title lives above the card, large: you should know what the step is
+          before you read what it says. */}
+      <header className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1 px-1">
+        <h2 className="flex items-baseline gap-3 text-slate-900">
+          <span className="text-2xl font-black leading-none tabular-nums text-indigo-600">
+            {String(number).padStart(2, "0")}
+          </span>
+          <span className="flex items-center gap-2 text-xl font-bold tracking-tight sm:text-2xl">
+            <span className="text-indigo-500">
+              <StepGlyph kind={glyph} />
+            </span>
+            {title}
+          </span>
+        </h2>
+        <span className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-slate-400">
+          {source ? (
+            <span className="rounded-full bg-indigo-50 px-2 py-0.5 font-semibold tracking-wide text-indigo-700">
+              {source}
+            </span>
+          ) : null}
+          {effort}
+        </span>
+      </header>
+      {hint ? <p className="px-1 text-xs text-slate-500">{hint}</p> : null}
+      <div className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">{children}</div>
+    </section>
+  );
+}
+
+/** Paragraphs with room to breathe: the text was called cramped, and it was. */
+function Prose({
+  paragraphs,
+  glosses = [],
+}: {
+  paragraphs: readonly string[];
+  glosses?: readonly GlossEntry[];
+}) {
+  return (
+    <div className="space-y-5">
+      {paragraphs.map((paragraph) => (
+        <GlossText
+          key={paragraph.slice(0, 48)}
+          text={paragraph}
+          glosses={glosses as GlossEntry[]}
+          context={paragraph}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** The lead paragraph as numbered points, one idea per line. */
+function IdeaPoints({ points }: { points: { text: string; kind: "point" | "example" }[] }) {
+  return (
+    <ol className="space-y-3">
+      {points.map((point, index) => (
+        <li
+          key={point.text.slice(0, 40)}
+          className={`flex gap-3 rounded-sm p-3 ${
+            point.kind === "example" ? "border-l-4 border-emerald-400 bg-slate-50" : "border-l-4 border-indigo-300 bg-white"
+          }`}
+        >
+          <span
+            className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold tabular-nums ${
+              point.kind === "example" ? "bg-emerald-100 text-emerald-800" : "bg-indigo-50 text-indigo-700"
+            }`}
+          >
+            {point.kind === "example" ? "e.g." : index + 1}
+          </span>
+          <p className="text-[15px] leading-7 text-slate-800">{point.text}</p>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function KeyPoints({ points }: { points: readonly string[] }) {
+  if (points.length === 0) return null;
+  return (
+    <ul className="space-y-1 border-t border-slate-200 pt-3">
+      {points.map((point) => (
+        <li key={point} className="flex gap-2 text-xs text-slate-600">
+          <span aria-hidden="true" className="text-indigo-600">
+            →
+          </span>
+          {point}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Where each tense sits on the line: the span the rule talks about. */
+const TIMELINE_SPAN: Record<string, { start: number; width: number; dashed?: boolean }> = {
+  "past-point": { start: 8, width: 16 },
+  "past-to-now": { start: 8, width: 42 },
+  "now-forward": { start: 50, width: 40 },
+  hypothetical: { start: 50, width: 40, dashed: true },
+};
+
+/**
+ * Time, drawn with the page's own colours.
+ *
+ * The first version was an SVG with hardcoded fills: in dark mode a white block
+ * landed on a dark card and the picture read as a rendering bug. This one is CSS over
+ * theme tokens, so it adapts to both themes by construction, and the labels sit in
+ * their own row instead of colliding with the bar.
+ */
+function Timeline({ span, caption }: { span: string; caption: string }) {
+  const box = TIMELINE_SPAN[span] ?? TIMELINE_SPAN["past-to-now"];
+
+  return (
+    <figure className="space-y-3 rounded-sm border border-slate-200 bg-slate-50 p-4">
+      <figcaption className="text-[11px] uppercase tracking-widest text-slate-500">On the timeline</figcaption>
+
+      <div className="relative h-16">
+        {/* Labels row */}
+        <div className="absolute inset-x-0 top-0 flex justify-between text-[11px] font-medium text-slate-500">
+          <span>past</span>
+          <span className="text-slate-400">now</span>
+          <span>after</span>
+        </div>
+
+        {/* The axis */}
+        <div className="absolute inset-x-0 top-9 h-0.5 rounded-full bg-slate-300" />
+
+        {/* The present: the only fixed reference. The label is in the row above, so
+            the mark is just a tick, not a second "now". */}
+        <div className="absolute left-1/2 top-7 h-5 w-px -translate-x-1/2 bg-slate-400" />
+
+        {/* The span the rule talks about */}
+        <div
+          className={`absolute top-6 h-6 rounded-full border-2 ${
+            box.dashed ? "border-dashed border-indigo-500 bg-indigo-500/10" : "border-indigo-500 bg-indigo-500/20"
+          }`}
+          style={{ left: `${box.start}%`, width: `${box.width}%` }}
+        />
+      </div>
+
+      <p className="text-sm leading-6 text-slate-700">{caption}</p>
+    </figure>
+  );
+}
+
+/**
+ * A group title between steps.
+ *
+ * Nine numbered cards in a row read as a list; three named groups read as a path: the
+ * learner knows whether they are understanding, using or producing.
+ */
+function SectionDivider({ label, note }: { label: string; note: string }) {
+  return (
+    <div className="flex items-center gap-3 pt-4">
+      <div className="h-px flex-1 bg-slate-200" />
+      <div className="text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-700">{label}</p>
+        <p className="text-[11px] text-slate-500">{note}</p>
+      </div>
+      <div className="h-px flex-1 bg-slate-200" />
+    </div>
+  );
+}
+
+/**
+ * The structure, whole.
+ *
+ * Pills alone show the pieces but not how they behave in a sentence. This block shows
+ * the pieces with the role each one plays, then the same structure highlighted inside
+ * the real sentences the material gives, so the learner sees the frame and the frame in
+ * use on the same screen.
+ */
+function Formula({ segments, examples }: { segments: string[]; examples: readonly string[] }) {
+  const role = (index: number) => {
+    if (segments.length === 2) return index === 0 ? "auxiliary" : "verb form";
+    if (index === 0) return "first block";
+    if (index === segments.length - 1) return "last block";
+    return "middle block";
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <p className="text-[11px] uppercase tracking-widest text-slate-500">The structure</p>
+        <div className="flex flex-wrap items-start gap-2">
+          {segments.map((segment, index) => (
+            <div key={`${segment}-${index}`} className="flex items-start gap-2">
+              {index > 0 ? (
+                <span aria-hidden="true" className="pt-2 font-mono text-lg text-slate-400">
+                  +
+                </span>
+              ) : null}
+              <div className="rounded-sm border border-indigo-200 bg-indigo-50/70 px-3 py-2">
+                <p className="font-mono text-sm font-semibold text-indigo-900">{segment}</p>
+                <p className="mt-0.5 text-[10px] uppercase tracking-widest text-indigo-500">{role(index)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-slate-500">
+          The blocks always come in this order: change the order and the meaning changes.
+        </p>
+      </div>
+
+      {examples.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-[11px] uppercase tracking-widest text-slate-500">The structure in real sentences</p>
+          <ul className="space-y-1.5">
+            {examples.map((example) => (
+              <li
+                key={example}
+                className="rounded-sm border-l-2 border-emerald-400 bg-slate-50 px-3 py-2 text-sm leading-7 text-slate-800"
+              >
+                {markSegments(example, segments)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Wraps every occurrence of a structure block inside a sentence. */
+function markSegments(sentence: string, segments: readonly string[]): ReactNode[] {
+  const pattern = segments
+    .flatMap((segment) => segment.split(/\s*\/\s*|\s+/))
+    .filter((word) => word.length > 1)
+    .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+
+  if (pattern.length === 0) return [sentence];
+
+  const parts = sentence.split(new RegExp(`(${pattern})`, "gi"));
+  return parts.map((part, index) =>
+    segments.some((segment) => segment.toLowerCase().includes(part.toLowerCase())) && part.trim().length > 0 ? (
+      <strong key={`${part}-${index}`} className="rounded-sm bg-indigo-100 px-1 font-semibold text-indigo-900">
+        {part}
+      </strong>
+    ) : (
+      <span key={`${part}-${index}`}>{part}</span>
+    ),
+  );
+}
+
+function Correction({ wrong, right }: { wrong: string; right: string }) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      <div className="space-y-1 rounded-sm border border-rose-200 bg-rose-50/70 p-3">
+        <p className="text-[11px] uppercase tracking-widest text-rose-700">Not this</p>
+        <p className="text-sm text-slate-800 line-through decoration-rose-400/70">{wrong}</p>
+      </div>
+      <div className="space-y-1 rounded-sm border border-emerald-200 bg-emerald-50/70 p-3">
+        <p className="text-[11px] uppercase tracking-widest text-emerald-700">This</p>
+        <p className="text-sm font-medium text-slate-900">{right}</p>
+      </div>
+    </div>
+  );
+}
+
+function TermTable({ entries }: { entries: readonly GlossEntry[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-xs">
+        <thead>
+          <tr className="text-[10px] uppercase tracking-widest text-slate-400">
+            <th className="py-1 pr-2 font-medium">Term</th>
+            <th className="py-1 pr-2 font-medium">Meaning</th>
+            <th className="py-1 font-medium">Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry) => (
+            <tr key={entry.term} className="border-t border-slate-100 align-top">
+              <td className="py-1.5 pr-2 font-semibold text-slate-900">{entry.term}</td>
+              <td className="py-1.5 pr-2 text-slate-700">{entry.translation}</td>
+              <td className="py-1.5">
+                <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
+                  {GLOSS_KIND_LABELS[entry.kind]}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SizeBar({ label, value, max, suffix }: { label: string; value: number; max: number; suffix: string }) {
+  const ratio = Math.max(0.04, Math.min(1, value / max));
+  return (
+    <div className="space-y-1">
+      <div className="flex items-baseline justify-between text-[11px] text-slate-500">
+        <span>{label}</span>
+        <span className="tabular-nums text-slate-700">{suffix}</span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-slate-100">
+        <div className="h-1.5 rounded-full bg-indigo-500" style={{ width: `${ratio * 100}%` }} />
+      </div>
+    </div>
+  );
+}
 
 async function TopicBody({ slug }: { slug: string }) {
-  const topic = await new TopicRepository().findBySlug(slug);
+  const repository = new TopicRepository();
+  const user = await getLocalUser();
+  const [topic, topics, doneIds, unitPrologues] = await Promise.all([
+    repository.findBySlug(slug),
+    repository.list(),
+    repository.completions(user.id),
+    repository.unitPrologues(),
+  ]);
 
   if (!topic) {
     return (
-      <div className="rounded-lg bg-white border border-slate-200 p-8 text-center space-y-2">
-        <p className="font-medium text-slate-700">Ese tema todavía no existe.</p>
+      <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-8 text-center">
+        <p className="font-medium text-slate-700">That lesson does not exist yet.</p>
         <Link href="/" className="text-sm text-indigo-600 hover:underline">
-          Volver a los módulos
+          Back to the modules
         </Link>
       </div>
     );
   }
 
+  const where = placement(topics, slug);
+  const moduleTopics = topics.filter((entry) => entry.unit === topic.unit);
+  const moduleDone = moduleTopics.filter((entry) => doneIds.includes(entry.id)).length;
+  const modulePrologue = unitPrologues.get(where.unitOrder) ?? null;
+
+  const grammar = topic.materials.find((material) => material.skill === "GRAMMAR");
+  const reading = topic.materials.find((material) => material.skill === "READING");
+  const writing = topic.materials.find((material) => material.skill === "WRITING");
+  const story = topic.materials.find((material) => material.skill === "STORY");
+  const lesson = grammar ? parseLesson(grammar.body) : null;
+  const ideaPoints = lesson ? splitIdea(lesson.idea) : [];
+  const objectives = grammar ? objectivesFor(grammar.keyPoints) : [];
+  const formula = grammar ? extractFormula(grammar.body, grammar.keyPoints) : [];
+  const correction = pairCorrection(lesson?.trap ?? null);
+  const timeline = timelineFor(grammar?.title ?? topic.title);
+  const lower = `${grammar?.title ?? topic.title} ${grammar?.body ?? ""}`.toLowerCase();
+  const conditional = /conditional/.test(lower)
+    ? { kind: "conditional" as const, variant: /third|mixed/.test(lower) ? ("third" as const) : /second/.test(lower) ? ("second" as const) : /first/.test(lower) ? ("first" as const) : ("zero" as const) }
+    : null;
+  const showsChart = /data commentary|results|statistic|chart|trend|mrr|revenue/.test(lower);
+  // Only for lessons that actually teach do-support: the grid shows the same
+  // sentence in four forms, which is the fastest way to answer "when do I use it".
+  const showsDoSupport = /emphatic|do have|don't have|do you have|do\/does/.test(lower);
+  const examples = (lesson?.examples ?? []).filter(
+    (example) => example.trim().split(/\s+/).length >= 3 && !example.trim().endsWith("+"),
+  );
+
+  const multiWord = topic.glosses
+    .filter((entry) => entry.kind !== "word")
+    .sort((first, second) => first.term.localeCompare(second.term));
+  const readingText = reading?.body.toLowerCase() ?? "";
+  const readingGlosses = topic.glosses.filter((entry) => readingText.includes(entry.term.toLowerCase()));
+
+  const steps = [
+    grammar ? "idea" : null,
+    grammar ? "structure" : null,
+    grammar ? "trap" : null,
+    multiWord.length > 0 ? "phrases" : null,
+    grammar ? "practice" : null,
+    reading ? "reading" : null,
+    writing ? "writing" : null,
+    "roleplay",
+    story ? "story" : null,
+  ].filter((name): name is string => Boolean(name));
+  const stepOf = (name: string) => steps.indexOf(name) + 1;
+
+  const anchors = [
+    grammar ? { id: "paso-idea", label: "The idea" } : null,
+    grammar ? { id: "paso-estructura", label: "Structure" } : null,
+    grammar ? { id: "paso-trampa", label: "The trap" } : null,
+    multiWord.length > 0 ? { id: "paso-frases", label: "Set phrases" } : null,
+    grammar ? { id: "paso-practica", label: "Practice" } : null,
+    reading ? { id: "paso-reading", label: "Reading" } : null,
+    writing ? { id: "paso-writing", label: "Writing" } : null,
+    { id: "paso-roleplay", label: "Role-play" },
+    story ? { id: "paso-story", label: "Story" } : null,
+  ].filter((anchor): anchor is { id: string; label: string } => Boolean(anchor));
+
   return (
-    <div className="space-y-6">
-      <nav className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
-        <Link href="/" className="hover:text-indigo-600">
-          Módulos
+    <div className="max-w-full space-y-6 overflow-x-clip">
+      {/* Breadcrumb: module above, the whole chain clickable, no dead ends. */}
+      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+        <Link href="/" className="rounded-sm px-1.5 py-0.5 hover:bg-slate-100 hover:text-indigo-700">
+          Modules
         </Link>
-        <span aria-hidden="true">/</span>
-        <span className="text-slate-700">Tema {topic.code ?? topic.order}</span>
+        <span aria-hidden="true" className="text-slate-300">
+          ›
+        </span>
+        <Link
+          href={`/#module-${where.unitOrder}`}
+          className="rounded-sm px-1.5 py-0.5 font-medium hover:bg-slate-100 hover:text-indigo-700"
+        >
+          {where.unitName}
+        </Link>
+        <span aria-hidden="true" className="text-slate-300">
+          ›
+        </span>
+        <span className="rounded-sm bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-700">
+          {topic.code ?? `#${topic.order}`}
+        </span>
+        <span className="text-slate-700">{topic.title}</span>
       </nav>
 
-      <header className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700">
-            Tema {topic.code ?? topic.order}
-          </span>
+      <header className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
           <LevelBadge level={topic.level} />
-          {topic.focus ? <span className="text-xs text-slate-500">{topic.focus}</span> : null}
+          <span className="rounded-full bg-slate-100 px-2 py-0.5">
+            Submodule {where.position} of {where.total}
+          </span>
+          <span className="flex items-center gap-1" aria-hidden="true">
+            {Array.from({ length: Math.min(where.total, 12) }, (_, index) => (
+              <span
+                key={index}
+                className={`h-1.5 w-4 rounded-full ${index < where.position ? "bg-indigo-500" : "bg-slate-200"}`}
+              />
+            ))}
+          </span>
         </div>
-        <h1 className="text-3xl font-bold text-slate-900">{topic.title}</h1>
-        <p className="text-sm text-slate-600 max-w-2xl">
-          Cuatro materiales del mismo tema, todos en contexto healthtech y Silicon Valley: la regla, un texto, un
-          diálogo y una tarea de escritura.
-        </p>
+
+        {topic.quote ? <QuoteBanner quote={topic.quote} module={where.unitName} title={topic.title} /> : null}
+
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{topic.title}</h1>
+
+        {/* The two prologues used to push the teaching a full screen down. They are
+            still here, one click away, because a learner who wants the why should find
+            it immediately, and one who wants the rule should too. */}
+        {modulePrologue || topic.prologue ? (
+          <details className="group rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <summary className="flex cursor-pointer items-center justify-between gap-2 text-xs font-semibold uppercase tracking-widest text-slate-600">
+              Why this lesson
+              <span className="text-[10px] font-normal normal-case tracking-normal text-slate-500 group-open:hidden">
+                module + lesson intro
+              </span>
+            </summary>
+            <div className="mt-3 space-y-4 border-t border-slate-200 pt-3">
+              {modulePrologue ? (
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-widest text-slate-400">The module</p>
+                  <GlossText text={modulePrologue} className="text-sm leading-7 text-slate-600" />
+                </div>
+              ) : null}
+              {topic.prologue ? (
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-widest text-slate-400">This lesson</p>
+                  <GlossText text={topic.prologue} glosses={topic.glosses} />
+                </div>
+              ) : null}
+            </div>
+          </details>
+        ) : null}
+
+        <LessonDone
+          slug={topic.slug}
+          initialDone={doneIds.includes(topic.id)}
+          completed={moduleDone}
+          total={moduleTopics.length}
+        />
+
+        {objectives.length > 0 ? (
+          <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-4">
+            <p className="text-[11px] uppercase tracking-widest text-slate-500">By the end you can</p>
+            <ul className="grid gap-1.5 sm:grid-cols-2">
+              {objectives.map((objective) => (
+                <li key={objective} className="flex gap-2 text-xs text-slate-700">
+                  <span aria-hidden="true" className="text-emerald-600">
+                    ✓
+                  </span>
+                  {objective}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap gap-2 text-xs font-semibold">
+          <Link
+            href="#paso-practica"
+            className="rounded-sm bg-indigo-600 px-3 py-1.5 text-white transition hover:bg-indigo-700 active:scale-95"
+          >
+            Go to practice
+          </Link>
+          <Link
+            href="#paso-roleplay"
+            className="rounded-sm bg-slate-100 px-3 py-1.5 text-slate-700 transition hover:bg-slate-200"
+          >
+            Role-play
+          </Link>
+          <Link href="/review/vocab" className="rounded-sm bg-slate-100 px-3 py-1.5 text-slate-700 transition hover:bg-slate-200">
+            Review vocabulary
+          </Link>
+          <Link
+            href={`/#module-${where.unitOrder}`}
+            className="rounded-sm bg-slate-100 px-3 py-1.5 text-slate-700 transition hover:bg-slate-200"
+          >
+            Back to module
+          </Link>
+        </div>
       </header>
 
       {topic.missing.length > 0 ? (
-        <section className="rounded-lg bg-white border border-slate-200 p-5 space-y-3">
+        <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
           <h2 className="font-semibold text-slate-800">
-            Falta material de: {topic.missing.map((skill) => SKILL_LABELS[skill]).join(" · ")}
+            Missing material: {topic.missing.map((skill) => skill.toLowerCase()).join(" · ")}
           </h2>
           <p className="text-sm text-slate-600">
-            Gentleman Shell lo escribe con foco healthtech, emprendimiento y Silicon Valley, y no guarda nada que
-            no pase la validación de dominio.
+            The engine writes it in healthtech and Silicon Valley context and refuses anything that fails the domain
+            check.
           </p>
-          <GenerateMaterials slug={topic.slug} missing={topic.missing.map((skill) => SKILL_LABELS[skill])} />
+          <GenerateMaterials slug={topic.slug} missing={topic.missing.map((skill) => skill.toLowerCase())} />
         </section>
       ) : null}
 
       {topic.materials.length === 0 ? (
-        <div className="rounded-lg bg-white border border-slate-200 p-8 text-center">
-          <p className="text-slate-600 text-sm">Todavía no hay materiales para este tema.</p>
+        <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
+          <p className="text-sm text-slate-600">No material for this lesson yet.</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {topic.materials.map((material) => (
-            <article key={material.skill} className="rounded-lg bg-white border border-slate-200 p-5 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[11px] uppercase tracking-widest text-slate-500">
-                  {SKILL_LABELS[material.skill as TopicSkill]}
-                </span>
-                <span className="text-[11px] text-slate-400">{material.title}</span>
-              </div>
-              <div className="whitespace-pre-wrap text-slate-800 text-sm leading-relaxed">{material.body}</div>
-              {material.keyPoints.length > 0 ? (
+        <div className="space-y-4 min-w-0">
+          <div className="space-y-4 min-w-0">
+            {anchors.length > 0 ? <TopicNav items={anchors} /> : null}
+            <GlossBar />
+
+            <SectionDivider label="Understand" note="What the rule is and what it sounds like." />
+
+            {grammar && lesson ? (
+              <Step
+                id="paso-idea"
+                number={stepOf("idea")}
+                title="The idea"
+                source="grammar"
+                effort="1 min"
+                glyph="idea"
+                hint="One point per line, so nothing hides inside a paragraph."
+              >
+                <IdeaPoints points={ideaPoints} />
+                <Prose paragraphs={lesson.body} glosses={topic.glosses} />
+                {timeline ? <Timeline span={timeline.span} caption={timeline.caption} /> : null}
+                {showsDoSupport ? <DoSupportGrid /> : null}
+                {conditional ? <ConditionalFlow kind={conditional.variant} /> : null}
+                {showsChart ? (
+                  <TrendChart caption="Say the jump, not every bar: the pilots doubled in the last two quarters." />
+                ) : null}
+              </Step>
+            ) : null}
+
+            {grammar && lesson ? (
+              <Step
+                id="paso-estructura"
+                number={stepOf("structure")}
+                title="The structure"
+                source="grammar"
+                effort="1 min"
+                glyph="structure"
+                hint="How it is built, and how it sounds in a real sentence."
+              >
+                {formula.length > 1 ? (
+                  <Formula segments={formula} examples={examples} />
+                ) : (
+                  <p className="text-sm text-slate-600">
+                    This lesson has no fixed blocks: you recognise it by context. The examples below are the pattern.
+                  </p>
+                )}
+                {formula.length <= 1 && examples.length > 0 ? (
+                  <div className="space-y-1">
+                    <p className="text-[11px] uppercase tracking-widest text-slate-500">In context</p>
+                    {examples.map((example) => (
+                      <p
+                        key={example}
+                        className="flex gap-2 rounded-sm border-l-2 border-emerald-400 bg-slate-50 px-3 py-1.5 text-sm text-slate-800"
+                      >
+                        <span aria-hidden="true" className="text-emerald-600">
+                          ✓
+                        </span>
+                        {example}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+                <KeyPoints points={grammar.keyPoints} />
+              </Step>
+            ) : null}
+
+            {lesson && (correction || lesson.trap) ? (
+              <Step
+                id="paso-trampa"
+                number={stepOf("trap")}
+                title="The trap"
+                source="grammar"
+                effort="1 min"
+                glyph="trap"
+                hint="What Spanish speakers do, and what to say instead."
+              >
+                {correction ? <Correction wrong={correction.wrong} right={correction.right} /> : null}
+                {lesson.trap ? <p className="text-sm leading-7 text-slate-700">{lesson.trap}</p> : null}
+              </Step>
+            ) : null}
+
+            {multiWord.length > 0 ? (
+              <Step
+                id="paso-frases"
+                number={stepOf("phrases")}
+                title="Set phrases"
+                source="vocabulary"
+                effort={`${multiWord.length} terms`}
+                glyph="verbs"
+                hint="What does not translate word by word: it goes in one piece."
+              >
+                <TermTable entries={multiWord.slice(0, 12)} />
+              </Step>
+            ) : null}
+
+            <SectionDivider label="Use it" note="Set phrases, drills and a scene to say it in." />
+
+            {grammar ? (
+              <Step
+                id="paso-practica"
+                number={stepOf("practice")}
+                title="Practice"
+                source="practice"
+                effort="2 min"
+                glyph="practice"
+                hint="Four items: when you miss one, the explanation says why."
+              >
+                <Drill slug={topic.slug} />
+              </Step>
+            ) : null}
+
+            <SectionDivider label="Read, write, tell" note="The same structure in a text, a task and a story." />
+
+            {reading ? (
+              <Step
+                id="paso-reading"
+                number={stepOf("reading")}
+                title="Read"
+                source="reading"
+                effort={`~${readingMinutes(reading.body)} min`}
+                glyph="read"
+                hint="Short read on the same structure, in a real work scene."
+              >
+                <SizeBar
+                  label="Text length"
+                  value={wordCount(reading.body)}
+                  max={400}
+                  suffix={`${wordCount(reading.body)} words`}
+                />
+                <Prose paragraphs={toParagraphs(reading.body)} glosses={topic.glosses} />
+                <KeyPoints points={reading.keyPoints} />
+                {readingGlosses.length > 0 ? (
+                  <div className="space-y-2 border-t border-slate-200 pt-3">
+                    <p className="text-[11px] uppercase tracking-widest text-slate-500">Terms in the text</p>
+                    <TermTable entries={readingGlosses.slice(0, 10)} />
+                  </div>
+                ) : null}
+              </Step>
+            ) : null}
+
+            {writing ? (
+              <Step
+                id="paso-writing"
+                number={stepOf("writing")}
+                title="Write"
+                source="writing"
+                effort="5 min"
+                glyph="write"
+                hint="Writing is what fixes the structure: do not skip it."
+              >
+                <Prose paragraphs={toParagraphs(writing.body)} glosses={topic.glosses} />
+                <SizeBar
+                  label="Target length"
+                  value={wordCount(writing.body)}
+                  max={wordCount(writing.body)}
+                  suffix={`~${wordCount(writing.body)} words`}
+                />
                 <ul className="space-y-1 border-t border-slate-200 pt-3">
-                  {material.keyPoints.map((point) => (
-                    <li key={point} className="text-xs text-slate-600 flex gap-2">
-                      <span aria-hidden="true" className="text-indigo-600">
-                        →
+                  {writing.keyPoints.map((point) => (
+                    <li key={point} className="flex gap-2 text-xs text-slate-700">
+                      <span aria-hidden="true" className="text-slate-400">
+                        ☐
                       </span>
                       {point}
                     </li>
                   ))}
                 </ul>
+              </Step>
+            ) : null}
+
+            <Step
+              id="paso-roleplay"
+              number={stepOf("roleplay")}
+              title="Role-play"
+                source="speaking"
+              effort="4 min"
+              glyph="speak"
+              hint="Say it out loud after writing it: the room is where it counts."
+            >
+              <RolePlay slug={topic.slug} />
+            </Step>
+
+            {story ? (
+              <Step
+                id="paso-story"
+                number={stepOf("story")}
+                title="The story"
+                source="story"
+                effort="3 min"
+                glyph="story"
+                hint="Read, listen, and tap the words you do not know."
+              >
+                <StoryReader title={story.title} body={story.body} glosses={topic.glosses} />
+              </Step>
+            ) : null}
+
+            {grammar ? (
+              <section className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-5">
+                <h2 className="text-sm font-semibold uppercase tracking-widest text-emerald-800">
+                  What you take from this lesson
+                </h2>
+                <ul className="grid gap-1.5 sm:grid-cols-2">
+                  {objectives.map((objective) => (
+                    <li key={objective} className="flex gap-2 text-sm text-slate-800">
+                      <span aria-hidden="true" className="text-emerald-700">
+                        ✓
+                      </span>
+                      {objective}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-slate-600">
+                  Everything here comes back in the review queue: the words you saved, the mistakes the corrector
+                  found, and this structure in the next submodule.
+                </p>
+                <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                  <Link
+                    href="/write"
+                    className="rounded-sm bg-emerald-700 px-3 py-1.5 text-white transition hover:bg-emerald-800"
+                  >
+                    Write an email with it
+                  </Link>
+                  <Link
+                    href="/review/mistakes"
+                    className="rounded-sm bg-white px-3 py-1.5 text-emerald-800 transition hover:bg-emerald-100"
+                  >
+                    Review your mistakes
+                  </Link>
+                </div>
+              </section>
+            ) : null}
+
+            <nav aria-label="Submodules" className="grid gap-2 sm:grid-cols-2">
+              {where.previous ? (
+                <Link
+                  href={`/topics/${where.previous.slug}`}
+                  className="rounded-lg border border-slate-200 bg-white p-3 transition hover:border-indigo-300 active:scale-[0.99]"
+                >
+                  <span className="text-[11px] uppercase tracking-widest text-slate-400">← Previous</span>
+                  <p className="text-sm font-medium text-slate-800">{where.previous.title}</p>
+                </Link>
+              ) : (
+                <span />
+              )}
+              {where.next ? (
+                <Link
+                  href={`/topics/${where.next.slug}`}
+                  className="rounded-lg bg-indigo-600 p-3 text-white transition hover:bg-indigo-700 active:scale-[0.99] sm:text-right"
+                >
+                  <span className="text-[11px] uppercase tracking-widest text-white/70">Next →</span>
+                  <p className="text-sm font-semibold">{where.next.title}</p>
+                </Link>
               ) : null}
-            </article>
-          ))}
+            </nav>
+          </div>
+
         </div>
       )}
     </div>
@@ -97,8 +874,8 @@ export default function TopicPage({ params }: { params: Promise<{ slug: string }
     <Suspense
       fallback={
         <div className="space-y-3" aria-busy="true">
-          <div className="h-8 w-64 rounded-sm bg-white border border-slate-200 animate-pulse" />
-          <div className="h-40 rounded-lg bg-white border border-slate-200 animate-pulse" />
+          <div className="h-8 w-64 animate-pulse rounded-sm border border-slate-200 bg-white" />
+          <div className="h-40 animate-pulse rounded-lg border border-slate-200 bg-white" />
         </div>
       }
     >

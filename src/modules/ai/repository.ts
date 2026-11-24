@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/shared/db/prisma";
+import { canonicalizeLessonContent } from "@/modules/lessons/structure";
 import type {
   GeneratedLesson,
   GeneratedQuestion,
@@ -199,7 +200,7 @@ export async function persistContent(
           level: lesson.level,
           title: lesson.title,
           summary: lesson.summary,
-          content: lesson.content,
+          content: canonicalizeLessonContent(lesson.content),
           order: lesson.order,
         },
       }),

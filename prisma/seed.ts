@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import { PrismaClient, CefrLevel, Skill, QuestionType } from "@prisma/client";
 import { loadLocalEnv } from "../src/shared/lib/load-env";
+import { LESSON_SEEDS } from "../src/modules/lessons/content";
+import { PATTERN_SEEDS } from "../src/modules/vocabulary/patterns";
 
 loadLocalEnv();
 
@@ -176,26 +178,35 @@ async function main() {
     await prisma.question.upsert({ where: { id }, update: data, create: { id, ...data } });
   }
 
-  // Lessons
-  const lessons = [
-    { module: "vocabulary", level: "A1" as CefrLevel, title: "Vocabulario básico de salud", summary: "Palabras esenciales para hablar de salud.", content: "Learn: patient, doctor, hospital, medicine, health, sick, well.\n\nExample: 'The patient is sick.'\n\nPractice using these words in simple sentences.", order: 1 },
-    { module: "vocabulary", level: "B1" as CefrLevel, title: "Vocabulario healtech intermedio", summary: "Términos técnicos del sector salud-digital.", content: "Key terms: telemedicine, EHR, HIPAA, interoperability, patient data, compliance.\n\nHIPAA = US health privacy law.\n\nEHR = Electronic Health Record.", order: 1 },
-    { module: "vocabulary", level: "C1" as CefrLevel, title: "Vocabulario avanzado healtech", summary: "Términos regulatorios y de datos.", content: "FHIR, pharmacovigilance, real-world evidence, clinical trial, FDA approval, CE mark.\n\nFHIR = Fast Healthcare Interoperability Resources (data standard).", order: 1 },
-    { module: "business-english", level: "B1" as CefrLevel, title: "Emails profesionales", summary: "Estructura de emails de negocio.", content: "Subject line, greeting, body, call to action, sign-off.\n\nExample: 'Hi team, please find attached the Q3 report. Best, Mauro.'", order: 1 },
-    { module: "business-english", level: "B2" as CefrLevel, title: "Reuniones y pitches", summary: "Vocabulario para reuniones y presentaciones.", content: "Agenda, milestone, runway, burn rate, traction, KPI, pivot.\n\nPivot = change product direction based on learning.", order: 1 },
-    { module: "contracts", level: "B1" as CefrLevel, title: "Contratos básicos", summary: "Vocabulario legal esencial.", content: "NDA = Non-Disclosure Agreement.\nLiability = legal responsibility.\nTerm = duration.\nClause = section of a contract.", order: 1 },
-    { module: "contracts", level: "C1" as CefrLevel, title: "Cláusulas avanzadas", summary: "Indemnification, IP, exclusivity.", content: "Indemnification = compensation for loss.\nIP assignment = transferring intellectual property.\nExclusivity = only one party can do X.", order: 1 },
-    { module: "reading", level: "B1" as CefrLevel, title: "Leer documentación técnica", summary: "Estrategias de lectura.", content: "Skim for main idea, scan for details, note unknown terms.\n\nPractice with API docs and whitepapers.", order: 1 },
-    { module: "listening", level: "B1" as CefrLevel, title: "Escuchar reuniones", summary: "Tips para listening en reuniones.", content: "Focus on key verbs and numbers. Take notes. Ask for clarification.\n\nCommon phrases: 'Let's circle back', 'Action item', 'Takeaway'.", order: 1 },
-    { module: "grammar", level: "B1" as CefrLevel, title: "Tiempos verbales profesionales", summary: "Present perfect, passive voice.", content: "Present perfect: 'We have launched the app.'\nPassive: 'The report was approved.'\nUseful for status updates.", order: 1 },
-  ];
-  for (const l of lessons) {
-    const id = seedId("lesson", l.module, l.level, l.title);
+  // Lessons: one canonical structure, defined in src/modules/lessons/content.ts.
+  // A lesson is adopted by its natural key, so a row that was generated before
+  // (and therefore has a different id) is updated in place instead of being
+  // duplicated. That is what makes `pnpm seed` alone rebuild every lesson the
+  // app ships: no stored lesson exists only in the database.
+  for (const l of LESSON_SEEDS) {
+    const existing = await prisma.lesson.findFirst({
+      where: { module: l.module, level: l.level, title: l.title },
+      select: { id: true },
+    });
+    const id = existing?.id ?? seedId("lesson", l.module, l.level, l.title);
     await prisma.lesson.upsert({ where: { id }, update: l, create: { id, ...l } });
   }
 
-  // Vocabulary
-  const vocab = [
+  // Vocabulary, including the patterns that ship with the app. A pattern is a
+  // vocabulary row of kind PATTERN, so it travels through the same upsert.
+  type VocabularySeed = {
+    term: string;
+    definition: string;
+    example: string;
+    module: string;
+    level: CefrLevel;
+    kind?: "WORD" | "PHRASAL_VERB" | "PATTERN" | "IDIOM";
+    function?: string;
+    register?: string;
+    extraExample?: string;
+    notes?: string;
+  };
+  const vocab: VocabularySeed[] = [
     { term: "patient", definition: "A person receiving medical care.", example: "The patient needs a check-up.", module: "vocabulary", level: "A1" as CefrLevel },
     { term: "telemedicine", definition: "Medical care delivered remotely via technology.", example: "We offer telemedicine consultations.", module: "vocabulary", level: "A2" as CefrLevel },
     { term: "HIPAA", definition: "US law protecting patient health information.", example: "Ensure HIPAA compliance.", module: "vocabulary", level: "B1" as CefrLevel },
@@ -210,6 +221,7 @@ async function main() {
     { term: "burn rate", definition: "Speed of spending cash.", example: "Reduce burn rate to extend runway.", module: "business-english", level: "B2" as CefrLevel },
     { term: "scalable", definition: "Can grow without losing quality.", example: "Build a scalable architecture.", module: "vocabulary", level: "B1" as CefrLevel },
     { term: "due diligence", definition: "Investigation before a deal.", example: "Investors do due diligence.", module: "business-english", level: "C1" as CefrLevel },
+    ...PATTERN_SEEDS,
   ];
   for (const v of vocab) {
     const id = seedId("vocabulary", v.term, v.module);

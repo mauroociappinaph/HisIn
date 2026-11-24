@@ -6,16 +6,7 @@ import type { VocabularyDTO } from "@/shared/types";
 import { EntryForm } from "@/components/entry-form";
 import { LevelBadge, ModuleTag, SpeakButton } from "@/components/vocab-ui";
 import { ChipsLegend } from "@/components/chips-legend";
-
-/** What each function does in a sentence, in the learner's terms. */
-const FUNCTION_MEANINGS: Record<string, string> = {
-  hedge: "no comprometerse del todo (might, it seems)",
-  soften: "suavizar algo incómodo (I'm afraid, would you mind)",
-  persuade: "empujar una decisión (make + objeto + verbo)",
-  report: "contar lo que otro dijo o hizo (is said to, was reported)",
-  compare: "medir dos cosas (twice as, compared with)",
-  express: "declarar interés, necesidad o postura (be interested in, would like)",
-};
+import { PATTERN_FUNCTION_MEANINGS as FUNCTION_MEANINGS, patternSectionViews } from "@/modules/vocabulary/patterns";
 
 
 export default function PatternsPage() {
@@ -174,14 +165,25 @@ export default function PatternsPage() {
               </div>
 
               <h2 className="text-lg font-mono font-bold text-slate-900 break-words">{entry.term}</h2>
-              <p className="text-sm text-slate-700">{entry.definition}</p>
-              <p className="text-sm italic text-slate-500 border-l-2 border-sky-200 pl-3">{entry.example}</p>
 
-              {entry.notes ? (
-                <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                  ⚠️ Error típico: {entry.notes}
-                </p>
-              ) : null}
+              {patternSectionViews(entry).map((section) => (
+                <div key={section.key} className="space-y-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    {section.label}
+                  </p>
+                  <p
+                    className={
+                      section.key === "example" || section.key === "extraExample"
+                        ? "text-sm italic text-slate-500 border-l-2 border-sky-200 pl-3"
+                        : section.key === "notes"
+                          ? "text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2"
+                          : "text-sm text-slate-700"
+                    }
+                  >
+                    {section.value}
+                  </p>
+                </div>
+              ))}
 
               {entry.source === "USER" ? (
                 <div className="mt-auto flex flex-wrap items-center gap-3">

@@ -110,8 +110,103 @@ model Topic {
   unitOrder Int             @default(0)
   level     CefrLevel
   focus     String?
+  /// Opening line shown before the lesson: one quote tying this submodule to its
+  /// module, so the first thing the learner reads has a voice.
+  quote     String?
+  /// English prologue: what this submodule is for and why it matters at work.
+  prologue  String?
   createdAt DateTime        @default(now())
   materials TopicMaterial[]
+  glosses   StoryGloss[]
+  done      TopicCompletion[]
+}
+
+/// The prologue of one module: the map of what the module covers, in English.
+model UnitMeta {
+  id        String   @id @default(cuid())
+  unitOrder Int      @unique
+  unit      String
+  prologue  String   @db.Text
+  createdAt DateTime @default(now())
+}
+
+/// One mistake taken from the learner's own writing, scheduled like a vocabulary
+/// card: what you got wrong is what you review.
+model Mistake {
+  id         String    @id @default(cuid())
+  userId     String
+  kind       String
+  original   String
+  corrected  String
+  why        String
+  /// Submodule that explains the rule, so the mistake links back to the lesson.
+  topicSlug  String?
+  source     String    @default("email")
+  easeFactor Float     @default(2.5)
+  interval   Int       @default(1)
+  repetitions Int      @default(0)
+  nextReview DateTime  @default(now())
+  resolved   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, nextReview])
+}
+
+/// One word or phrase explained once, for every lesson.
+///
+/// A learner hovers the same unknown term in five different texts; asking the engine
+/// five times is waste and asking never is the bug the owner reported. This table is
+/// the dictionary the course builds as it is read.
+model TermGloss {
+  id          String   @id @default(cuid())
+  /// Normalised term: the cache key, so "Data migration" and "data migration" meet.
+  key         String   @unique
+  term        String
+  translation String
+  kind        String
+  note        String?
+  createdAt   DateTime @default(now())
+
+  @@index([kind])
+}
+
+/// A cached engine expansion for a thin search query: the same question asked twice
+/// costs one model call, not one per keystroke.
+model SearchExpansion {
+  id        String   @id @default(cuid())
+  queryKey  String   @unique
+  keywords  String[]
+  topics    String[]
+  createdAt DateTime @default(now())
+}
+
+/// A lesson the learner marked as done. One row per learner and topic, so the
+/// checkbox is idempotent and the progress of a module is a count, not a guess.
+model TopicCompletion {
+  id        String   @id @default(cuid())
+  userId    String
+  topicId   String
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, topicId])
+  @@index([userId])
+}
+
+/// Per-story glossary: the Spanish translation of the words worth knowing plus the
+/// multi-word units (phrasal verbs, patterns, idioms) that appear in the text.
+/// Stored instead of computed on hover so the reading stays instant.
+model StoryGloss {
+  id          String @id @default(cuid())
+  topicId     String
+  topic       Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  term        String
+  translation String
+  kind        String
+  note        String?
+
+  @@unique([topicId, term])
+  @@index([topicId])
 }
 
 model TopicMaterial {

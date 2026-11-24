@@ -3,6 +3,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { VocabularyDTO } from "@/shared/types";
 import { KIND_LABELS, KindTag, LevelBadge, ModuleTag, SpeakButton } from "@/components/vocab-ui";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+interface SearchHit {
+  id: string;
+  title: string;
+  href: string;
+  meta: string | null;
+  level: string | null;
+  preview: string;
+  score: number;
+}
+
+interface SearchGroup {
+  kind: string;
+  label: string;
+  hits: SearchHit[];
+}
 
 const KINDS = ["all", "WORD", "PHRASAL_VERB", "PATTERN", "IDIOM"] as const;
 const FUNCTIONS = ["hedge", "soften", "persuade", "report", "compare", "express"] as const;
@@ -18,6 +35,11 @@ export default function LibraryPage() {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<(typeof KINDS)[number]>("all");
   const [shown, setShown] = useState(20);
+  // The same box searches the whole course, not only the saved words: lessons,
+  // story terms, mistakes and news come back ranked next to your own entries.
+  const [results, setResults] = useState<SearchGroup[] | null>(null);
+  const [expanded, setExpanded] = useState<string[] | null>(null);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -49,6 +71,43 @@ export default function LibraryPage() {
       return matchesKind && matchesText;
     });
   }, [entries, kind, query]);
+
+  useEffect(() => {
+    const term = query.trim();
+    let active = true;
+
+    // Every setState lives inside the timer callback: the effect only schedules
+    // work and subscribes, which is what the lint rule asks for.
+    const timer = setTimeout(() => {
+      if (term.length < 2) {
+        setResults(null);
+        setSearching(false);
+        return;
+      }
+
+      setSearching(true);
+      fetch(`/api/search?q=${encodeURIComponent(term)}`)
+        .then((response) => response.json())
+        .then((data: { groups?: SearchGroup[]; expanded?: { keywords: string[] } | null }) => {
+          if (active) {
+            setResults(data.groups ?? []);
+            setExpanded(data.expanded?.keywords ?? null);
+          }
+        })
+        .catch(() => {
+          if (active) setResults([]);
+        })
+        .finally(() => {
+          if (active) setSearching(false);
+        });
+    }, 250);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [query]);
+
 
   const patch = useCallback(async (id: string, body: Record<string, unknown>) => {
     const response = await fetch(`/api/vocabulary/${id}`, {
@@ -83,24 +142,23 @@ export default function LibraryPage() {
       </header>
 
       <div className="flex flex-wrap gap-2">
-        {KINDS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={kind === option}
-            onClick={() => {
-              setKind(option);
-              setShown(20);
-            }}
-            className={`px-3 py-1.5 rounded-sm text-xs font-semibold transition ${
-              kind === option
-                ? "bg-indigo-600 text-white"
-                : "bg-white border border-slate-200 text-slate-600 hover:border-indigo-300"
-            }`}
-          >
-            {option === "all" ? `Todo (${entries.length})` : `${KIND_LABELS[option]} (${counts.get(option) ?? 0})`}
-          </button>
-        ))}
+        {/* shadcn Tabs: arrow keys move between filters and the active one is announced
+            as selected, which the button row could not do. */}
+        <Tabs
+          value={kind}
+          onValueChange={(value) => {
+            setKind(value as (typeof KINDS)[number]);
+            setShown(20);
+          }}
+        >
+          <TabsList>
+            {KINDS.map((option) => (
+              <TabsTrigger key={option} value={option}>
+                {option === "all" ? `Todo (${entries.length})` : `${KIND_LABELS[option]} (${counts.get(option) ?? 0})`}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
 
       <input
@@ -110,10 +168,50 @@ export default function LibraryPage() {
           setQuery(event.target.value);
           setShown(20);
         }}
-        placeholder="Buscar por término, definición o ejemplo…"
-        aria-label="Buscar en mi vocabulario"
+        placeholder="Buscar en todo el curso: una palabra, una regla, una duda…"
+        aria-label="Buscar en todo el curso"
         className="w-full px-4 py-2.5 rounded-sm border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
       />
+
+      {searching ? <p className="text-xs text-slate-500">Buscando en lecciones, términos y errores…</p> : null}
+
+      {results && results.length > 0 ? (
+        <section className="space-y-3 rounded-lg border border-indigo-200 bg-indigo-50/60 p-4">
+          <p className="text-[11px] uppercase tracking-widest text-indigo-700">En todo el curso</p>
+          {expanded && expanded.length > 0 ? (
+            <p className="text-[11px] text-slate-500">
+              Buscamos también: {expanded.join(" · ")}
+            </p>
+          ) : null}
+          {results.map((group) => (
+            <div key={group.kind} className="space-y-1">
+              <p className="text-[11px] font-semibold text-slate-600">{group.label}</p>
+              <ul className="space-y-1">
+                {group.hits.slice(0, 4).map((hit) => (
+                  <li key={hit.id}>
+                    <a
+                      href={hit.href}
+                      className="flex flex-wrap items-baseline gap-2 rounded-sm bg-white px-3 py-2 text-sm text-slate-800 hover:border-indigo-300 border border-transparent"
+                    >
+                      <span className="font-medium">{hit.title}</span>
+                      {hit.level ? <span className="text-[10px] text-slate-500">{hit.level}</span> : null}
+                      {hit.meta ? (
+                        <span className="truncate text-[11px] text-slate-500">{hit.meta}</span>
+                      ) : null}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      ) : null}
+
+      {results && results.length === 0 && query.trim().length >= 2 ? (
+        <p className="text-xs text-slate-500">
+          Nada en el curso con esas palabras. Probá con el término en inglés.
+        </p>
+      ) : null}
 
       {loading ? (
         <div className="space-y-2" aria-busy="true">

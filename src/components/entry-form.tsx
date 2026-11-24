@@ -40,6 +40,7 @@ const EMPTY = {
   separable: false,
   register: "" as "" | (typeof REGISTERS)[number],
   patternFunction: "" as "" | (typeof FUNCTIONS)[number],
+  extraExample: "",
   notes: "",
 };
 
@@ -82,13 +83,14 @@ export function EntryForm({ kinds, defaultModule, defaultLevel, defaultOpen = fa
           kind: form.kind,
           level: form.level,
           module: form.module,
-          ...(form.kind === "PHRASAL_VERB"
-            ? {
-                separable: form.separable,
-                ...(form.register ? { register: form.register } : {}),
-              }
+          ...(form.kind === "PHRASAL_VERB" ? { separable: form.separable } : {}),
+          ...(form.kind === "PHRASAL_VERB" || form.kind === "PATTERN"
+            ? form.register
+              ? { register: form.register }
+              : {}
             : {}),
           ...(form.kind === "PATTERN" && form.patternFunction ? { function: form.patternFunction } : {}),
+          ...(form.extraExample.trim() ? { extraExample: form.extraExample.trim() } : {}),
           ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
         }),
       });
@@ -219,6 +221,19 @@ export function EntryForm({ kinds, defaultModule, defaultLevel, defaultOpen = fa
           />
         </label>
 
+        <label className="space-y-1 md:col-span-2">
+          <span className="text-xs font-medium text-slate-600">
+            Segundo ejemplo (opcional) — el mismo término en otro sentido
+          </span>
+          <textarea
+            value={form.extraExample}
+            onChange={(event) => update("extraExample", event.target.value)}
+            rows={2}
+            placeholder="We handle projects end to end, from discovery to launch."
+            className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+          />
+        </label>
+
         <label className="space-y-1">
           <span className="text-xs font-medium text-slate-600">Nivel</span>
           <select
@@ -250,34 +265,35 @@ export function EntryForm({ kinds, defaultModule, defaultLevel, defaultOpen = fa
         </label>
 
         {form.kind === "PHRASAL_VERB" ? (
-          <>
-            <label className="space-y-1">
-              <span className="text-xs font-medium text-slate-600">¿Se separa?</span>
-              <select
-                value={form.separable ? "yes" : "no"}
-                onChange={(event) => update("separable", event.target.value === "yes")}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-              >
-                <option value="yes">Sí (turn it off)</option>
-                <option value="no">No (look after it)</option>
-              </select>
-            </label>
-            <label className="space-y-1">
-              <span className="text-xs font-medium text-slate-600">Registro</span>
-              <select
-                value={form.register}
-                onChange={(event) => update("register", event.target.value as typeof form.register)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-              >
-                <option value="">Sin especificar</option>
-                {REGISTERS.map((register) => (
-                  <option key={register} value={register}>
-                    {register}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </>
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-slate-600">¿Se separa?</span>
+            <select
+              value={form.separable ? "yes" : "no"}
+              onChange={(event) => update("separable", event.target.value === "yes")}
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+            >
+              <option value="yes">Sí (turn it off)</option>
+              <option value="no">No (look after it)</option>
+            </select>
+          </label>
+        ) : null}
+
+        {form.kind === "PHRASAL_VERB" || form.kind === "PATTERN" ? (
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-slate-600">Registro</span>
+            <select
+              value={form.register}
+              onChange={(event) => update("register", event.target.value as typeof form.register)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+            >
+              <option value="">Sin especificar</option>
+              {REGISTERS.map((register) => (
+                <option key={register} value={register}>
+                  {register}
+                </option>
+              ))}
+            </select>
+          </label>
         ) : null}
 
         {form.kind === "PATTERN" ? (
@@ -299,11 +315,17 @@ export function EntryForm({ kinds, defaultModule, defaultLevel, defaultOpen = fa
         ) : null}
 
         <label className="space-y-1 md:col-span-2">
-          <span className="text-xs font-medium text-slate-600">Dónde la encontraste (opcional)</span>
+          <span className="text-xs font-medium text-slate-600">
+            {form.kind === "PATTERN" ? "Error típico que querés recordar" : "Dónde la encontraste"} (opcional)
+          </span>
           <input
             value={form.notes}
             onChange={(event) => update("notes", event.target.value)}
-            placeholder="Reunión con inversores, 14/03"
+            placeholder={
+              form.kind === "PATTERN"
+                ? "Después de 'for' va gerundio: thanks for handling"
+                : "Reunión con inversores, 14/03"
+            }
             className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
           />
         </label>
