@@ -232,6 +232,25 @@ function Timeline({ span, caption }: { span: string; caption: string }) {
 }
 
 /**
+ * A group title between steps.
+ *
+ * Nine numbered cards in a row read as a list; three named groups read as a path: the
+ * learner knows whether they are understanding, using or producing.
+ */
+function SectionDivider({ label, note }: { label: string; note: string }) {
+  return (
+    <div className="flex items-center gap-3 pt-4">
+      <div className="h-px flex-1 bg-slate-200" />
+      <div className="text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-700">{label}</p>
+        <p className="text-[11px] text-slate-500">{note}</p>
+      </div>
+      <div className="h-px flex-1 bg-slate-200" />
+    </div>
+  );
+}
+
+/**
  * The structure, whole.
  *
  * Pills alone show the pieces but not how they behave in a sentence. This block shows
@@ -495,18 +514,32 @@ async function TopicBody({ slug }: { slug: string }) {
 
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{topic.title}</h1>
 
-        {modulePrologue ? (
-          <div className="max-w-prose space-y-1 border-l-2 border-slate-200 pl-4">
-            <p className="text-[11px] uppercase tracking-widest text-slate-400">The module</p>
-            <GlossText text={modulePrologue} className="text-sm leading-7 text-slate-600" />
-          </div>
-        ) : null}
-
-        {topic.prologue ? (
-          <div className="max-w-prose space-y-1">
-            <p className="text-[11px] uppercase tracking-widest text-slate-400">This lesson</p>
-            <GlossText text={topic.prologue} glosses={topic.glosses} />
-          </div>
+        {/* The two prologues used to push the teaching a full screen down. They are
+            still here, one click away, because a learner who wants the why should find
+            it immediately, and one who wants the rule should too. */}
+        {modulePrologue || topic.prologue ? (
+          <details className="group rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <summary className="flex cursor-pointer items-center justify-between gap-2 text-xs font-semibold uppercase tracking-widest text-slate-600">
+              Why this lesson
+              <span className="text-[10px] font-normal normal-case tracking-normal text-slate-500 group-open:hidden">
+                module + lesson intro
+              </span>
+            </summary>
+            <div className="mt-3 space-y-4 border-t border-slate-200 pt-3">
+              {modulePrologue ? (
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-widest text-slate-400">The module</p>
+                  <GlossText text={modulePrologue} className="text-sm leading-7 text-slate-600" />
+                </div>
+              ) : null}
+              {topic.prologue ? (
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-widest text-slate-400">This lesson</p>
+                  <GlossText text={topic.prologue} glosses={topic.glosses} />
+                </div>
+              ) : null}
+            </div>
+          </details>
         ) : null}
 
         <LessonDone
@@ -579,6 +612,8 @@ async function TopicBody({ slug }: { slug: string }) {
           <div className="space-y-4 min-w-0">
             {anchors.length > 0 ? <TopicNav items={anchors} /> : null}
             <GlossBar />
+
+            <SectionDivider label="Understand" note="What the rule is and what it sounds like." />
 
             {grammar && lesson ? (
               <Step
@@ -667,6 +702,8 @@ async function TopicBody({ slug }: { slug: string }) {
               </Step>
             ) : null}
 
+            <SectionDivider label="Use it" note="Set phrases, drills and a scene to say it in." />
+
             {grammar ? (
               <Step
                 id="paso-practica"
@@ -680,6 +717,8 @@ async function TopicBody({ slug }: { slug: string }) {
                 <Drill slug={topic.slug} />
               </Step>
             ) : null}
+
+            <SectionDivider label="Read, write, tell" note="The same structure in a text, a task and a story." />
 
             {reading ? (
               <Step
@@ -762,6 +801,42 @@ async function TopicBody({ slug }: { slug: string }) {
               >
                 <StoryReader title={story.title} body={story.body} glosses={topic.glosses} />
               </Step>
+            ) : null}
+
+            {grammar ? (
+              <section className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-5">
+                <h2 className="text-sm font-semibold uppercase tracking-widest text-emerald-800">
+                  What you take from this lesson
+                </h2>
+                <ul className="grid gap-1.5 sm:grid-cols-2">
+                  {objectives.map((objective) => (
+                    <li key={objective} className="flex gap-2 text-sm text-slate-800">
+                      <span aria-hidden="true" className="text-emerald-700">
+                        ✓
+                      </span>
+                      {objective}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-slate-600">
+                  Everything here comes back in the review queue: the words you saved, the mistakes the corrector
+                  found, and this structure in the next submodule.
+                </p>
+                <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                  <Link
+                    href="/write"
+                    className="rounded-sm bg-emerald-700 px-3 py-1.5 text-white transition hover:bg-emerald-800"
+                  >
+                    Write an email with it
+                  </Link>
+                  <Link
+                    href="/review/mistakes"
+                    className="rounded-sm bg-white px-3 py-1.5 text-emerald-800 transition hover:bg-emerald-100"
+                  >
+                    Review your mistakes
+                  </Link>
+                </div>
+              </section>
             ) : null}
 
             <nav aria-label="Submodules" className="grid gap-2 sm:grid-cols-2">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { Toaster } from "sonner";
 import { connection } from "next/server";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             Generar contenido
           </Link>
         </footer>
+        <Toaster position="bottom-center" richColors />
       </body>
     </html>
   );
