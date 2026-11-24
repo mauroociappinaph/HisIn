@@ -48,7 +48,7 @@ entries keep working through form, API and analyze exactly as before S2.
 | T2 | S4, S5, S6 | inline | feat(lessons): one canonical lesson structure |
 | T3 | S1, S5 | parent: seed wiring + data run | feat(content): seed thanks-for-handling pattern and canonical lessons |
 | T4 | S1-S7 | inline checks: pnpm test, tsc, lint, differential, verifier | — |
-| T5 | S5 | pending human decision: the 18 prose-only lessons | — |
+| T5 | S5 | authored sections for the 18 prose-only lessons | included in the lessons commit |
 
 ### Evidence
 
@@ -61,8 +61,11 @@ entries keep working through form, API and analyze exactly as before S2.
 - Data: `pnpm seed` writes the PATTERN row (`Thanks for handling + noun/gerund`, source SEED, function
   `soften`, register `neutral`, second example and typical mistake present) and the 10 canonical lessons.
   `pnpm db:normalize-lessons` is idempotent (second run rewrites 0 rows).
-- Open: 18 AI-generated prose lessons in the database still lack the five sections;
-  `db:normalize-lessons` lists them and leaves their text untouched.
+- Open: none. The 18 AI-generated prose lessons now carry authored sections (`src/modules/lessons/legacy-content.ts`),
+  applied in place by `db:normalize-lessons`; a second run rewrites 0 rows and all 28 lessons report five sections.
+- Commits on `feat/stories-interactive`: `ecfd7f6` (patterns) and `75b6b1b` (lessons + content).
+- Delivery shape: the branch already carries 34 commits and ~58k authored lines since `main`, far past one
+  reviewable slice, so publishing needs chained PRs; these two commits are one reviewable slice each.
 
 ## Log
 
