@@ -178,9 +178,17 @@ async function main() {
     await prisma.question.upsert({ where: { id }, update: data, create: { id, ...data } });
   }
 
-  // Lessons: one canonical structure, defined in src/modules/lessons/content.ts
+  // Lessons: one canonical structure, defined in src/modules/lessons/content.ts.
+  // A lesson is adopted by its natural key, so a row that was generated before
+  // (and therefore has a different id) is updated in place instead of being
+  // duplicated. That is what makes `pnpm seed` alone rebuild every lesson the
+  // app ships: no stored lesson exists only in the database.
   for (const l of LESSON_SEEDS) {
-    const id = seedId("lesson", l.module, l.level, l.title);
+    const existing = await prisma.lesson.findFirst({
+      where: { module: l.module, level: l.level, title: l.title },
+      select: { id: true },
+    });
+    const id = existing?.id ?? seedId("lesson", l.module, l.level, l.title);
     await prisma.lesson.upsert({ where: { id }, update: l, create: { id, ...l } });
   }
 

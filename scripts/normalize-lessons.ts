@@ -1,37 +1,38 @@
 import { PrismaClient } from "@prisma/client";
 import { loadLocalEnv } from "../src/shared/lib/load-env";
 import { canonicalizeLessonContent, isCompleteLessonContent } from "../src/modules/lessons/structure";
-import { authoredLessonContent } from "../src/modules/lessons/legacy-content";
 
 loadLocalEnv();
 
 const prisma = new PrismaClient();
 
 /**
- * Rewrites every stored lesson into the canonical section structure.
+ * Rewrites stored lesson content into the canonical section structure.
  *
- * It only rewrites the `content` column, it never deletes a row, and content it
- * cannot parse is left as it is. Running it twice is a no-op, which is what makes
- * it safe to run against a database that already has learner-facing lessons.
+ * It is a dry run unless `--apply` is passed: rewriting learner-facing rows is
+ * the only irreversible thing here, so it must be asked for explicitly.
  *
- * A lesson with authored sections (`legacy-content.ts`) gets those; the rest are
- * normalized by their own markers. "Sin cambios" is not the same as "completa":
- * a legacy lesson still written as prose is listed instead of counted as done.
+ * It only touches the `content` column, never deletes a row, and leaves content
+ * it cannot parse as it is. Lessons that ship with the app are owned by
+ * `src/modules/lessons/content.ts` and are rebuilt by `pnpm seed`; this script
+ * exists for rows the seed does not know about (generated or hand-made).
  */
 async function main() {
+  const apply = process.argv.includes("--apply");
   const lessons = await prisma.lesson.findMany({
     select: { id: true, module: true, level: true, title: true, content: true },
   });
 
   const changes = lessons
-    .map((lesson) => ({
-      id: lesson.id,
-      before: lesson.content,
-      after:
-        authoredLessonContent(lesson.module, lesson.level, lesson.title) ??
-        canonicalizeLessonContent(lesson.content),
-    }))
+    .map((lesson) => ({ id: lesson.id, title: lesson.title, before: lesson.content, after: canonicalizeLessonContent(lesson.content) }))
     .filter((change) => change.after !== change.before);
+
+  if (!apply) {
+    console.log(`Dry run: ${changes.length} de ${lessons.length} lecciones cambiarían. Nada se escribió.`);
+    for (const change of changes) console.log(`  - ${change.title}`);
+    console.log("Pasá --apply para escribir los cambios.");
+    return;
+  }
 
   if (changes.length > 0) {
     await prisma.$transaction(

@@ -6,9 +6,13 @@ import { prisma } from "@/shared/db/prisma";
  * Snapshot of every piece of generated content, and how to put it back.
  *
  * The whole course lives in the database: 149 topics, 596 materials, 2.500
- * glossary rows, the prologues and the quotes. Several scripts delete rows on
- * purpose, so there has to be a way back that does not depend on remembering which
- * file was written by which run.
+ * glossary rows, the lexicographic prologues and the quotes. Several scripts
+ * rewrite or delete rows on purpose, so there has to be a way back that does not
+ * depend on remembering which file was written by which run.
+ *
+ * Lessons are part of the snapshot even though `prisma/seed.ts` can rebuild the
+ * ones that ship with the app: a lesson generated into the database lives nowhere
+ * else, and it is exactly what `db:normalize-lessons --apply` rewrites.
  *
  *   tsx scripts/backup-content.ts                 write odd/backups/content-<stamp>.json
  *   tsx scripts/backup-content.ts --restore <f>   put it back, idempotently
@@ -17,6 +21,7 @@ interface Snapshot {
   takenAt: string;
   mistakes?: { kind: string; original: string; corrected: string; why: string; topicSlug: string | null; source: string }[];
   expansions?: { queryKey: string; keywords: string[]; topics: string[] }[];
+  lessons?: { module: string; level: string; title: string; summary: string; content: string; order: number }[];
   topics: {
     slug: string;
     title: string;
@@ -41,15 +46,20 @@ async function snapshot(): Promise<Snapshot> {
   });
   const units = await prisma.unitMeta.findMany({ orderBy: { unitOrder: "asc" } });
 
-  const [mistakes, expansions] = await Promise.all([
+  const [mistakes, expansions, lessons] = await Promise.all([
     prisma.mistake.findMany({ select: { kind: true, original: true, corrected: true, why: true, topicSlug: true, source: true } }),
     prisma.searchExpansion.findMany({ select: { queryKey: true, keywords: true, topics: true } }),
+    prisma.lesson.findMany({
+      select: { module: true, level: true, title: true, summary: true, content: true, order: true },
+      orderBy: [{ module: "asc" }, { level: "asc" }, { title: "asc" }],
+    }),
   ]);
 
   return {
     takenAt: new Date().toISOString(),
     mistakes,
     expansions,
+    lessons,
     topics: topics.map((topic) => ({
       slug: topic.slug,
       title: topic.title,
@@ -83,6 +93,35 @@ async function restore(file: string) {
   let topics = 0;
   let materials = 0;
   let glosses = 0;
+  let lessons = 0;
+
+  // A lesson is adopted by its natural key, never by id: an id from another
+  // database means nothing here, and duplicating a title would be worse than
+  // overwriting it.
+  for (const lesson of data.lessons ?? []) {
+    const existing = await prisma.lesson.findFirst({
+      where: { module: lesson.module, level: lesson.level as never, title: lesson.title },
+      select: { id: true },
+    });
+    if (existing) {
+      await prisma.lesson.update({
+        where: { id: existing.id },
+        data: { summary: lesson.summary, content: lesson.content, order: lesson.order },
+      });
+    } else {
+      await prisma.lesson.create({
+        data: {
+          module: lesson.module,
+          level: lesson.level as never,
+          title: lesson.title,
+          summary: lesson.summary,
+          content: lesson.content,
+          order: lesson.order,
+        },
+      });
+    }
+    lessons += 1;
+  }
 
   for (const entry of data.topics) {
     const row = await prisma.topic.upsert({
@@ -185,7 +224,7 @@ async function restore(file: string) {
     });
   }
 
-  console.log(`restored topics=${topics} materials=${materials} glosses=${glosses} units=${data.units.length}`);
+  console.log(`restored topics=${topics} materials=${materials} glosses=${glosses} lessons=${lessons} units=${data.units.length}`);
 }
 
 async function main() {
@@ -210,7 +249,9 @@ async function main() {
   const materials = data.topics.reduce((total, topic) => total + topic.materials.length, 0);
   const glosses = data.topics.reduce((total, topic) => total + topic.glosses.length, 0);
   console.log(`snapshot: ${file}`);
-  console.log(`topics=${data.topics.length} materials=${materials} glosses=${glosses} units=${data.units.length}`);
+  console.log(
+    `topics=${data.topics.length} materials=${materials} glosses=${glosses} lessons=${data.lessons?.length ?? 0} units=${data.units.length}`,
+  );
   await prisma.$disconnect();
 }
 

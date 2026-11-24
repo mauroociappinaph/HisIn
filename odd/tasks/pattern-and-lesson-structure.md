@@ -48,7 +48,7 @@ entries keep working through form, API and analyze exactly as before S2.
 | T2 | S4, S5, S6 | inline | feat(lessons): one canonical lesson structure |
 | T3 | S1, S5 | parent: seed wiring + data run | feat(content): seed thanks-for-handling pattern and canonical lessons |
 | T4 | S1-S7 | inline checks: pnpm test, tsc, lint, differential, verifier | — |
-| T5 | S5 | authored sections for the 18 prose-only lessons | included in the lessons commit |
+| T5 | S5 | the 18 prose lessons moved into the seed | feat(lessons): rebuild every lesson from source |
 
 ### Evidence
 
@@ -61,9 +61,16 @@ entries keep working through form, API and analyze exactly as before S2.
 - Data: `pnpm seed` writes the PATTERN row (`Thanks for handling + noun/gerund`, source SEED, function
   `soften`, register `neutral`, second example and typical mistake present) and the 10 canonical lessons.
   `pnpm db:normalize-lessons` is idempotent (second run rewrites 0 rows).
-- Open: none. The 18 AI-generated prose lessons now carry authored sections (`src/modules/lessons/legacy-content.ts`),
-  applied in place by `db:normalize-lessons`; a second run rewrites 0 rows and all 28 lessons report five sections.
-- Commits on `feat/stories-interactive`: `ecfd7f6` (patterns) and `75b6b1b` (lessons + content).
+- Lessons: all 28 live in `src/modules/lessons/content.ts`. `pnpm seed` adopts each one by natural key
+  (`module|level|title`), so a row that was generated before keeps its id and no duplicate appears: ids are
+  identical before and after a seed run, `seed=28 db=28`, and every stored row equals its source entry
+  (`identical=28`). The database holds nothing the source cannot rebuild.
+- `db:normalize-lessons` is a dry run unless `--apply` is passed, so no script rewrites learner-facing rows
+  by accident; on a seeded database it reports 0 pending changes.
+- `pnpm backup:content` now snapshots lessons too (`lessons=28`) and `--restore` adopts them by natural key:
+  restoring the fresh snapshot into the same database changed no id and no body.
+- Commits on `feat/stories-interactive`: `ecfd7f6` (patterns), `75b6b1b` (lessons + content), `0633c97`
+  (evidence doc), plus the risk-1 commit (seed adoption, gated normalize, backup coverage).
 - Delivery shape: the branch already carries 34 commits and ~58k authored lines since `main`, far past one
   reviewable slice, so publishing needs chained PRs; these two commits are one reviewable slice each.
 
@@ -96,6 +103,12 @@ L4. Term shape: `validateEntry` requires a PATTERN term to carry slots, so the s
 L5. Function `soften` and register `neutral` were reused instead of adding an enum value: a new value
 would need a migration and this request is about content and structure.
 
-L6. The 18 AI-generated prose lessons found in the database cannot be given the five sections without
-authored content, so they were left intact and are listed by `db:normalize-lessons`. T5 records the
-open decision: author them, or regenerate/replace them.
+L6. The 18 AI-generated prose lessons found in the database could not be given the five sections without
+authored content, so they were first left intact and listed by `db:normalize-lessons`.
+
+L7. Human request, verbatim: "Resolve el Risk 1". Risk 1 was the normalize script rewriting stored lesson
+content. Resolution chosen: make the data rebuildable instead of merely careful - all 28 lessons moved into
+`src/modules/lessons/content.ts`, the seed adopts them by natural key (no duplicate, ids preserved),
+`db:normalize-lessons` writes only with `--apply`, and `backup:content` now covers lessons. Verified:
+`seed=28 db=28 identical=28`, unchanged ids after a seed run, 0 pending changes on a dry run, and an
+idempotent restore.
